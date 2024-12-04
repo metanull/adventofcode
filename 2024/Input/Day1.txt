@@ -1,0 +1,7 @@
+This is a dummy input file
+Pleae make sure to obtain the real input files from https://adventofcode.com/2024/day/1/input
+
+In order to run the Solutions without changes, make sure to store Input files following this
+naming convention: /[Year]/Day[Number].txt
+
+By example: `/2024/Day1.txt` is the input file for the Puzzle of 1st of December 2024.
