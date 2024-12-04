@@ -32,7 +32,7 @@ Process {
             $Label = $_.key
             $Direction = $_.value
             if( (Test-MatrixSubstringFromMiddle -X $CurrentIndex.X -Y $CurrentIndex.Y -XInc $Direction.XInc -YInc $Direction.YInc -MatrixSize $MatrixSize -Length $Needle.Length)) {
-                $SubString = Get-MatrixSubstringFromMiddle -Matrix $Matrix -X $CurrentIndex.X -Y $CurrentIndex.Y -XInc $Direction.XInc -YInc $Direction.YInc -MatrixSize $MatrixSize -Length $Needle.Length
+                $SubString = Get-MatrixSubstringFromMiddle -Matrix $Matrix -X $CurrentIndex.X -Y $CurrentIndex.Y -XInc $Direction.XInc -YInc $Direction.YInc -Length $Needle.Length
                 if($Substring -eq $Needle) {
                     # Only retain the points, where words crossing is matching Needle
                     [pscustomobject]@{
@@ -53,44 +53,9 @@ Process {
     } | Measure-Object
 }
 Begin {
-    function Test-MatrixSubstringFromMiddle {
-        <#
-            .SYNOPSIS
-            Test if it is possible to obtain a word of a given length from a matrix, starting from a given point - which is to be at the center of that word - in a given direction
-        #>
-        param([long]$X,[long]$Y,[long]$XInc,[long]$YInc,[long]$MatrixSize,[long]$Length)
-        if(-Not($Length%2)) {
-            throw "Needle's length is even!"
-        }
-        $Length = ($Length -1)/2
-
-        if(     ($X - ($Length * [Math]::Abs($XInc))) -ge 0 `
-           -and ($Y - ($Length * [Math]::Abs($YInc))) -ge 0 `
-           -and ($X + ($Length * [Math]::Abs($XInc))) -lt $MatrixSize `
-           -and ($Y + ($Length * [Math]::Abs($YInc))) -lt $MatrixSize ) {
-            return $true
-        }
-        return $false
-    }
-    function Get-MatrixSubstringFromMiddle {
-        <#
-            .SYNOPSIS
-            Get a word from a matrix, starting from a given point - which is to be at the center of that word - in a given direction
-        #>
-        param([String[]]$Matrix,[long]$X,[long]$Y,[long]$XInc,[long]$YInc,[long]$MatrixSize,[long]$Length)
-        if(-not (Test-MatrixSubstringFromMiddle -X $CurrentIndex.X -Y $CurrentIndex.Y -XInc $Value.XInc -YInc $Value.YInc -MatrixSize $MatrixSize -Length $Length)) {
-            return $null
-        }
-        $Offset = (($Length -1)/2)
-        $NewX = $X - ($Offset * $XInc)
-        $NewY = $Y - ($Offset * $YInc)
-
-        $Str = ''
-        for($i=0;$i -lt $Length;$i++) {
-            $Str += $Matrix[$NewY+($i*$YInc)][$NewX+($i*$XInc)]
-        }
-        $Str | Write-Output
-    }
+    
+    # Import Matrix functions
+    . (Join-Path $PSScriptRoot ..\Template\Matrix.ps1)
 
     # Read the input
     <#

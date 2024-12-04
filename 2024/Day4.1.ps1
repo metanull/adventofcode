@@ -27,7 +27,7 @@ Process {
             $Direction = $_.key
             $Value = $_.value
             if( (Test-MatrixSubstring -X $CurrentIndex.X -Y $CurrentIndex.Y -XInc $Value.XInc -YInc $Value.YInc -MatrixSize $MatrixSize -Length $Needle.Length)) {
-                $SubString = Get-MatrixSubstring -Matrix $Matrix -X $CurrentIndex.X -Y $CurrentIndex.Y -XInc $Value.XInc -YInc $Value.YInc -MatrixSize $MatrixSize -Length $Needle.Length
+                $SubString = Get-MatrixSubstring -Matrix $Matrix -X $CurrentIndex.X -Y $CurrentIndex.Y -XInc $Value.XInc -YInc $Value.YInc -Length $Needle.Length
                 if($Substring -eq $Needle) {
                     [pscustomobject]@{
                         X = $CurrentIndex.X
@@ -43,35 +43,10 @@ Process {
 }
 
 Begin {
-    function Test-MatrixSubstring {
-        <#
-            .SYNOPSIS
-            Test if it is possible to obtain a word of a given length from a matrix, starting from a given point, in a given direction
-        #>
-        param([long]$X,[long]$Y,[long]$XInc,[long]$YInc,[long]$MatrixSize,[long]$Length)
-        if(      ((($X) + ($Length * $XInc)) -le ($MatrixSize)) `
-            -and ((($Y) + ($Length * $YInc)) -le ($MatrixSize)) `
-            -and ((($X+1) + ($Length * $XInc)) -ge 0) `
-            -and ((($Y+1) + ($Length * $YInc)) -ge 0) ) {
-            return $true
-        }
-        return $false
-    }
-    function Get-MatrixSubstring {
-        <#
-            .SYNOPSIS
-            Get a word from a matrix, starting from a given point, and in a given direction
-        #>
-        param([String[]]$Matrix,[long]$X,[long]$Y,[long]$XInc,[long]$YInc,[long]$MatrixSize,[long]$Length)
-        if(-not (Test-MatrixSubstring -X $CurrentIndex.X -Y $CurrentIndex.Y -XInc $Value.XInc -YInc $Value.YInc -MatrixSize $MatrixSize -Length $Length)) {
-            return $null
-        }
-        $Str = ''
-        for($i=0;$i -lt $Length;$i++) {
-            $Str += $Matrix[$Y+($i*$YInc)][$X+($i*$XInc)]
-        }
-        $Str | Write-Output
-    }
+
+    # Import Matrix functions
+    . (Join-Path $PSScriptRoot ..\Template\Matrix.ps1)
+    
 
     <#
     $File = @'
