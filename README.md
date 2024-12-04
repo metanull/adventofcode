@@ -11,7 +11,7 @@ This repository holds my own solutions to the puzzles provided on [adventofcode.
   - `ext` is the file extension corresponding to the chosen language (e.g. `php`,`ps1`,`sh`,`c`)
 
 By Example:
-`/2024/Day 3.1.ps1` is my solution for to the first (`1`) part of puzzle of the third (`3`) day of this year's advent of code issue (`2024`). This solution is written in powershell (`ps1`).
+`/2024/Day3.1.ps1` is my solution for to the first (`1`) part of puzzle of the third (`3`) day of this year's advent of code issue (`2024`). This solution is written in powershell (`ps1`).
 
 ## Puzzles and Inputs
 
