@@ -1,20 +1,24 @@
 # https://adventofcode.com/2024/day/5
 Process {
     $Data | Foreach-Object {
+        # Verify line compliance
         try {
+            # Reset the list of forbidden items
             $Forbidden = @()
             for($i=0; $i -lt $_.Values.Length; $i ++) {
                 $Current = $_.Values[$i]
+                # Verify if the current item is not forbidden by the current set of rules
                 if($Current -in $Forbidden) {
                     throw "Item #$($i+1) ($($Current)) is not compliant with the rules in [$($_.Values -join ',')]"
                 }
+                # Add rules imposed by the current item to the set of rules
                 $Forbidden += ($Rules | Where-Object{$_.Key -eq $Current} | Select-Object -ExpandProperty Values)
             }
             # Compliant, send down to the pipeline
             $_ | Write-Output
         } catch {
             # Non compliant, discard
-            $_ | Write-Warning
+            $_ | Write-Verbose
         }
     } | Foreach-Object {
         # Preserve only the Middle Value
@@ -22,7 +26,7 @@ Process {
             throw "Invalid number of elements in input, can't get the middle value from: [$($_.Values -join ',')]"
         }
         $_.Values[($_.Values.Count -1)/2] | Write-Output
-    } | Measure-Object -Sum | Select-Object -ExpandProperty Sum
+    } | Measure-Object -Sum
 }
 Begin {
     $PuzzleUrl = "https://adventofcode.com/$(Get-Date -Format 'yyyy')/day/$([int](Get-Date -Format 'dd'))"

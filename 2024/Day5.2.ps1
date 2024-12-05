@@ -1,16 +1,23 @@
 # https://adventofcode.com/2024/day/5
 Process {
     $Data | Foreach-Object {
+        # Verify line compliance
         $Line = $_
         $Forbidden = @()
         try {
-            for($i=0; $i -lt $_.Values.Length; $i ++) {
-                $Current = $_.Values[$i]
-                if($Current -in $Forbidden) {
-                    throw "Item #$($i+1) ($($Current)) is not compliant with the rules in [$($_.Values -join ',')]"
-                }
-                $Forbidden += ($Rules | Where-Object{$_.Key -eq $Current} | Select-Object -ExpandProperty Values)
-            }
+           # Reset the list of forbidden items
+           $Forbidden = @()
+           for($i=0; $i -lt $_.Values.Length; $i ++) {
+               $Current = $_.Values[$i]
+               # Verify if the current item is not forbidden by the current set of rules
+               if($Current -in $Forbidden) {
+                   throw "Item #$($i+1) ($($Current)) is not compliant with the rules in [$($_.Values -join ',')]"
+               }
+               # Add rules imposed by the current item to the set of rules
+               $Forbidden += ($Rules | Where-Object{$_.Key -eq $Current} | Select-Object -ExpandProperty Values)
+           }
+            # Compliant, discard
+            "Compliant: [$($_.Values -join ',')]" | Write-Verbose
         } catch {
             # Non compliant... send down the pipeline
             $Line | Write-Output
@@ -31,7 +38,7 @@ Process {
             throw "Invalid number of elements in input, can't get the middle value from: [$($_.Reordered -join ',')]"
         }
         $_.Reordered[($_.Reordered.Count -1)/2] | Write-Output
-    } | Measure-Object -Sum | Select-Object -ExpandProperty Sum
+    } | Measure-Object -Sum
 }
 
 Begin {
