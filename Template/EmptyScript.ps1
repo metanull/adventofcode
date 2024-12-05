@@ -1,3 +1,4 @@
+# https://adventofcode.com/{YEAR}/day/{DAY}[#part2]
 Process {
     $InputData | ForEach-Object {
         $Line = $_
