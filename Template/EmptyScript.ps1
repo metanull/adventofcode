@@ -5,7 +5,9 @@ Process {
     }
 }
 Begin {
-    $PuzzleUrl = "https://adventofcode.com/$(Get-Date -Format 'yyyy')/day/$([int](Get-Date -Format 'dd'))"
+    $Year = [int]$(Get-Date -Format 'yyyy')
+    $Day = [int](Get-Date -Format 'dd')
+    $PuzzleUrl = "https://adventofcode.com/$Year/$Day"
     $InputPath = Join-Path -Path $PSScriptRoot -ChildPath "Input\$(($PSCommandPath | Split-Path -Leaf) -replace '\.\d+\.ps1','.txt')"
     if(-Not (Test-Path $InputPath)) {
         $InputUrl = "$PuzzleUrl/input"
