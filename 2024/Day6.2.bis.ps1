@@ -21,33 +21,29 @@ Process {
         $PotentialLoops = 0
         $LoopBlockers = @()
         while($true) {
-            # Give a look far to the side, for a blocker or an existing footstep
+            # See what happens if we'd add a blocker riht in front of the guard
             try {
                 WhatIfThereWasABlockerAhead -Width $Width -Height $Height -InputData $InputData -Guard $Guard | Out-Null
             } catch [AlreadyBeenHereException] {
                 # Potential Infinite Loop, that's interresting
                 $PotentialLoops ++ 
 
+                # Add the blocker to the list, if not yet there
                 $CurrentBlocker = "($($Guard.X + $Guard.DirX),$($Guard.Y + $Guard.DirY))"
                 if($LoopBlockers -notcontains $CurrentBlocker) {
-                    # Write-Warning "Current Blocker: $CurrentBlocker; Total unique blockers: $($LoopBlockers.Count)"
                     $LoopBlockers += ,($CurrentBlocker)
-                } else {
-                    Write-Warning "Current Blocker: $CurrentBlocker; WAS ALREADY IN THE LIST!"
                 }
-                Write-Warning "Potential Infinite Loop #$($PotentialLoops) by blocking Guard where he is ($($Guard.X),$($Guard.Y)) using ($($_.Exception.GuardStarts.X + $_.Exception.GuardStarts.DirX),$($_.Exception.GuardStarts.Y + $_.Exception.GuardStarts.DirY)); Total unique blockers: $($LoopBlockers.Count); He'd do $($_.Exception.GuardEnds.Turns) turns and $($_.Exception.GuardEnds.Steps) steps; Trail Length: $($_.Exception.Trail.Length)"
+                # Write-Warning "Potential Infinite Loop #$($PotentialLoops) by blocking Guard where he is ($($Guard.X),$($Guard.Y)) using ($($_.Exception.GuardStarts.X + $_.Exception.GuardStarts.DirX),$($_.Exception.GuardStarts.Y + $_.Exception.GuardStarts.DirY)); Total unique blockers: $($LoopBlockers.Count); He'd do $($_.Exception.GuardEnds.Turns) turns and $($_.Exception.GuardEnds.Steps) steps; Trail Length: $($_.Exception.Trail.Length)"
             } catch [ExitsException] {
-                # Guard would exit, we don't want that
-                # Write-Warning "Clear sight to the exit on $($_.Exception.Guard.X),$($_.Exception.Guard.Y) after $($_.Exception.Guard.Steps) steps and $($_.Exception.Guard.Turns) turns"
+                # Guard would exit, we don't want that... ignore this case
+                # Write-Warning "Clear path to the exit on $($_.Exception.Guard.X),$($_.Exception.Guard.Y) after $($_.Exception.Guard.Steps) steps and $($_.Exception.Guard.Turns) turns"
             }
 
             # Let the Guard walk their way
             try {
-                # Write-Warning "$($Guard.X), $($Guard.Y) - Direction: $($Guard.DirX), $($Guard.DirY)"
                 Walk -Width $Width -Height $Height -InputData $InputData -Guard ([ref]$Guard) | Out-Null
             } catch [BlockedException] {
                 # Guard is blocked, let's turn
-                # Write-Warning "Blocked in $($Guard.X),$($Guard.Y), turning" 
                 Turn -Width $Width -Height $Height -InputData $InputData -Guard ([ref]$Guard)
             } finally {
                 # Leave some footsteps behind (useful to see where the guard has been)
@@ -64,6 +60,7 @@ Process {
     Write-Warning "Unique places (counting footsteps on the ground): $(([regex]::new('X')).Matches($InputData)|Measure-Object|Select-Object -ExpandProperty Count)"
     Write-Warning "Potential infinite loops: $($PotentialLoops)"
     Write-Warning "Unique Blockers for infinite loops: $($LoopBlockers.Count)"
+    Write-Warning "Guards starting point is in the list of Unique Blockers: $($LoopBlockers -contains "($($GuardStarts.X),$($GuardStarts.Y))")"
     $LoopBlockers | Write-Output
 }
 
