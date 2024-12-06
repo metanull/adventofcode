@@ -29,7 +29,7 @@ Function Walk {
     param(
         [int]$Width,
         [int]$Height,
-        [string[]]$InputData,
+        $InputData,
         [ref]$Guard
     )
     if($Guard.Value.Y -le 0 -and $Guard.Value.DirY -eq -1) {throw [ExitsException]::new($Guard.Value.PSObject.Copy())}
@@ -75,13 +75,18 @@ try {
         try {
             "$($Guard.X), $($Guard.Y) - Direction: $($Guard.DirX), $($Guard.DirY)" | Write-Warning
             Walk -Width $Width -Height $Height -InputData $InputData -Guard ([ref]$Guard)
+
+            $InputData[$Guard.Y] = $InputData[$Guard.Y].remove($Guard.X,1).insert($Guard.X,'X')
         } catch [BlockedException] {
             Write-Warning "Blocked in $($Guard.X),$($Guard.Y), turning" 
             $GuardBlocked = $_.Exception.Guard
             $Guard.DirX,$Guard.DirY = -$Guard.DirY,$Guard.DirX
+
+            $InputData[$Guard.Y] = $InputData[$Guard.Y].remove($Guard.X,1).insert($Guard.X,'X')
         }
     }
 } catch [ExitsException] {
     $GuardEnds = $_.Exception.Guard
 }
 Write-Warning "Exiting from $($GuardEnds.X),$($GuardEnds.Y)"
+Write-Warning "Unique places: $(([regex]::new('X')).Matches($InputData)|Measure-Object|Select-Object -ExpandProperty Count)"
