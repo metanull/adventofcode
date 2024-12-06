@@ -19,6 +19,7 @@ Process {
         # Leave some footsteps behind (useful to see where the guard has been)
         $InputData[$Guard.Y] = $InputData[$Guard.Y].remove($Guard.X,1).insert($Guard.X,'X')
         $PotentialLoops = 0
+        $LoopBlockers = @()
         while($true) {
             # Give a look far to the side, for a blocker or an existing footstep
             try {
@@ -26,7 +27,15 @@ Process {
             } catch [AlreadyBeenHereException] {
                 # Potential Infinite Loop, that's interresting
                 $PotentialLoops ++ 
-                Write-Warning "Potential Infinite Loop #$($PotentialLoops) by blocking Guard where he is ($($Guard.X),$($Guard.Y)); Turns: $($_.Exception.Guard.Turns); Steps: $($_.Exception.Guard.Steps); Trail Length: $($_.Exception.Trail.Length)"
+
+                $CurrentBlocker = "($($Guard.X + $Guard.DirX),$($Guard.Y + $Guard.DirY))"
+                if($LoopBlockers -notcontains $CurrentBlocker) {
+                    # Write-Warning "Current Blocker: $CurrentBlocker; Total unique blockers: $($LoopBlockers.Count)"
+                    $LoopBlockers += ,($CurrentBlocker)
+                } else {
+                    Write-Warning "Current Blocker: $CurrentBlocker; WAS ALREADY IN THE LIST!"
+                }
+                Write-Warning "Potential Infinite Loop #$($PotentialLoops) by blocking Guard where he is ($($Guard.X),$($Guard.Y)) using ($($_.Exception.GuardStarts.X + $_.Exception.GuardStarts.DirX),$($_.Exception.GuardStarts.Y + $_.Exception.GuardStarts.DirY)); Total unique blockers: $($LoopBlockers.Count); He'd do $($_.Exception.GuardEnds.Turns) turns and $($_.Exception.GuardEnds.Steps) steps; Trail Length: $($_.Exception.Trail.Length)"
             } catch [ExitsException] {
                 # Guard would exit, we don't want that
                 # Write-Warning "Clear sight to the exit on $($_.Exception.Guard.X),$($_.Exception.Guard.Y) after $($_.Exception.Guard.Steps) steps and $($_.Exception.Guard.Turns) turns"
@@ -54,6 +63,8 @@ Process {
 
     Write-Warning "Unique places (counting footsteps on the ground): $(([regex]::new('X')).Matches($InputData)|Measure-Object|Select-Object -ExpandProperty Count)"
     Write-Warning "Potential infinite loops: $($PotentialLoops)"
+    Write-Warning "Unique Blockers for infinite loops: $($LoopBlockers.Count)"
+    $LoopBlockers | Write-Output
 }
 
 Begin {
@@ -87,10 +98,12 @@ Begin {
         }
     }
     class AlreadyBeenHereException : Exception{
-        [object]$Guard
+        [object]$GuardStarts
+        [object]$GuardEnds
         [string]$Trail
-        AlreadyBeenHereException([object]$Guard,[string]$Trail) : base('ALREADY') {
-            $this.Guard = $Guard.PSObject.Copy()
+        AlreadyBeenHereException([object]$GuardStarts,[object]$GuardEnds,[string]$Trail) : base('ALREADY') {
+            $this.GuardStarts = $GuardStarts.PSObject.Copy()
+            $this.GuardEnds = $GuardEnds.PSObject.Copy()
             $this.Trail = $Trail.PSObject.Copy()
         }
     }
@@ -161,7 +174,7 @@ Begin {
                 $ImaginaryGuard.LineOfSight += Walk -Width $Width -Height $Height -InputData $ImaginaryMap -Guard ([ref]$ImaginaryGuard)
                 if($ImaginaryGuard.Turns -gt $MaxTurns -and $ImaginaryGuard.LineOfSight -match '(X*X{100})$') {
                     # Potential Infinite Loop, that's interresting
-                    throw [AlreadyBeenHereException]::new($ImaginaryGuard,$matches[1])
+                    throw [AlreadyBeenHereException]::new($Guard,$ImaginaryGuard,$matches[1])
                 }
             } catch [BlockedException] {
                 # Guard is blocked, let's turn and keep on
