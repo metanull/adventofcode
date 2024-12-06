@@ -23,15 +23,24 @@ Process {
         while($true) {
             # See what happens if we'd add a blocker riht in front of the guard
             try {
-                WhatIfThereWasABlockerAhead -Width $Width -Height $Height -InputData $InputData -Guard $Guard | Out-Null
+                WhatIfThereWasABlockerAhead -Width $Width -Height $Height -InputData $InputData -Guard $Guard -MaxTurns 250 | Out-Null
             } catch [AlreadyBeenHereException] {
                 # Potential Infinite Loop, that's interresting
                 $PotentialLoops ++ 
 
                 # Add the blocker to the list, if not yet there
-                $CurrentBlocker = "($($Guard.X + $Guard.DirX),$($Guard.Y + $Guard.DirY))"
-                if($LoopBlockers -notcontains $CurrentBlocker) {
-                    $LoopBlockers += ,($CurrentBlocker)
+                $CurrentBlocker = "($($_.Exception.GuardStarts.X + $_.Exception.GuardStarts.DirX),$($_.Exception.GuardStarts.Y + $_.Exception.GuardStarts.DirY))"
+                if($InputData[$_.Exception.GuardStarts.Y + $_.Exception.GuardStarts.DirY][$_.Exception.GuardStarts.X + $_.Exception.GuardStarts.DirX] -eq '#') {
+                    Write-Warning "Blocker is a real wall, not interresting"
+                } else {
+                    if($LoopBlockers -notcontains $CurrentBlocker) {
+                        if($LoopBlockers.Count %100 -eq 0) {
+                            Write-Host ''
+                        } else {
+                            Write-Host '.' -NoNewline
+                        }
+                        $LoopBlockers += ,($CurrentBlocker)
+                    }
                 }
                 # Write-Warning "Potential Infinite Loop #$($PotentialLoops) by blocking Guard where he is ($($Guard.X),$($Guard.Y)) using ($($_.Exception.GuardStarts.X + $_.Exception.GuardStarts.DirX),$($_.Exception.GuardStarts.Y + $_.Exception.GuardStarts.DirY)); Total unique blockers: $($LoopBlockers.Count); He'd do $($_.Exception.GuardEnds.Turns) turns and $($_.Exception.GuardEnds.Steps) steps; Trail Length: $($_.Exception.Trail.Length)"
             } catch [ExitsException] {
