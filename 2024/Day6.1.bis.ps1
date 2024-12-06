@@ -32,20 +32,36 @@ Function Walk {
         $InputData,
         [ref]$Guard
     )
-    if($Guard.Value.Y -le 0 -and $Guard.Value.DirY -eq -1) {throw [ExitsException]::new($Guard.Value.PSObject.Copy())}
-    if($Guard.Value.Y -ge $Height -1 -and $Guard.Value.DirY -eq 1) {throw [ExitsException]::new($Guard.Value.PSObject.Copy())}
-    if($Guard.Value.X -le 0 -and $Guard.Value.DirX -eq -1) {throw [ExitsException]::new($Guard.Value.PSObject.Copy())}
-    if($Guard.Value.X -ge $Width -1 -and $Guard.Value.DirX -eq 1) {throw [ExitsException]::new($Guard.Value.PSObject.Copy())}
-
-    $Ahead = $InputData[$Guard.Value.Y + $Guard.Value.DirY][$Guard.Value.X + $Guard.Value.DirX]
+    $Ahead = LookAhead -Width $Width -Height $Height -InputData $InputData -Guard $Guard.Value
     if($Ahead -eq '#') {
-        #$Guard.Value.DirX,$Guard.Value.DirY = -$Guard.Value.DirY,$Guard.Value.DirX
-        $Guard.Value.Turns = $Guard.Value.Turns + 1
         throw [BlockedException]::new($Guard.Value.PSObject.Copy(),[pscustomobject]@{X=$Guard.Value.X;Y=$Guard.Value.Y;Value=$Ahead})
     }
     $Guard.Value.Steps = $Guard.Value.Steps + 1
     $Guard.Value.X += $Guard.Value.DirX
     $Guard.Value.Y += $Guard.Value.DirY
+}
+Function Turn {
+    param(
+        [int]$Width,
+        [int]$Height,
+        $InputData,
+        [ref]$Guard
+    )
+    $Guard.Value.DirX,$Guard.Value.DirY = -$Guard.Value.DirY,$Guard.Value.DirX
+    $Guard.Value.Turns = $Guard.Value.Turns + 1
+}
+Function LookAhead {
+    param(
+        [int]$Width,
+        [int]$Height,
+        $InputData,
+        $Guard
+    )
+    if($Guard.Y -le 0 -and $Guard.DirY -eq -1) {throw [ExitsException]::new($Guard.PSObject.Copy())}
+    if($Guard.Y -ge $Height -1 -and $Guard.DirY -eq 1) {throw [ExitsException]::new($Guard.PSObject.Copy())}
+    if($Guard.X -le 0 -and $Guard.DirX -eq -1) {throw [ExitsException]::new($Guard.PSObject.Copy())}
+    if($Guard.X -ge $Width -1 -and $Guard.DirX -eq 1) {throw [ExitsException]::new($Guard.PSObject.Copy())}
+    return $InputData[$Guard.Y + $Guard.DirY][$Guard.X + $Guard.DirX]
 }
 
 # Load InputData
@@ -63,34 +79,32 @@ for($y=0;$y -lt $Height; $y++) {
         break
     }
 }
-$GuardStarts = $Guard.PSObject.Copy()
-$GuardBlocked = $null
-$GuardEnds = $null
 
 # Perform the watch
-
-Write-Warning "Entering from $($GuardStarts.X),$($GuardStarts.Y)"
-# Leave a breadcrumb behind
-$InputData[$Guard.Y] = $InputData[$Guard.Y].remove($Guard.X,1).insert($Guard.X,'X')
+$GuardStarts = $Guard.PSObject.Copy()
+$GuardEnds = $null
 try {
+    # Leave some footsteps behind (useful to see where the guard has been)
+    $InputData[$Guard.Y] = $InputData[$Guard.Y].remove($Guard.X,1).insert($Guard.X,'X')
     while($true) {
         try {
+            # Let the Guard walk
             # Write-Warning "$($Guard.X), $($Guard.Y) - Direction: $($Guard.DirX), $($Guard.DirY)"
             Walk -Width $Width -Height $Height -InputData $InputData -Guard ([ref]$Guard)
-
-            # Leave a breadcrumb behind
-            $InputData[$Guard.Y] = $InputData[$Guard.Y].remove($Guard.X,1).insert($Guard.X,'X')
         } catch [BlockedException] {
+            # Guard is blocked, let's turn
             # Write-Warning "Blocked in $($Guard.X),$($Guard.Y), turning" 
-            $GuardBlocked = $_.Exception.Guard
-            $Guard.DirX,$Guard.DirY = -$Guard.DirY,$Guard.DirX
-
-            # Leave a breadcrumb behind
+            Turn -Width $Width -Height $Height -InputData $InputData -Guard ([ref]$Guard)
+        } finally {
+            # Leave some footsteps behind (useful to see where the guard has been)
             $InputData[$Guard.Y] = $InputData[$Guard.Y].remove($Guard.X,1).insert($Guard.X,'X')
         }
     }
 } catch [ExitsException] {
     $GuardEnds = $_.Exception.Guard
+} finally {
+    Write-Warning "Entering from $($GuardStarts.X),$($GuardStarts.Y)"
+    Write-Warning "Exiting from  $($GuardEnds.X),$($GuardEnds.Y)"
 }
-Write-Warning "Exiting from $($GuardEnds.X),$($GuardEnds.Y)"
-Write-Warning "Unique places (counting breadcrumbs): $(([regex]::new('X')).Matches($InputData)|Measure-Object|Select-Object -ExpandProperty Count)"
+
+Write-Warning "Unique places (counting footsteps on the ground): $(([regex]::new('X')).Matches($InputData)|Measure-Object|Select-Object -ExpandProperty Count)"
