@@ -30,17 +30,13 @@ Process {
 
                 # Add the blocker to the list, if not yet there
                 $CurrentBlocker = "($($_.Exception.GuardStarts.X + $_.Exception.GuardStarts.DirX),$($_.Exception.GuardStarts.Y + $_.Exception.GuardStarts.DirY))"
-                if($InputData[$_.Exception.GuardStarts.Y + $_.Exception.GuardStarts.DirY][$_.Exception.GuardStarts.X + $_.Exception.GuardStarts.DirX] -eq '#') {
-                    Write-Warning "Blocker is a real wall, not interresting"
-                } else {
-                    if($LoopBlockers -notcontains $CurrentBlocker) {
-                        if($LoopBlockers.Count %100 -eq 0) {
-                            Write-Host ''
-                        } else {
-                            Write-Host '.' -NoNewline
-                        }
-                        $LoopBlockers += ,($CurrentBlocker)
+                if($LoopBlockers -notcontains $CurrentBlocker) {
+                    if($LoopBlockers.Count %100 -eq 0) {
+                        Write-Host ''
+                    } else {
+                        Write-Host '.' -NoNewline
                     }
+                    $LoopBlockers += ,($CurrentBlocker)
                 }
                 # Write-Warning "Potential Infinite Loop #$($PotentialLoops) by blocking Guard where he is ($($Guard.X),$($Guard.Y)) using ($($_.Exception.GuardStarts.X + $_.Exception.GuardStarts.DirX),$($_.Exception.GuardStarts.Y + $_.Exception.GuardStarts.DirY)); Total unique blockers: $($LoopBlockers.Count); He'd do $($_.Exception.GuardEnds.Turns) turns and $($_.Exception.GuardEnds.Steps) steps; Trail Length: $($_.Exception.Trail.Length)"
             } catch [ExitsException] {
@@ -169,7 +165,11 @@ Begin {
         $ImaginaryGuard | Add-Member -NotePropertyName LineOfSight -NotePropertyValue ''
         
         # Test what's ahead to avoid breaking the boundaries of the map
-        LookAhead -Width $Width -Height $Height -InputData $ImaginaryMap -Guard $ImaginaryGuard
+        $Ahead = LookAhead -Width $Width -Height $Height -InputData $ImaginaryMap -Guard $ImaginaryGuard
+        if($Ahead -eq '#') {
+            # There is a real blocker ahead, no need to go further
+            return
+        }
         # Add a blocker in front of the guard, and pretend walking
         $ImaginaryMap[$ImaginaryGuard.Y + $ImaginaryGuard.DirY] = $ImaginaryMap[$ImaginaryGuard.Y + $ImaginaryGuard.DirY].remove($ImaginaryGuard.X + $ImaginaryGuard.DirX,1).insert($ImaginaryGuard.X + $ImaginaryGuard.DirX,'#')
 
@@ -190,7 +190,7 @@ Begin {
                 $ImaginaryMap[$ImaginaryGuard.Y] = $ImaginaryMap[$ImaginaryGuard.Y].remove($ImaginaryGuard.X,1).insert($ImaginaryGuard.X,'X')
             }
         }
-        if( $ImaginaryGuard.Turns -ge 499 ) {
+        if( $ImaginaryGuard.Turns -ge ($AbsoluteMaxTurns -1) ) {
             throw "Unwanted Infinite Loop..."
         }
     }
