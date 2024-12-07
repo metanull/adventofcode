@@ -1,3 +1,35 @@
+<#
+
+
+L'erreur est là:::  LE SLICE est 2 crans trop à gauche (avant le offsetstart du RightMap correspondant!!!)
+
+We have in EXCESS 2
+
+AVERTISSEMENT : Taking a new entry from the left map
+AVERTISSEMENT : -= LOOP START =-
+ ====== LEFT ======
+ Range:          50 - 98
+ > Offset:       2
+ > Range*Offset: 52 - 100
+AVERTISSEMENT : Right map entry found for 52 at 2
+                                         ====== RIGHT ======
+                                         Range:          52 - 54
+                                         > Offset:       -15
+                                         > Range*Offset: 37 - 39
+Left map entry requires 48 items
+Right map provides 2 items
+                                                                                 ====== SLICE ======
+                                                                                 Range:          50 - 52
+                                                                                 > Offset:       -15
+                                                                                 > Range*Offset: 35 - 37
+#>
+
+
+
+
+
+
+
 # https://adventofcode.com/2023/day/5
 [CmdletBinding()]
 param ()
@@ -21,29 +53,21 @@ Process {
     }
 
     "LEFT" | Write-Warning
-    $PairOfMaps.Left | ft
+    # $PairOfMaps.Left | ft
     "RIGHT" | Write-Warning
-    $PairOfMaps.Right | ft
+    # $PairOfMaps.Right | ft
 
     # Merge the two maps
     $CurrentLeftMapEntry = $null
     for($l = 0; $l -lt $PairOfMaps.Left.Count; $l ++) {
-
         if($null -eq $CurrentLeftMapEntry) {
             "Taking a new entry from the left map" | Write-Warning
             $CurrentLeftMapEntry = $PairOfMaps.Left[$l]
         } else {
             "Keep going with the existing entry from the left map" | Write-Warning
         }
-
-        @("----------------------------------"
-        "- CURRENT LEFT MAP ENTRY (Index: $l):"
-        "- Start: $($CurrentLeftMapEntry.start)"
-        "- End: $($CurrentLeftMapEntry.end)"
-        "- Offset: $($CurrentLeftMapEntry.offset)"
-        "- OffStart: $($CurrentLeftMapEntry.offstart)"
-        "- OffEnd: $($CurrentLeftMapEntry.offend)"
-        "----------------------------------") -join "`n" | Write-Warning
+        Write-Warning "-= LOOP START =-"
+        DumpMap -Map $CurrentLeftMapEntry -Left
 
         # Look for the start of the right map
         $RightStartIndex = $null
@@ -59,17 +83,10 @@ Process {
             throw "No right map entry found for $($CurrentLeftMapEntry.offstart)"
         }
         "Right map entry found for $($CurrentLeftMapEntry.offstart) at $RightStartIndex" | Write-Warning
-        "Left map entry requires $($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start) items" | Write-Warning
-        "Right map entry can provide $($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) items" | Write-Warning
+        DumpMap -Map $PairOfMaps.Right[$RightStartIndex] -Right
 
-        @("   ----------------------------------"
-        "   - CURRENT RIGHT MAP ENTRY (Index: $r):"
-        "   - Start: $($PairOfMaps.Right[$RightStartIndex].start)"
-        "   - End: $($PairOfMaps.Right[$RightStartIndex].end)"
-        "   - Offset: $($PairOfMaps.Right[$RightStartIndex].offset)"
-        "   - OffStart: $($PairOfMaps.Right[$RightStartIndex].offstart)"
-        "   - OffEnd: $($PairOfMaps.Right[$RightStartIndex].offend)"
-        "   ----------------------------------") -join "`n" | Write-Warning
+        "Left map entry requires $($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start) items" | Write-Host -ForegroundColor Blue
+        "Right map provides $($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) items" | Write-Host -ForegroundColor Blue
         
         # Take what we have
         # "Take what we have" | Write-Warning
@@ -82,16 +99,10 @@ Process {
         $Slice.offset = $PairOfMaps.Right[$RightStartIndex].offset
         $Slice.offstart = $Slice.start + $Slice.Offset
         $Slice.offend = $Slice.end + $Slice.Offset
+        
+        DumpMap -Map $Slice -Slice
         $Slice | Write-Output
 
-        @("#  ----------------------------------"
-        "#  - NEW SLICE:"
-        "#  - Start: $($Slice.start)"
-        "#  - End: $($Slice.end)"
-        "#  - Offset: $($Slice.offset)"
-        "#  - OffStart: $($Slice.offstart)"
-        "#  - OffEnd: $($Slice.offend)"
-        "#  ----------------------------------") -join "`n" | Write-Host -ForegroundColor Cyan
 
         if( ($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) - ($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start) -ge 0) {
             if( ($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) - ($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start) -gt 0) {
@@ -113,12 +124,13 @@ Process {
             $l = $l - 1     # we need to keep on with the current left map entry
             
             # Adjust the values to continue from where we were
-
-            "Continuing from where we were, for the next $($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) items" | Write-Host -ForegroundColor Cyan
+            #"Continuing from where we were, for the next $($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) items" | Write-Host -ForegroundColor Cyan
+            "Continuing from where we were..." | Write-Host -ForegroundColor Cyan
             $CurrentLeftMapEntry.start += (($Slice.end - $Slice.start)) 
-            $CurrentLeftMapEntry.end =  $CurrentLeftMapEntry.start + ($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start)
+            #$CurrentLeftMapEntry.end =  $CurrentLeftMapEntry.start + ($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start)
             $CurrentLeftMapEntry.offstart += (($Slice.end - $Slice.start)) 
-            $CurrentLeftMapEntry.offend =  $CurrentLeftMapEntry.offstart + ($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start)
+            #$CurrentLeftMapEntry.offend =  $CurrentLeftMapEntry.offstart + ($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start)
+            DumpMap -Map $CurrentLeftMapEntry -Tampered
 # PROGRES MAIS PAS ENCOR EBON
             continue
         }
@@ -182,6 +194,51 @@ Begin {
         }
     }
 
+    Function DumpMap {
+        [CmdletBinding(DefaultParameterSetName='Map')]
+        param(
+            [object]$Map,
+            [Parameter(Mandatory,ParameterSetName='Left')]
+            [switch]$Left,
+            [Parameter(Mandatory,ParameterSetName='Right')]
+            [switch]$Right,
+            [Parameter(Mandatory,ParameterSetName='Slice')]
+            [switch]$Slice,
+            [Parameter(Mandatory,ParameterSetName='Tampered')]
+            [switch]$Tampered
+        )
+
+        if($Left) {
+            $Title = "LEFT"
+            $Padding = 0
+            $Color = [System.ConsoleColor]::Cyan
+        } elseif($Right) {
+            $Title = "RIGHT"
+            $Padding = 40
+            $Color = [System.ConsoleColor]::Magenta
+        } elseif($Slice) {
+            $Title = "SLICE"
+            $Padding = 80
+            $Color = [System.ConsoleColor]::Green
+        } elseif($Tampered) {
+            $Title = "TAMPERED"
+            $Padding = 80
+            $Color = [System.ConsoleColor]::Yellow
+        } else {
+            $Title = "MAP"
+            $Padding = 0
+            $Color = $Host.UI.RawUI.ForegroundColor
+        }
+
+        $Padding = ''.PadLeft($Padding)
+        @("$Padding ====== $Title ======"
+        "$Padding Range:          $($Map.start) - $($Map.end)"
+        "$Padding > Offset:       $($Map.offset)"
+        "$Padding > Range*Offset: $($Map.offstart) - $($Map.offend)"
+        ) -join "`n" | Write-Host -ForegroundColor $Color
+
+    }
+    
     Function Fill-Gaps {
         param(
             [Alias('Map')]
@@ -230,7 +287,7 @@ Begin {
             $MappedRanges += ,[pscustomobject]@{
                 start=$Maps.$Index[$i].source
                 end=$Maps.$Index[$i].source + $Maps.$Index[$i].length
-                offset=$Maps.$Index[$i].destination-$Maps.$Index[$i].source
+                offset=$Maps.$Index[$i].destination - $Maps.$Index[$i].source
                 offstart=$Maps.$Index[$i].destination
                 offend=$Maps.$Index[$i].destination + $Maps.$Index[$i].length
             }
