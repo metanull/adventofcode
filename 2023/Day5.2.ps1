@@ -1,5 +1,63 @@
 # https://adventofcode.com/2023/day/5
+[CmdletBinding()]
+param ()
 Process {
+    $Order = @('seed','soil','fertilizer','water','light','temperature','humidity','location')
+    
+        $Index = 0
+        $TempMap = Get-MappedRanges -Maps $Maps -SourceName ($Order[$Index]) -DestinationName ($Order[$Index + 1]) | Sort-Object start
+        # Fill the gaps
+        $prev = 0
+        $MapLeft = for($i=0;$i -lt $TempMap.Count;$i++) {
+            if($TempMap[$i].start -ne $prev) {
+                [pscustomobject]@{start = $prev;end = $TempMap[$i].start;offset = 0;offstart = $prev;offend = $TempMap[$i].start}
+            } else {
+                $TempMap[$i]
+            }
+            if($i -eq ($TempMap.Count -1) -and $TempMap[$i].end -lt 1000000000000000) {
+                [pscustomobject]@{start = $TempMap[$i].end;end = 1000000000000000;offset = 0;offstart = $TempMap[$i].end;offend = 1000000000000000}
+            }
+            $prev = $TempMap[$i].end
+        }
+        
+
+        $Index = 1
+        $TempMap = Get-MappedRanges -Maps $Maps -SourceName ($Order[$Index]) -DestinationName ($Order[$Index + 1]) | Sort-Object start
+        # Fill the gaps
+        $prev = 0
+        $MapRight = for($i=0;$i -lt $TempMap.Count;$i++) {
+            if($TempMap[$i].start -ne $prev) {
+                [pscustomobject]@{start = $prev;end = $TempMap[$i].start;offset = 0;offstart = $prev;offend = $TempMap[$i].start}
+            } else {
+                $TempMap[$i]
+            }
+            if($i -eq ($TempMap.Count -1) -and $TempMap[$i].end -lt 1000000000000000) {
+                [pscustomobject]@{start = $TempMap[$i].end;end = 1000000000000000;offset = 0;offstart = $TempMap[$i].end;offend = 1000000000000000}
+            }
+            $prev = $TempMap[$i].end
+        }
+
+        $BiMap = for($n = 0; $n -lt [Math]::Max($MapLeft.Count, $MapRight.Count); $n++) {
+            $obj = [pscustomobject]@{}
+            if($n -lt $MapLeft.Count) {
+                $obj | Add-Member -NotePropertyName 'leftstart' -NotePropertyValue $MapLeft[$n].start
+                $obj | Add-Member -NotePropertyName 'leftend' -NotePropertyValue $MapLeft[$n].end
+                $obj | Add-Member -NotePropertyName 'leftoffset' -NotePropertyValue $MapLeft[$n].offset
+                $obj | Add-Member -NotePropertyName 'leftoffstart' -NotePropertyValue $MapLeft[$n].offstart
+                $obj | Add-Member -NotePropertyName 'leftoffend' -NotePropertyValue $MapLeft[$n].offend
+            }
+            if($n -lt $MapRight.Count) {
+                $obj | Add-Member -NotePropertyName 'rightstart' -NotePropertyValue $MapRight[$n].start
+                $obj | Add-Member -NotePropertyName 'rightend' -NotePropertyValue $MapRight[$n].end
+                $obj | Add-Member -NotePropertyName 'rightoffset' -NotePropertyValue $MapRight[$n].offset
+                $obj | Add-Member -NotePropertyName 'rightoffstart' -NotePropertyValue $MapRight[$n].offstart
+                $obj | Add-Member -NotePropertyName 'rightoffend' -NotePropertyValue $MapRight[$n].offend
+            }
+            $obj | Write-Output
+        }
+        $BiMap | Write-Output
+    
+    <#
     $Lowest = $null
     $n = $Seeds.Length
     for($ks = 0; $ks -lt $n; $ks+=2) {
@@ -16,7 +74,8 @@ Process {
             }
         }
     }
-    "Lowest Location: $Lowest" | Write-Output
+        "Lowest Location: $Lowest" | Write-Output
+    #>
 }
 Begin {
     $Year = 2023
@@ -54,6 +113,30 @@ Begin {
         } else {
             throw "Unexpected line: $Line"
         }
+    }
+
+    Function Get-MappedRanges {
+        param(
+            [hashtable]$Maps,
+            [string]$SourceName,
+            [string]$DestinationName,
+            [switch]$Unmapped
+        )
+        $Index = "$($SourceName)-to-$($DestinationName)"
+        if(-not ($Maps.ContainsKey($Index))) {
+            throw "No map found for $Index"
+        }
+        $MappedRanges = @()
+        for($i = 0; $i -lt $Maps.$Index.Count ; $i++) {
+            $MappedRanges += ,[pscustomobject]@{
+                start=$Maps.$Index[$i].source
+                end=$Maps.$Index[$i].source + $Maps.$Index[$i].length
+                offset=$Maps.$Index[$i].destination-$Maps.$Index[$i].source
+                offstart=$Maps.$Index[$i].destination
+                offend=$Maps.$Index[$i].destination + $Maps.$Index[$i].length
+            }
+        }
+        return $MappedRanges
     }
 
     Function ConvertFrom-MapIndex {
