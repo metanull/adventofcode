@@ -19,111 +19,97 @@ Process {
     }
 
     # Merge the two maps
+    $CurrentLeftMapEntry = $null
     for($l = 0; $l -lt $PairOfMaps.Left.Count; $l ++) {
+
+        if($null -eq $CurrentLeftMapEntry) {
+            "Taking a new entry from the left map" | Write-Warning
+            $CurrentLeftMapEntry = $PairOfMaps.Left[$l]
+        } else {
+            "Keep going with the existing entry from the left map" | Write-Warning
+        }
+
+        @("----------------------------------"
+        "- CURRENT LEFT MAP ENTRY (Index: $l):"
+        "- Start: $($CurrentLeftMapEntry.start)"
+        "- End: $($CurrentLeftMapEntry.end)"
+        "- Offset: $($CurrentLeftMapEntry.offset)"
+        "- OffStart: $($CurrentLeftMapEntry.offstart)"
+        "- OffEnd: $($CurrentLeftMapEntry.offend)"
+        "----------------------------------") -join "`n" | Write-Warning
+
         # Look for the start of the right map
         $RightStartIndex = $null
         for($r = 0; $r -lt $PairOfMaps.Right.Count; $r ++) {
-            if(     $PairOfMaps.Left[$l].offstart -ge $PairOfMaps.Right[$r].start `
-                -and $PairOfMaps.Left[$l].offstart -le $PairOfMaps.Right[$r].end 
+            if(     $CurrentLeftMapEntry.offstart -ge $PairOfMaps.Right[$r].start `
+                -and $CurrentLeftMapEntry.offstart -lt $PairOfMaps.Right[$r].end 
             ) {
                 $RightStartIndex = $r
                 break;
             }
         }
         if($null -eq $RightStartIndex) {
-            throw "No right map found for $($PairOfMaps.Left[$l].offstart)"
+            throw "No right map entry found for $($CurrentLeftMapEntry.offstart)"
         }
-        "Right map found for $($PairOfMaps.Left[$l].offstart) at $RightStartIndex" | Write-Warning
+        "Right map entry found for $($CurrentLeftMapEntry.offstart) at $RightStartIndex" | Write-Warning
+        "Left map entry requires $($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start) items" | Write-Warning
+        "Right map entry can provide $($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) items" | Write-Warning
 
-        "Right map can provide $($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) items" | Write-Warning
-        "Left map requires $($PairOfMaps.Left[$l].end - $PairOfMaps.Left[$l].start) items" | Write-Warning
+        @("   ----------------------------------"
+        "   - CURRENT RIGHT MAP ENTRY (Index: $r):"
+        "   - Start: $($PairOfMaps.Right[$RightStartIndex].start)"
+        "   - End: $($PairOfMaps.Right[$RightStartIndex].end)"
+        "   - Offset: $($PairOfMaps.Right[$RightStartIndex].offset)"
+        "   - OffStart: $($PairOfMaps.Right[$RightStartIndex].offstart)"
+        "   - OffEnd: $($PairOfMaps.Right[$RightStartIndex].offend)"
+        "   ----------------------------------") -join "`n" | Write-Warning
         
         # Take what we have
-        $Slice = $PairOfMaps.Left[$l].PSObject.Copy()
-        $Slice.start = $PairOfMaps.Left[$l].start
+        # "Take what we have" | Write-Warning
+        $Slice = $CurrentLeftMapEntry.PSObject.Copy()
+        $Slice.start = $CurrentLeftMapEntry.start
         $Slice.end = $Slice.start + [Math]::Min(
             ($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start),
-            ($PairOfMaps.Left[$l].end - $PairOfMaps.Left[$l].start)
+            ($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start)
         )
-
         $Slice.offset = $PairOfMaps.Right[$RightStartIndex].offset
         $Slice.offstart = $Slice.start + $Slice.Offset
         $Slice.offend = $Slice.end + $Slice.Offset
         $Slice | Write-Output
 
-        # Print what we miss
-        "We miss $($($PairOfMaps.Left[$l].end - $PairOfMaps.Left[$l].start) - $Slice.end)" | Write-Warning
+        if( ($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) - ($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start) -ge 0) {
+            if( ($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) - ($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start) -gt 0) {
+                "`n`nWe have in EXCESS $(($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) - ($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start))`n`n" | Write-Warning
 
-        if( ($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) - ($PairOfMaps.Left[$l].end - $PairOfMaps.Left[$l].start) -ge 0) {
-            "Right map can provide enough items" | Write-Warning
-            # nothing else to do here, continue with left map
+                # we need to ADD a new slice in the LeftMap for this excess??
+                #
+                # Continue with another slice from the right map??? no we hav eit already, then what to do?
+                # missing a [Math]::Max somewhere to take just the needed.
+                # our slice took too much!!
+                #
+                # this is to be fixed at the level of the slice, ahead, and this case should therefore be an exception
+                #
+
+                $CurrentLeftMapEntry = $null
+                continue
+            } else {
+                "Right map can provide just enough items" | Write-Warning
+                # nothing else to do here, continue with the next left map entry
+                $CurrentLeftMapEntry = $null
+                continue
+            }
         } else {
             "Right map can't provide enough items" | Write-Warning
-            # Take what we have...
-            # = repeat mor eor less what we did above
-            # ...Then Look for more
-            # to do so, it would be interrest to save the current item of the left map in a temp variable
-            # so that it can be updated before continuing the loop
-        }
-    }
-<#
-    # Merge the two maps
-    for($l = 0; $l -lt $PairOfMaps.Left.Count; $l ++) {
-        for($r = 0; $r -lt $PairOfMaps.Right.Count; $r ++) {
-            if($PairOfMaps.Left[$l].end -le $PairOfMaps.Right[$l].start ) {
-                # Direct translation, use the offset from right, with start and end from left
-                $Merged += @{
-                    start = $PairOfMaps.Left[$l].start
-                    end = $PairOfMaps.Left[$l].end
-                    offset = $PairOfMaps.Right[$r].offset
-                    offstart = $PairOfMaps.Left[$r].offstart + $PairOfMaps.Right[$r].offset
-                    offend = $PairOfMaps.Left[$r].offend + $PairOfMaps.Right[$r].offset
-                }
-            } elseif($PairOfMaps.Left[$l].end -le $PairOfMaps.Right[$l].end) {
-                # Section, use a slice of left with a slice of right
-                $Merged += @{
-                    start = $PairOfMaps.Left[$l].start
-                    end = $PairOfMaps.Left[$l].end
-                    offset = $PairOfMaps.Right[$r].offset
-                    offstart = $PairOfMaps.Left[$r].offstart + $PairOfMaps.Right[$r].offset
-                    offend = $PairOfMaps.Left[$r].offend + $PairOfMaps.Right[$r].offset
-                }
-            }
+            "We miss $($($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start) - ($Slice.end - $Slice.start))" | Write-Warning
+            # we need to take more from the right map, starting from where we were.
+            $l = $l - 1     # we need to keep on with the current left map entry
+            $CurrentLeftMapEntry.start += (($Slice.end - $Slice.start)) 
+            $CurrentLeftMapEntry.offstart += (($Slice.end - $Slice.start)) 
 
-            if($PairOfMaps.Left[$l].start -le $PairOfMaps.Right[$r].start -and $PairOfMaps.Left[$l].end -ge $PairOfMaps.Right[$r].end) {
-                $PairOfMaps.Left[$l].offset = $PairOfMaps.Right[$r].start - $PairOfMaps.Left[$l].start
-                $PairOfMaps.Left[$l].offstart = $PairOfMaps.Right[$r].start
-                $PairOfMaps.Left[$l].offend = $PairOfMaps.Right[$r].end
-            }
-            if($PairOfMaps.Right[$r].start -le $PairOfMaps.Left[$l].start -and $PairOfMaps.Right[$r].end -ge $PairOfMaps.Left[$l].end) {
-                $PairOfMaps.Right[$r].offset = $PairOfMaps.Left[$l].start - $PairOfMaps.Right[$r].start
-                $PairOfMaps.Right[$r].offstart = $PairOfMaps.Left[$l].start
-                $PairOfMaps.Right[$r].offend = $PairOfMaps.Left[$l].end
-            }
+            continue
         }
     }
-#>
-<#
-        $BiMap = for($n = 0; $n -lt [Math]::Max($MapLeft.Count, $MapRight.Count); $n++) {
-            $obj = [pscustomobject]@{}
-            if($n -lt $MapLeft.Count) {
-                $obj | Add-Member -NotePropertyName 'leftstart' -NotePropertyValue $MapLeft[$n].start
-                $obj | Add-Member -NotePropertyName 'leftend' -NotePropertyValue $MapLeft[$n].end
-                $obj | Add-Member -NotePropertyName 'leftoffset' -NotePropertyValue $MapLeft[$n].offset
-                $obj | Add-Member -NotePropertyName 'leftoffstart' -NotePropertyValue $MapLeft[$n].offstart
-                $obj | Add-Member -NotePropertyName 'leftoffend' -NotePropertyValue $MapLeft[$n].offend
-            }
-            if($n -lt $MapRight.Count) {
-                $obj | Add-Member -NotePropertyName 'rightstart' -NotePropertyValue $MapRight[$n].start
-                $obj | Add-Member -NotePropertyName 'rightend' -NotePropertyValue $MapRight[$n].end
-                $obj | Add-Member -NotePropertyName 'rightoffset' -NotePropertyValue $MapRight[$n].offset
-                $obj | Add-Member -NotePropertyName 'rightoffstart' -NotePropertyValue $MapRight[$n].offstart
-                $obj | Add-Member -NotePropertyName 'rightoffend' -NotePropertyValue $MapRight[$n].offend
-            }
-            $obj | Write-Output
-        }
-        $BiMap | Write-Output
-    #>
+
     <#
     $Lowest = $null
     $n = $Seeds.Length
