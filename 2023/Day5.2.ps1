@@ -2,6 +2,8 @@
 [CmdletBinding()]
 param ()
 Process {
+    "`n`n`n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@`n`n`n" | Write-Host -ForegroundColor Magenta
+
     $Order = @('seed','soil','fertilizer','water','light','temperature','humidity','location')
     
     # Get two maps, filling blanks
@@ -17,6 +19,11 @@ Process {
             $PairOfMaps.Right = Fill-Gaps -TempMap $TempMap -Index $Index -Max $Max
         }
     }
+
+    "LEFT" | Write-Warning
+    $PairOfMaps.Left | ft
+    "RIGHT" | Write-Warning
+    $PairOfMaps.Right | ft
 
     # Merge the two maps
     $CurrentLeftMapEntry = $null
@@ -77,19 +84,20 @@ Process {
         $Slice.offend = $Slice.end + $Slice.Offset
         $Slice | Write-Output
 
+        @("#  ----------------------------------"
+        "#  - NEW SLICE:"
+        "#  - Start: $($Slice.start)"
+        "#  - End: $($Slice.end)"
+        "#  - Offset: $($Slice.offset)"
+        "#  - OffStart: $($Slice.offstart)"
+        "#  - OffEnd: $($Slice.offend)"
+        "#  ----------------------------------") -join "`n" | Write-Host -ForegroundColor Cyan
+
         if( ($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) - ($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start) -ge 0) {
             if( ($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) - ($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start) -gt 0) {
                 "`n`nWe have in EXCESS $(($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) - ($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start))`n`n" | Write-Warning
 
-                # we need to ADD a new slice in the LeftMap for this excess??
-                #
-                # Continue with another slice from the right map??? no we hav eit already, then what to do?
-                # missing a [Math]::Max somewhere to take just the needed.
-                # our slice took too much!!
-                #
-                # this is to be fixed at the level of the slice, ahead, and this case should therefore be an exception
-                #
-
+                #Not a problem, move next
                 $CurrentLeftMapEntry = $null
                 continue
             } else {
@@ -103,9 +111,15 @@ Process {
             "We miss $($($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start) - ($Slice.end - $Slice.start))" | Write-Warning
             # we need to take more from the right map, starting from where we were.
             $l = $l - 1     # we need to keep on with the current left map entry
-            $CurrentLeftMapEntry.start += (($Slice.end - $Slice.start)) 
-            $CurrentLeftMapEntry.offstart += (($Slice.end - $Slice.start)) 
+            
+            # Adjust the values to continue from where we were
 
+            "Continuing from where we were, for the next $($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) items" | Write-Host -ForegroundColor Cyan
+            $CurrentLeftMapEntry.start += (($Slice.end - $Slice.start)) 
+            $CurrentLeftMapEntry.end =  $CurrentLeftMapEntry.start + ($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start)
+            $CurrentLeftMapEntry.offstart += (($Slice.end - $Slice.start)) 
+            $CurrentLeftMapEntry.offend =  $CurrentLeftMapEntry.offstart + ($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start)
+# PROGRES MAIS PAS ENCOR EBON
             continue
         }
     }
@@ -180,7 +194,7 @@ Begin {
             # Write-Warning "$i Prev:$Prev; Start:$($TempMap[$i].start); End:$($TempMap[$i].end)"
             if($TempMap[$i].start -ne $prev) {
                 # Write-Warning "$i Filling GAP:  Start:$($prev); End:$($TempMap[$i].start); Offset:0)"
-                [pscustomobject]@{start = $prev;end = $TempMap[$i].start;offset = 0;offstart = $prev;offend = $TempMap[$i].start} | Write-Output 
+                [pscustomobject]@{start = $prev;end = $TempMap[$i].start;offset = $null;offstart = $prev;offend = $TempMap[$i].start} | Write-Output 
                 $prev = $TempMap[$i].start
                 if($Prev -ne 0) {
                     # Filling the gap didn't reach the current's start, so we need to repeat the current
@@ -194,7 +208,7 @@ Begin {
             }
             if($i -eq ($TempMap.Count -1) -and $TempMap[$i].end -lt $Max) {
                 # Write-Warning "$i Adding LAST:  Start:$($TempMap[$i].end); End:$($Max); Offset:0)"
-                [pscustomobject]@{start = $TempMap[$i].end;end = $Max;offset = 0;offstart = $TempMap[$i].end;offend = $Max} | Write-Output
+                [pscustomobject]@{start = $TempMap[$i].end;end = $Max;offset = $null;offstart = $TempMap[$i].end;offend = $Max} | Write-Output
                 $prev = $TempMap[$i].start
             }
         }
