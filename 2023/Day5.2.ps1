@@ -1,160 +1,43 @@
-<#
-
-
-L'erreur est là:::  LE SLICE est 2 crans trop à gauche (avant le offsetstart du RightMap correspondant!!!)
-
-We have in EXCESS 2
-
-AVERTISSEMENT : Taking a new entry from the left map
-AVERTISSEMENT : -= LOOP START =-
- ====== LEFT ======
- Range:          50 - 98
- > Offset:       2
- > Range*Offset: 52 - 100
-AVERTISSEMENT : Right map entry found for 52 at 2
-                                         ====== RIGHT ======
-                                         Range:          52 - 54
-                                         > Offset:       -15
-                                         > Range*Offset: 37 - 39
-Left map entry requires 48 items
-Right map provides 2 items
-                                                                                 ====== SLICE ======
-                                                                                 Range:          50 - 52
-                                                                                 > Offset:       -15
-                                                                                 > Range*Offset: 35 - 37
-#>
-
-
-
-
-
-
-
-# https://adventofcode.com/2023/day/5
+# https://adventofcode.com/2023/day/5#part2
 [CmdletBinding()]
 param ()
 Process {
-    "`n`n`n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@`n`n`n" | Write-Host -ForegroundColor Magenta
-
-    $Order = @('seed','soil','fertilizer','water','light','temperature','humidity','location')
+    $Data = @{
+        Seeds = @()
+        Order = @()
+        Maps = $null
+    }
+    Read-InputMaps -InputPath $InputPath -Data ([ref]$Data) | Out-Null
+    $Map = Get-SimplifiedMap -Maps $Data.Maps -Order $Data.Order -Max ([Math]::pow(2,32))
     
-    # Get two maps, filling blanks
-    $Max = [Math]::pow(2,32) # ([int32]::MaxValue+1)*2 # 4294967296 # [int64]::MaxValue
-    $PairOfMaps = [pscustomobject]@{Left=@{};Right=@()}
-    $Index = 0
-    for($n=0; $n -lt 2; $n++) {
-        $Index = $Index + $n
-        $TempMap = Get-MappedRanges -Maps $Maps -SourceName ($Order[$Index]) -DestinationName ($Order[$Index + 1]) | Sort-Object start
-        if($n -eq 0) {
-            $PairOfMaps.Left = Fill-Gaps -TempMap $TempMap -Index $Index -Max $Max
-        } else {
-            $PairOfMaps.Right = Fill-Gaps -TempMap $TempMap -Index $Index -Max $Max
-        }
-    }
+    # Part TWO: seeds is not a simple list, but a list of ranges
+    $Locations = for($s = 0; $s -lt $Data.Seeds.Count; $s += 2) {
+        $Range = @{start = $Data.Seeds[$s]; end = $Data.Seeds[$s] + $Data.Seeds[$s+1]}
+        while($null -ne $Range) {
+            $SeedInRange = $Range.start
+            for($i = 0; $i -lt $Map.Count; $i ++) {
+                if($SeedInRange -ge $Map[$i].start -and $SeedInRange -lt $Map[$i].end) {
+                    # Found the first seed in range
+                    # Send it's location down to the pipeline (we care only about the "smallest location")
+                    # thus no need to send the whole range
+                    $Location = $Map[$i].offstart + ($SeedInRange - $Map[$i].start)
+                    $Location | write-Output
 
-    "LEFT" | Write-Warning
-    # $PairOfMaps.Left | ft
-    "RIGHT" | Write-Warning
-    # $PairOfMaps.Right | ft
-
-    # Merge the two maps
-    $CurrentLeftMapEntry = $null
-    for($l = 0; $l -lt $PairOfMaps.Left.Count; $l ++) {
-        if($null -eq $CurrentLeftMapEntry) {
-            "Taking a new entry from the left map" | Write-Warning
-            $CurrentLeftMapEntry = $PairOfMaps.Left[$l]
-        } else {
-            "Keep going with the existing entry from the left map" | Write-Warning
-        }
-        Write-Warning "-= LOOP START =-"
-        DumpMap -Map $CurrentLeftMapEntry -Left
-
-        # Look for the start of the right map
-        $RightStartIndex = $null
-        for($r = 0; $r -lt $PairOfMaps.Right.Count; $r ++) {
-            if(     $CurrentLeftMapEntry.offstart -ge $PairOfMaps.Right[$r].start `
-                -and $CurrentLeftMapEntry.offstart -lt $PairOfMaps.Right[$r].end 
-            ) {
-                $RightStartIndex = $r
-                break;
-            }
-        }
-        if($null -eq $RightStartIndex) {
-            throw "No right map entry found for $($CurrentLeftMapEntry.offstart)"
-        }
-        "Right map entry found for $($CurrentLeftMapEntry.offstart) at $RightStartIndex" | Write-Warning
-        DumpMap -Map $PairOfMaps.Right[$RightStartIndex] -Right
-
-        "Left map entry requires $($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start) items" | Write-Host -ForegroundColor Blue
-        "Right map provides $($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) items" | Write-Host -ForegroundColor Blue
-        
-        # Take what we have
-        # "Take what we have" | Write-Warning
-        $Slice = $CurrentLeftMapEntry.PSObject.Copy()
-        $Slice.start = $CurrentLeftMapEntry.start
-        $Slice.end = $Slice.start + [Math]::Min(
-            ($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start),
-            ($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start)
-        )
-        $Slice.offset = $PairOfMaps.Right[$RightStartIndex].offset
-        $Slice.offstart = $Slice.start + $Slice.Offset
-        $Slice.offend = $Slice.end + $Slice.Offset
-        
-        DumpMap -Map $Slice -Slice
-        $Slice | Write-Output
-
-
-        if( ($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) - ($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start) -ge 0) {
-            if( ($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) - ($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start) -gt 0) {
-                "`n`nWe have in EXCESS $(($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) - ($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start))`n`n" | Write-Warning
-
-                #Not a problem, move next
-                $CurrentLeftMapEntry = $null
-                continue
-            } else {
-                "Right map can provide just enough items" | Write-Warning
-                # nothing else to do here, continue with the next left map entry
-                $CurrentLeftMapEntry = $null
-                continue
-            }
-        } else {
-            "Right map can't provide enough items" | Write-Warning
-            "We miss $($($CurrentLeftMapEntry.end - $CurrentLeftMapEntry.start) - ($Slice.end - $Slice.start))" | Write-Warning
-            # we need to take more from the right map, starting from where we were.
-            $l = $l - 1     # we need to keep on with the current left map entry
-            
-            # Adjust the values to continue from where we were
-            #"Continuing from where we were, for the next $($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start) items" | Write-Host -ForegroundColor Cyan
-            "Continuing from where we were..." | Write-Host -ForegroundColor Cyan
-            $CurrentLeftMapEntry.start += (($Slice.end - $Slice.start)) 
-            #$CurrentLeftMapEntry.end =  $CurrentLeftMapEntry.start + ($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start)
-            $CurrentLeftMapEntry.offstart += (($Slice.end - $Slice.start)) 
-            #$CurrentLeftMapEntry.offend =  $CurrentLeftMapEntry.offstart + ($PairOfMaps.Right[$RightStartIndex].end - $PairOfMaps.Right[$RightStartIndex].start)
-            DumpMap -Map $CurrentLeftMapEntry -Tampered
-# PROGRES MAIS PAS ENCOR EBON
-            continue
-        }
-    }
-
-    <#
-    $Lowest = $null
-    $n = $Seeds.Length
-    for($ks = 0; $ks -lt $n; $ks+=2) {
-        "#$($ks/2) * $($Seeds[$ks +1])" | Write-Host
-        # "$ks, $($Seeds[$ks]) $($Seeds[$ks+1])" | Write-Warning
-        for($t = 0; $t -lt ($Seeds[$ks +1]); $t++) {
-            # "$ks $t $($Seeds[$ks] + $t)" | Write-Warning
-            $Seed = $Seeds[$ks] + $t
-            $Location = ConvertFrom-SeedToLocation -Maps $Maps -SeedValue $Seed
-            # "Seed: $Seed -> Location: $Location" | Write-Output
-            if($Lowest -eq $null -or $Location -lt $Lowest) {
-                $Lowest = $Location
-                "New Lowest Location: $Lowest" | Write-Output
+                    # Does the map entry cover the whole range of seeds?
+                    if(($Range.end -lt $Map[$i].end)) {
+                        # Yes, we can skip the rest of the seeds in the range, as we have the smallest already
+                        $Range = $null
+                        break
+                    } else {
+                        # No, we need to lookup for other entries in the map for the remaining of the range
+                        $Range.start = $($Map[$i].end)
+                        break
+                    }
+                }
             }
         }
     }
-        "Lowest Location: $Lowest" | Write-Output
-    #>
+    $Locations | Measure-Object -Minimum -Maximum
 }
 Begin {
     $Year = 2023
@@ -167,116 +50,181 @@ Begin {
         throw "Input file is missing. Please download the Input file at $InputUrl, and save it as $InputPath"
     }
     "Instructions: $PuzzleUrl" | Write-Warning
-    $InputData = Get-Content $InputPath -ErrorAction Stop
 
-    $Seeds = [long[]]($InputData[0] -replace '^seeds: ','' -split ' ' | ForEach-Object { [long]$_ })
-    $Label = $null
-    $Maps = @{}
-    for($y=2;$y -lt $InputData.Length;$y++) {
-        $Line = $InputData[$y]
-        if($Line -eq '') {
-            $Label = $null
-            continue
-        }
-        if($Line -match '^(.*)\s+map:$') {
-            $Label = $Matches[1]
-            $Maps += @{$Label = @()}
-            continue
-        }
-        if($Line -match '^(\d+)\s+(\d+)\s+(\d+)$') {
-            $Maps.$Label += ,[PSCustomObject]@{
-                destination = [long]$Matches[1]
-                source = [long]$Matches[2]
-                length = [long]$Matches[3]
-            }
-        } else {
-            throw "Unexpected line: $Line"
-        }
-    }
-
-    Function DumpMap {
-        [CmdletBinding(DefaultParameterSetName='Map')]
-        param(
-            [object]$Map,
-            [Parameter(Mandatory,ParameterSetName='Left')]
-            [switch]$Left,
-            [Parameter(Mandatory,ParameterSetName='Right')]
-            [switch]$Right,
-            [Parameter(Mandatory,ParameterSetName='Slice')]
-            [switch]$Slice,
-            [Parameter(Mandatory,ParameterSetName='Tampered')]
-            [switch]$Tampered
-        )
-
-        if($Left) {
-            $Title = "LEFT"
-            $Padding = 0
-            $Color = [System.ConsoleColor]::Cyan
-        } elseif($Right) {
-            $Title = "RIGHT"
-            $Padding = 40
-            $Color = [System.ConsoleColor]::Magenta
-        } elseif($Slice) {
-            $Title = "SLICE"
-            $Padding = 80
-            $Color = [System.ConsoleColor]::Green
-        } elseif($Tampered) {
-            $Title = "TAMPERED"
-            $Padding = 80
-            $Color = [System.ConsoleColor]::Yellow
-        } else {
-            $Title = "MAP"
-            $Padding = 0
-            $Color = $Host.UI.RawUI.ForegroundColor
-        }
-
-        $Padding = ''.PadLeft($Padding)
-        @("$Padding ====== $Title ======"
-        "$Padding Range:          $($Map.start) - $($Map.end)"
-        "$Padding > Offset:       $($Map.offset)"
-        "$Padding > Range*Offset: $($Map.offstart) - $($Map.offend)"
-        ) -join "`n" | Write-Host -ForegroundColor $Color
-
-    }
     
-    Function Fill-Gaps {
+
+    ##
+    
+    Function Get-SimplifiedMap {
+        <#
+        .SYNOPSIS
+            Get the simplified map
+        .DESCRIPTION
+            Get the simplified map by combining all the maps
+        .PARAMETER Maps
+            The hashtable containing the maps (Coming from the INPUT file)
+        .PARAMETER Order
+            The order of the maps
+        .PARAMETER Max  
+            The maximum number of values of the map (2^32 by default)
+        .EXAMPLE
+            Get-SimplifiedMap
+        #>
+        [CmdletBinding()]
         param(
-            [Alias('Map')]
-            [object[]]$TempMap,
-            [long]$Index,
+            $Maps,
+            $Order,
+            $Max = [Math]::pow(2,32)
+        )
+        if($Order.Count -lt 2) {
+            throw "Not enough maps to combine"
+        }
+        # Get the left most map
+        $Map = Get-MappedRangesByName -Maps $Maps -SourceName ($Order[0]) -DestinationName ($Order[1]) | Sort-Object start
+        $Left = Repair-ContinuousRange -Map $Map -Max $Max | Sort-Object offstart
+        for($x=0; $x -lt $Order.Count -2; $x ++ ) {
+            # Combine the left map with the right map
+            Write-Debug "$($Order[0])-$($Order[$x+2])"
+            $Map = Get-MappedRangesByName -Maps $Maps -SourceName ($Order[$x + 1]) -DestinationName ($Order[$x + 2]) | Sort-Object start
+            $Right = Repair-ContinuousRange -Map $Map -Max $Max | Sort-Object start
+            $Combined = Join-AdjacentMaps -Left $Left -Right $Right | Sort-Object offstart
+            # Replace the left map by the combined map created from left and right maps
+            $Left = $Combined
+        }
+        # Send the combined map to the output
+        $Left | Write-Output
+    }
+
+    Function Join-AdjacentMaps {
+        <#
+        .SYNOPSIS
+            Combine two adjacent maps into a single one
+        .DESCRIPTION
+            Combine two adjacent maps into a single one
+        .PARAMETER Left
+            The left map
+        .PARAMETER Right
+            The right map
+        .EXAMPLE
+            Join-AdjacentMaps -Left $Left -Right $Right
+        #>
+        param(
+            [object[]]$Left,
+            [object[]]$Right
+        )
+        # Join the two maps
+        $kl,$kr = 0,0
+        while($kl -lt $Left.Count -and $kr -lt $Right.Count) {
+            Write-Debug "($kl,$kr)`t$($Left[$kl].start)-$($Left[$kl].end)`t => $($Left[$kl].offstart)-$($Left[$kl].offend)`t <=> $($Right[$kr].start)-$($Right[$kr].end)`t => $($Right[$kr].offstart)-$($Right[$kr].offend)"
+            if($Left[$kl].offend -lt $Right[$kr].end) {
+                Write-Debug "Left has less than Right"
+                # Send the map entry to the pipeline
+                [pscustomobject]@{
+                    start = $Left[$kl].start
+                    end = $Left[$kl].start + ($Left[$kl].end - $Left[$kl].start)
+                    offset = $Right[$kr].offset
+                    offstart = $Right[$kr].offstart
+                    offend = $Right[$kr].offstart + ($Left[$kl].end - $Left[$kl].start)
+                } | Write-Output
+                # Adjust the right map entry, and proceed to the next left map entry
+                $Right[$kr].start += ($Left[$kl].end - $Left[$kl].start)
+                $Right[$kr].offstart += ($Left[$kl].end - $Left[$kl].start)
+                $kl++
+                Write-Debug "NEW ($kl,$kr)`t$($Left[$kl].start)-$($Left[$kl].end)`t => $($Left[$kl].offstart)-$($Left[$kl].offend)`t <=> $($Right[$kr].start)-$($Right[$kr].end)`t => $($Right[$kr].offstart)-$($Right[$kr].offend)"
+            }elseif($Left[$kl].offend -gt $Right[$kr].end) {
+                Write-Debug "Left has more than Right"
+                # Send the map entry to the pipeline
+                [pscustomobject]@{
+                    start = $Left[$kl].start
+                    end = $Left[$kl].start + ($Right[$kr].end - $Right[$kr].start)
+                    offset = $Right[$kr].offset
+                    offstart = $Right[$kr].offstart
+                    offend = $Right[$kr].offstart + ($Right[$kr].end - $Right[$kr].start)
+                } | Write-Output
+                # Adjust the left map entry, and proceed to the next right map entry
+                $Left[$kl].start += ($Right[$kr].end - $Right[$kr].start)
+                $Left[$kl].offstart += ($Right[$kr].end - $Right[$kr].start)
+                $kr++
+                Write-Debug "NEW ($kl,$kr)`t$($Left[$kl].start)-$($Left[$kl].end)`t => $($Left[$kl].offstart)-$($Left[$kl].offend)`t <=> $($Right[$kr].start)-$($Right[$kr].end)`t => $($Right[$kr].offstart)-$($Right[$kr].offend)"
+            } else {
+                Write-Debug "Left has the same as Right"
+                # Send the map entry to the pipeline
+                [pscustomobject]@{
+                    start = $Left[$kl].start
+                    end = $Left[$kl].start + ($Left[$kl].end - $Left[$kl].start)
+                    offset = $Right[$kr].offset
+                    offstart = $Right[$kr].offstart
+                    offend = $Right[$kr].offstart + ($Right[$kr].end - $Right[$kr].start)
+                } | Write-Output
+                # Proceed to the next left and right map entries
+                $kl++
+                $kr++
+                Write-Debug "NEW ($kl,$kr)`t$($Left[$kl].start)-$($Left[$kl].end)`t => $($Left[$kl].offstart)-$($Left[$kl].offend)`t <=> $($Right[$kr].start)-$($Right[$kr].end)`t => $($Right[$kr].offstart)-$($Right[$kr].offend)"
+            }
+        }
+    }
+    Function Repair-ContinuousRange {
+        <#
+        .SYNOPSIS
+            Fill the gaps in the map
+        .DESCRIPTION
+            Fill the gaps in the map (e.g. makes sure that we have a continuous map from 0 to $Max)
+        .PARAMETER Map
+            The map to fill the gaps
+        .PARAMETER Max
+            The maximum value of the map (2^32 by default)
+        .EXAMPLE
+            Repair-ContinuousRange -Map $Map
+        #>
+        param(
+            [object[]]$Map,
             [long]$Max = [Math]::pow(2,32)
         )
         $prev = 0
-        for($i=0;$i -lt $TempMap.Count;$i++) {
-            # Write-Warning "$i Prev:$Prev; Start:$($TempMap[$i].start); End:$($TempMap[$i].end)"
-            if($TempMap[$i].start -ne $prev) {
-                # Write-Warning "$i Filling GAP:  Start:$($prev); End:$($TempMap[$i].start); Offset:0)"
-                [pscustomobject]@{start = $prev;end = $TempMap[$i].start;offset = $null;offstart = $prev;offend = $TempMap[$i].start} | Write-Output 
-                $prev = $TempMap[$i].start
+        for($i=0;$i -lt $Map.Count;$i++) {
+            Write-Debug "$i Prev:$Prev; Start:$($Map[$i].start); End:$($Map[$i].end)"
+            if($Map[$i].start -ne $prev) {
+                Write-Debug "$i Filling GAP:  Start:$($prev); End:$($Map[$i].start); Offset:0)"
+                # Send the map entry to the pipeline
+                [pscustomobject]@{start = $prev;end = $Map[$i].start;offset = $null;offstart = $prev;offend = $Map[$i].start} | Write-Output 
+                $prev = $Map[$i].start
                 if($Prev -ne 0) {
                     # Filling the gap didn't reach the current's start, so we need to repeat the current
-                    # Write-Warning "REPEAT"
                     $i --
                 }
             } else {
-                # Write-Warning "$i Adding AS IS: Start:$($TempMap[$i].start); End:$($TempMap[$i].end); Offset:$($TempMap[$i].offset)"
-                $TempMap[$i] | Write-Output
-                $prev = $TempMap[$i].end
+                Write-Debug "$i Adding AS IS: Start:$($Map[$i].start); End:$($Map[$i].end); Offset:$($Map[$i].offset)"
+                $Map[$i] | Write-Output
+                $prev = $Map[$i].end
             }
-            if($i -eq ($TempMap.Count -1) -and $TempMap[$i].end -lt $Max) {
-                # Write-Warning "$i Adding LAST:  Start:$($TempMap[$i].end); End:$($Max); Offset:0)"
-                [pscustomobject]@{start = $TempMap[$i].end;end = $Max;offset = $null;offstart = $TempMap[$i].end;offend = $Max} | Write-Output
-                $prev = $TempMap[$i].start
+            if($i -eq ($Map.Count -1) -and $Map[$i].end -lt $Max) {
+                Write-Debug "$i Adding LAST:  Start:$($Map[$i].end); End:$($Max); Offset:0)"
+                # Send the map entry to the pipeline
+                [pscustomobject]@{start = $Map[$i].end;end = $Max;offset = $null;offstart = $Map[$i].end;offend = $Max} | Write-Output
+                $prev = $Map[$i].start
             }
         }
     }
 
-    Function Get-MappedRanges {
+    Function Get-MappedRangesByName {
+        <#
+        .SYNOPSIS
+            Get the mapped ranges from the maps
+        .DESCRIPTION
+            Get the mapped ranges from the maps by their names "{source}-{destination}"
+        .PARAMETER Maps
+            The hashtable containing the maps (Coming from the INPUT file)
+        .PARAMETER SourceName
+            The name of the source 
+        .PARAMETER DestinationName
+            The name of the destination 
+        .EXAMPLE
+            Get-MappedRangesByName -Maps $Maps -SourceName 'seed' -DestinationName 'soil'
+        #>
         param(
             [hashtable]$Maps,
             [string]$SourceName,
-            [string]$DestinationName,
-            [switch]$Unmapped
+            [string]$DestinationName
         )
         $Index = "$($SourceName)-to-$($DestinationName)"
         if(-not ($Maps.ContainsKey($Index))) {
@@ -295,38 +243,66 @@ Begin {
         return $MappedRanges
     }
 
-    Function ConvertFrom-MapIndex {
-        param(
-            [hashtable]$Maps,
-            [string]$SourceName,
-            [string]$DestinationName,
-            [long]$SourceValue
+    Function Read-InputMaps {
+        <#
+        .SYNOPSIS
+            Read the input maps
+        .DESCRIPTION
+            Read the input maps from the file
+        .PARAMETER InputPath
+            The path to the input file
+        .PARAMETER Data
+            The reference to an object or hashtable that receives: Seeds, Order and Maps
+        .PARAMETER Order
+            The reference to the order array, receives the order of the maps
+        #>
+        [CmdletBinding()]
+        [OutputType([hashtable])]
+        param (
+            [Parameter(Mandatory)]
+            [ValidateScript({Test-Path $_ -PathType Leaf})]
+            [string]$InputPath,
+
+            [ref]$Data
         )
-        $Index = "$($SourceName)-to-$($DestinationName)"
-        if(-not ($Maps.ContainsKey($Index))) {
-            throw "No map found for $Index"
-        }
-        for($i = 0; $i -lt $Maps.$Index.Count ; $i++) {
-            if( $SourceValue -ge $Maps.$Index[$i].source -and $SourceValue -lt ($Maps.$Index[$i].source + $Maps.$Index[$i].length)) {
-                return $Maps.$Index[$i].destination + $SourceValue - $Maps.$Index[$i].source
+        $InputData = Get-Content $InputPath -ErrorAction Stop
+
+        #Load the list of seeds
+        $SeedList = [long[]]($InputData[0] -replace '^seeds: ','' -split ' ' | ForEach-Object { [long]$_ })
+        $Data.Value.Seeds = $SeedList
+        Write-Debug "Seeds: $($Data.Value.Seeds)"
+
+        # Load the Maps from the Input file
+        $Data.Value.Order = @()
+        $Label = $null
+        $Maps = @{}
+        for($y=2;$y -lt $InputData.Length;$y++) {
+            $Line = $InputData[$y]
+            if($Line -eq '') {
+                $Label = $null
+                continue
+            }
+            if($Line -match '^(.*)\s+map:$') {
+                $Label = $Matches[1]
+                $Maps += @{$Label = @()}
+                $Data.Value.Order += ,($Label -replace '-to-.*$','')
+                continue
+            }
+            if($Line -match '^(\d+)\s+(\d+)\s+(\d+)$') {
+                $Maps.$Label += ,[PSCustomObject]@{
+                    destination = [long]$Matches[1]
+                    source = [long]$Matches[2]
+                    length = [long]$Matches[3]
+                }
+            } else {
+                throw "Unexpected line: $Line"
             }
         }
-        return $SourceValue
-    }
+        $Data.Value.Order += ,($Label -replace '^.*-to-','')
+        Write-Debug "Order: $($Data.Value.Order)"
 
-    Function ConvertFrom-SeedToLocation {
-        param(
-            [hashtable]$Maps,
-            [long]$SeedValue
-        )
-        $SoilValue = ConvertFrom-MapIndex -Maps $Maps -SourceName 'seed' -DestinationName 'soil' -SourceValue $SeedValue
-        $FertilizerValue = ConvertFrom-MapIndex -Maps $Maps -SourceName 'soil' -DestinationName 'fertilizer' -SourceValue $SoilValue
-        $WaterValue = ConvertFrom-MapIndex -Maps $Maps -SourceName 'fertilizer' -DestinationName 'water' -SourceValue $FertilizerValue
-        $LightValue = ConvertFrom-MapIndex -Maps $Maps -SourceName 'water' -DestinationName 'light' -SourceValue $WaterValue
-        $TemperatureValue = ConvertFrom-MapIndex -Maps $Maps -SourceName 'light' -DestinationName 'temperature' -SourceValue $LightValue
-        $HumidityValue = ConvertFrom-MapIndex -Maps $Maps -SourceName 'temperature' -DestinationName 'humidity' -SourceValue $TemperatureValue
-        $LocationValue = ConvertFrom-MapIndex -Maps $Maps -SourceName 'humidity' -DestinationName 'location' -SourceValue $HumidityValue
-        return $LocationValue
+        $Data.Value.Maps = $Maps
+        $Maps | Write-Output
     }
-    
+  
 }
