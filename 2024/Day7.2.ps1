@@ -2,6 +2,8 @@
 # Load the file, removing every line that is present in output of 2024/Day7.1.ps1
 # PRocess the remaining line from left to right!
 
+
+
 Process {
     $rxLine = [Regex]::new('^(?<x>\d+):\s(?<values>.*)$')
     $AllInput = $InputData | ForEach-Object {
@@ -34,53 +36,14 @@ Process {
     $AllInput | Where-Object {
         $_.X -notin $AlreadyKnown
     } | Foreach-Object {
-        $_ | Write-Warning
-
-        if(LTORMUL -Values $_.Values -X $_.X) {
+        $List = $_.Values + ,($_.X)
+        Write-Warning "START: $($List -join ', ')"
+        if(MulSumCat -Values $List) {
             $_.X | Write-Output
         }
     }
 }
 Begin {
-    Function LTORMUL {
-        [CmdletBinding()]
-        param(
-            [Parameter(Mandatory)]
-            [long[]] $Values,
-
-            [Parameter(Mandatory)]
-            [long] $X
-        )
-        $op = $('+','*','||')
-        for($k=0; $k -lt $Values.Length; $k+=2) {
-            for($i = 0; $i -lt $op.Length; $i++) {
-                switch($op[$i]) {
-                    '+' {
-                        $TMP = $Values[$k] + $values[$k+1]
-                    }
-                    '*' {
-                        $TMP = $Values[$k] * $values[$k+1]
-                    }
-                    '||' {
-                        $TMP = [long]"$($Values[$k])$($values[$k+1])"
-                    }
-                }
-                if($TMP -le $X) {
-                    if($Values.Count -eq 2 -and $TMP -eq $X) {
-                        return $true
-                    } elseif($Values.Count -gt 2) {
-                        if(LTORMUL -Values (@($TMP) + ($Values | Select-Object -Skip 2)) -X $X) {
-                            return $true
-                        }
-                    } else {
-                        # don't return $false; as there are 3 consecutive tests
-                        # an empty return is enough
-                    }
-                }
-            }
-        }
-    }
-
     $Year = 2024
     $Day = 7
     $PuzzleUrl = "https://adventofcode.com/$Year/$Day"
@@ -92,6 +55,48 @@ Begin {
     }
     "Instructions: $PuzzleUrl" | Write-Debug
     $InputData = Get-Content $InputPath -ErrorAction Stop
+
+    Function MulSumCat {
+        param(
+            $Values
+        )
+        Write-Debug "Values: $($Values -join ', ')"
+        if($Values.Count -lt 2) {
+            Write-Error "Not enough values"
+            return $false
+        }
+        $A = $Values | Select-Object -First 1
+        $B = $Values | Select-Object -First 1 -Skip 1
+        if($Values.Count -eq 2) {
+            return $A -eq $B
+        }
+        $X = $Values | Select-Object -Last 1
+        if($Values.Count -eq 3) {
+            if($A+$B -eq $X) {          return $true }
+            if($A*$B -eq $X) {          return $true }
+            if([long]"$A$B" -eq $X) {   return $true }
+        }
+        $List = $Values | Select-Object -Skip 2
+        if($A+$B -le $X) {
+            if(MulSumCat -Values (($A + $B),$List|%{$_})) {
+                Write-Debug "$A+$B"
+                return $true
+            }
+        }
+        if($A*$B -le $X) {
+            if(MulSumCat -Values (($A * $B),$List|%{$_})) {
+                Write-Debug "$A*$B"
+                return $true
+            }
+        } 
+        if([long]"$A$B" -le $X) {
+            if(MulSumCat -Values (([long]"$A$B"),$List|%{$_})) {
+                Write-Debug "$A||$B"
+                return $true
+            }
+        }
+        return $false
+    }
 
     Function WalkNode {
         [CmdletBinding()]
