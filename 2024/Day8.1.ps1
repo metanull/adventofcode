@@ -6,13 +6,13 @@ Process {
         ([regex]::new('([a-zA-Z0-9])')).Matches($InputData[$y])|Where-Object{
             $_.Success
         } | Foreach-Object {
-            [pscustomobject]@{freq=[string]($_.Value);X=[long]($_.Index);Y=[long](-$y+($InputData.count -1))}
+            [pscustomobject]@{freq=[string]($_.Value);X=[long]($_.Index);Y=[long]($y)}
         }
     }
 
     $Point | select-object -ExpandProperty freq -Unique | Foreach-Object {
         $freq = $_
-        $set = $Point|Where-Object{$_.freq -eq $freq}
+        $set = $Point|Where-Object{$_.freq -ceq $freq}  # -ceq = CASE SENSITIVE
         for($i=0;$i -lt $set.count - 1;$i++){
             $A = [pscustomobject]@{name='A';x=$set[$i].x;y=$set[$i].y}
             for($j=1;$j -lt $set.count -$i;$j++){
@@ -24,7 +24,43 @@ Process {
         }
     } | Where-Object {
         $_.x -ge $Origin.x -and $_.x -le $End.x -and $_.y -ge $Origin.y -and $_.y -le $End.y
-    } | Group-Object x,y | Measure-Object
+    } | Group-Object x,y | Tee-Object -Variable UniqueAntinodes | Measure-Object
+
+
+    # Print the MAP
+    for($y = 0; $y -lt 2; $y++) {
+        for($x = 0; $x -lt $InputData[$y].Length; $x++) {
+            switch($y) {
+                0 { [int][Math]::Truncate($x / 10) | Write-Host -NoNewline}
+                1 { $x % 10 | Write-Host -NoNewline }
+            }
+        }
+        '|' | Write-Host
+    }
+    for($y = 0; $y -lt $InputData.count; $y++) {
+        $Line = $InputData[$y]
+        for($x = 0; $x -lt $Line.Length; $x++) {
+            $Char = $Line[$x]
+            
+            $FG = $host.UI.RawUI.ForegroundColor
+            $BG = $host.UI.RawUI.BackgroundColor
+            if("$x, $y" -in $UniqueAntinodes.Name) {
+                $BG = [ConsoleColor]::Magenta
+                $FG = [ConsoleColor]::Cyan
+                if($Char -eq '.') {
+                    $Char = "#"
+                }
+            }
+            if($Char -ne '.') {
+                #$BG = [ConsoleColor]::Cyan
+                $FG = [ConsoleColor]::Cyan
+            }
+            $Char | Write-Host -ForegroundColor $FG -BackgroundColor $BG -NoNewline
+        }
+        "|$y`t" | Write-Host -ForegroundColor $host.UI.RawUI.ForegroundColor -BackgroundColor $host.UI.RawUI.BackgroundColor -NoNewline
+        $Legend = ($UniqueAntinodes.Name | Select-Object -Unique |? { $_ -match ", $y`$"}) -join '); ('
+        "($Legend)" | Write-Host
+    }
 
 }
 Begin {
