@@ -4,6 +4,7 @@ Process {
     $InputData | ForEach-Object {
         Write-Warning $_
         $IntArray = $Parser.Matches($_)|?{$_.Success}|%{[int]$_.Value}
+        ($IntArray) -join ','
         (Defrag -DiskImage $IntArray) -join ','
         # Write-Warning ((Expand -Line $_ ) -join '')
         # Write-Warning ((ExpandDefrag -Line $_ ) -join '')
