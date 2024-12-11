@@ -1,64 +1,73 @@
-# https://adventofcode.com/{YEAR}/day/{DAY}[#part2]
 Process {
-    
-    <#
-    $Parser = [regex]::new('(?<digit>\d)')
-    $InputData | ForEach-Object {
-        Write-Warning $_
-        $IntArray = $Parser.Matches($_)|?{$_.Success}|%{[int]$_.Value}
-        ($IntArray) -join ','
-        (Defrag -DiskImage $IntArray) -join ','
-        # Write-Warning ((Expand -Line $_ ) -join '')
-        # Write-Warning ((ExpandDefrag -Line $_ ) -join '')
-    }#>
-    $InputData | ForEach-Object {
-        Write-Warning ((Expand -Line $_ ) -join '')
-        (ExpandDefrag -Line $_ ) -join ''
-    } | Tee-Object -Variable Defragmented
-    Write-Warning ((Expand -Line $Defragmented ) -join '')
-    $Parser = [regex]::new('(?<digit>\d)')
-    $Parser.Matches($Defragmented)|% { $_.Index * $_.Value } | Measure-Object -sum
-}
-Begin {
+    $DiskImage = $InputData | ExpandImage
+    $MirrorImage = $DiskImage.PSObject.Copy()
+    [array]::Reverse($MirrorImage)
+    $BlockCount = ($DiskImage|?{$null -ne $_}).count
 
-    Function Defrag {
-        [CmdletBinding()]
-        param(
-            [Parameter(ValueFromPipeline)]
-            [object[]]$DiskImage
-        )
-        Begin {
-            $Array = @()
-        }
-        Process {
-            $Array += ,($_)
-        }
-        End {
-            $freeIndex = $null
-            $lastBlock = $DiskImage.Length - ($DiskImage.Length % 2)
-            for($blockIndex = $lastBlock; $blockIndex -ge 0 -and $blockIndex -gt $freeIndex; $blockIndex -=2) {
-                if([int]($DiskImage[$blockIndex]) -gt 0) {
-                    $blockSize = [int]"$($DiskImage[$blockIndex])"
-                    if($blockSize -gt 0) {
-                        for($freeIndex = 1; $freeIndex -lt $DiskImage.Length; $freeIndex ++ ) {
-                            $freeSize = [int]"$($DiskImage[$freeIndex])"
-                            if($freeSize -eq 0) {
-                                continue
-                            } else {
-                                if($freeIndex -le 0) {
-                                    throw 'Invalid index for free block'
-                                }
-                                $DiskImage[$freeIndex - 1] = (($DiskImage[$freeIndex - 1]) + 1)
-                                $DiskImage[$freeIndex] = (($DiskImage[$freeIndex - 1]) - 1)
-                                $DiskImage[$blockIndex] = (($DiskImage[$blockIndex]) - 1)
-                            }
-                        }
-                    }
+    $PercentMax = $BlockCount
+    Write-Progress -Activity 'Defragmenting' -PercentComplete ([Math]::Truncate($BlockCount*$PercentMax) * 100)
+    $CursorIndex = 0
+    $FillerIndex = 0
+    $DiskImage | ForEach-Object {
+        Write-Progress -Activity 'Defragmenting' -PercentComplete ([Math]::Truncate($BlockCount*$PercentMax) * 100)
+        if($BlockCount -le 0) {
+            $null | Write-Output
+        } elseif($null -ne $_) {
+            $_ | Write-Output
+            $BlockCount --
+        } else {
+            for($n = $FillerIndex; $n -lt $MirrorImage.Count; $n++) {
+                if($null -ne $MirrorImage[$n]) {
+                    $MirrorImage[$n] | Write-Output
+                    $BlockCount --
+                    $FillerIndex = $n + 1
+                    break
                 }
             }
-            return $DiskImage
+        }
+        $CursorIndex ++
+    }
+    Write-Progress -Activity 'Defragmenting' -Completed
+}
+Begin {
+    Function ExpandImage {
+        [OutputType([int[]])]
+        [CmdletBinding()]
+        param(
+            [OutputType([int[]])]
+            [Parameter(Mandatory,ValueFromPipeline)]
+            [String]$DiskImage
+        )
+        Begin {
+            $Parser = [regex]::new('(?<digit>\d)')
+        }
+        Process {
+            $CursorIndex = 0
+            $FileIndex = 0
+            $DiskImage | ForEach-Object {
+                $Parser.Matches($_) | Where-Object {
+                    $_.Success
+                } | ForEach-Object {
+                    [int]($_.Value) | Write-Output
+                }
+            } | Foreach-Object {
+                $BlockSize = $_
+                for($n = 0; $n -lt $BlockSize; $n ++ ) {
+                    if($CursorIndex % 2 -eq 0) {
+                        $FileIndex | Write-Output
+                    } else {
+                        $null | Write-Output
+                    }
+                }
+                if($CursorIndex % 2 -ne 0) {
+                    $FileIndex ++
+                }
+                $CursorIndex ++
+            }
         }
     }
+
+
     # REDO: using recursive (fix the first, then recurse)
     Function ExpandDefrag {
         [CmdletBinding()]
