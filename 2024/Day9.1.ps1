@@ -6,6 +6,7 @@ Process {
 
     $CursorIndex = 0
     $FillerIndex = 0
+    $ChecksumIndex = 0
     $DiskImage | ForEach-Object {
         if($BlockCount -le 0) {
             $null | Write-Output
@@ -23,7 +24,9 @@ Process {
             }
         }
         $CursorIndex ++
-    }
+    } | ForEach-Object {
+        ($ChecksumIndex ++) * $_
+    } | Measure-Object -Sum
 }
 Begin {
     Function ExpandImage {
