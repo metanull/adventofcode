@@ -63,52 +63,6 @@ Begin {
         }
     }
 
-
-    # REDO: using recursive (fix the first, then recurse)
-    Function ExpandDefrag {
-        [CmdletBinding()]
-        param([String]$Line)
-
-        $Expanded = ((Expand -Line $Line) -join '').ToCharArray()
-        $end = $Expanded.Length - 1
-        $k = $end
-        for($j = 0; $j -lt $Expanded.Length -and $j -lt $k; $j++) {
-            write-debug "J: $j = $($Expanded[$j])"
-            if($Expanded[$j] -eq '.') {
-                for($k = $end; $k -gt 0; $k --) {
-                    write-debug "K: $k = $($Expanded[$k])"
-                    $end = $k
-                    if($Expanded[$k] -ne '.') {
-                        write-debug "SWAP: $j $k"
-                        $Expanded[$j],$Expanded[$k] = $Expanded[$k],$Expanded[$j]
-                        Write-Debug ($Expanded -join '')
-                        break
-                    }
-                }
-            }
-        }
-        return $Expanded
-    }
-    Function Expand {
-        [CmdletBinding()]
-        param([String]$Line)
-        for($i=0;$i -lt $Line.Length; $i+=2) {
-            $FileN = ($i/2)
-            $Block = [int]("$($Line[$i])")
-            Write-Debug "$FileN,  $Block"
-            for($k=0; $k -lt $Block; $k++) {
-                $FileN | Write-Output
-            }
-            if($i -lt ($Line.Length +1) ){
-                $Empty = [int]("$($Line[$i+1])")
-                Write-Debug ".,  $Empty"
-                for($k=0; $k -lt $Empty; $k++) {
-                    '.' | Write-Output
-                }
-            }
-        }
-    }
-
     $Year = 2024
     $Day = 9
     $PuzzleUrl = "https://adventofcode.com/$Year/$Day"
