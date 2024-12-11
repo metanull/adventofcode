@@ -4,12 +4,9 @@ Process {
     [array]::Reverse($MirrorImage)
     $BlockCount = ($DiskImage|?{$null -ne $_}).count
 
-    $PercentMax = $BlockCount
-    Write-Progress -Activity 'Defragmenting' -PercentComplete ([Math]::Truncate($BlockCount*$PercentMax) * 100)
     $CursorIndex = 0
     $FillerIndex = 0
     $DiskImage | ForEach-Object {
-        Write-Progress -Activity 'Defragmenting' -PercentComplete ([Math]::Truncate($BlockCount*$PercentMax) * 100)
         if($BlockCount -le 0) {
             $null | Write-Output
         } elseif($null -ne $_) {
@@ -27,7 +24,6 @@ Process {
         }
         $CursorIndex ++
     }
-    Write-Progress -Activity 'Defragmenting' -Completed
 }
 Begin {
     Function ExpandImage {
