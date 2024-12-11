@@ -1,5 +1,7 @@
 # https://adventofcode.com/{YEAR}/day/{DAY}[#part2]
 Process {
+    
+    <#
     $Parser = [regex]::new('(?<digit>\d)')
     $InputData | ForEach-Object {
         Write-Warning $_
@@ -8,7 +10,14 @@ Process {
         (Defrag -DiskImage $IntArray) -join ','
         # Write-Warning ((Expand -Line $_ ) -join '')
         # Write-Warning ((ExpandDefrag -Line $_ ) -join '')
-    }
+    }#>
+    $InputData | ForEach-Object {
+        Write-Warning ((Expand -Line $_ ) -join '')
+        (ExpandDefrag -Line $_ ) -join ''
+    } | Tee-Object -Variable Defragmented
+    Write-Warning ((Expand -Line $Defragmented ) -join '')
+    $Parser = [regex]::new('(?<digit>\d)')
+    $Parser.Matches($Defragmented)|% { $_.Index * $_.Value } | Measure-Object -sum
 }
 Begin {
 
@@ -95,8 +104,8 @@ Begin {
         }
     }
 
-    $Year = [int]$(Get-Date -Format 'yyyy')
-    $Day = [int](Get-Date -Format 'dd')
+    $Year = 2024
+    $Day = 9
     $PuzzleUrl = "https://adventofcode.com/$Year/$Day"
     $InputPath = Join-Path -Path $PSScriptRoot -ChildPath "Input\$(($PSCommandPath | Split-Path -Leaf) -replace '\.\d+\.ps1','.txt')"
     if(-Not (Test-Path $InputPath)) {
