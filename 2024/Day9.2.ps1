@@ -15,43 +15,47 @@ Process {
 
     $Index = 0
     $Position = 0
-    ($DiskImageInt |% {
-        # pour les paies (car 1 sur deux est un data)
-        for($i=0; $i -lt $_; $i ++) {
-            $Position | Write-Output
-            $Index ++
-        }
-        $Moved | Where-Object { $_.to -eq $Position } {
+    ($DiskImageInt | Foreach-Object {
+        if($Position % 2 -eq 0) {
+            # Even number, the figure represent a block of data, it was not modified by the defrag
             for($i=0; $i -lt $_; $i ++) {
-                $_.from | Write-Output
+                ($Position / 2) | Write-Output
                 $Index ++
             }
-        }
-        #Pour l'élément suivant (car 1 sur deux est un free space)
-        for($i=0; $i -lt $_; $i ++) {
-            $Position | Write-Output
-            $Index ++
-        }
-
-
-        $Position ++
-    }) -join ''
-
-    $Index = 0
-    $Position = 0
-    $DiskImageInt |% {
-        for($i=0; $i -lt $_; $i ++) {
-            $Position * $Index | Write-Output
-            $Index ++
-        }
-        $Moved | Where-Object { $_.to -eq $Position } {
-            for($i=0; $i -lt $_; $i ++) {
-                $_.from * $Index | Write-Output
-                $Index ++
+        } else {
+            # Odd number, the figure represents:
+            if($_ -gt 0) {
+                # if > 0, an amount of free space, never touched by the defragmentation
+<##>                for($i=0; $i -lt $ClonedImage[$Position]; $i ++) {
+<##>                    $null | Write-Output
+<##>                }
+                $Index += $ClonedImage[$Position]
+            } elseif($_ -eq 0 -and $ClonedImage[$Position] -eq 0) {
+                # if == 0, AND the original block had no space; then there is no space, and therefor enothing to do
+            } else {
+                # else, some of the original free space was consumed by the defrag
+                $Moved | Where-Object {
+                    $_.to -eq $Position
+                } | Foreach-Object {
+                    $LengthBeforeDefrag = $ClonedImage[$_.from]
+                    $ValueBeforeDefrag = $_.from / 2
+                    for($i=0; $i -lt $LengthBeforeDefrag; $i ++) {
+                        $ValueBeforeDefrag | Write-Output
+                        $Index ++
+                    }
+                }
+                if($_ -ne 0) {
+                    #There is still some free space left
+<##>                for($i=0; $i -lt ([Math]::Abs($_)); $i ++) {
+<##>                    $null | Write-Output
+<##>                }
+                    $Index += [Math]::Abs($_)
+                }
             }
         }
         $Position ++
-    }
+    } |% {"'$_'"} ) -join ','
+
 <#    $p = 0
     for($x = 0; $x -lt $ClonedImage.Count; $x++) {
         $Defrag = $DiskImageInt[$x]
