@@ -1,114 +1,207 @@
 Process {
     $DiskImage = $InputData
 
-    $DiskImage | Write-Warning
-
-    ExpandImage -InputData $DiskImage | Write-Warning
-    '00992111777.44.333....5555.6666.....8888..'|write-warning
+    #$DiskImage | Write-Warning
+    #ExpandImage -InputData $DiskImage | Write-Warning
+    #'00992111777.44.333....5555.6666.....8888..'|write-warning
 
     $DiskImageInt = ([char[]]$DiskImage)|%{CtoI($_) }
     $ClonedImage = $DiskImageInt.PSObject.Copy()
-    $DiskImageInt -join ','
+    # $DiskImageInt -join ',' | Write-Warning
     $Moved = ([pscustomobject]@{List=@()})
-    Defrag -Input ([ref]$DiskImageInt) -Moved ([ref]$Moved)
-    $DiskImageInt -join ','
 
+    Write-Warning "DEFRAG"
+
+    ExpandDefragmentedImage -DiskImageInt $DiskImageInt -ClonedImage $ClonedImage -Moved $Moved -FilePath (Join-Path $PSScriptRoot 'Output\Day9.2.BEFORE.txt')
+    Defrag -Input ([ref]$DiskImageInt) -Moved ([ref]$Moved)
+    ExpandDefragmentedImage -DiskImageInt $DiskImageInt -ClonedImage $ClonedImage -Moved $Moved -FilePath (Join-Path $PSScriptRoot 'Output\Day9.2.AFTER.txt')
+    # $DiskImageInt -join ';' | Write-Warning
+
+    Write-Warning "COMPUTE"
     $Index = 0
     $Position = 0
-    ($DiskImageInt | Foreach-Object {
+    $DiskImageInt | Foreach-Object {
+        $OldLength = $ClonedImage[$Position]
+        $NewLength = $_
         if($Position % 2 -eq 0) {
-            # Even number, the figure represent a block of data, it was not modified by the defrag
-            for($i=0; $i -lt $_; $i ++) {
-                ($Position / 2) | Write-Output
-                $Index ++
-            }
-        } else {
-            # Odd number, the figure represents:
-            if($_ -gt 0) {
-                # if > 0, an amount of free space, never touched by the defragmentation
-<##>                for($i=0; $i -lt $ClonedImage[$Position]; $i ++) {
-<##>                    $null | Write-Output
-<##>                }
-                $Index += $ClonedImage[$Position]
-            } elseif($_ -eq 0 -and $ClonedImage[$Position] -eq 0) {
-                # if == 0, AND the original block had no space; then there is no space, and therefor enothing to do
+            # Length is the length of a block of data
+            if($NewLength -eq 0) {
+                for($i = 0; $i -lt $OldLength; $i ++) {
+                    $null | Write-Output
+                }
             } else {
-                # else, some of the original free space was consumed by the defrag
-                $Moved | Where-Object {
-                    $_.to -eq $Position
-                } | Foreach-Object {
-                    $LengthBeforeDefrag = $ClonedImage[$_.from]
-                    $ValueBeforeDefrag = $_.from / 2
-                    for($i=0; $i -lt $LengthBeforeDefrag; $i ++) {
-                        $ValueBeforeDefrag | Write-Output
-                        $Index ++
-                    }
+                for($i = 0; $i -lt $OldLength; $i ++) {
+                    $Position / 2 | Write-Output    
                 }
-                if($_ -ne 0) {
-                    #There is still some free space left
-<##>                for($i=0; $i -lt ([Math]::Abs($_)); $i ++) {
-<##>                    $null | Write-Output
-<##>                }
-                    $Index += [Math]::Abs($_)
+            }
+            $Index += $OldLength
+        } else {
+            # Length is the length of a block of free space
+            # 1 original data left
+            if($NewLength -gt 0) {
+                for($i = 0; $i -lt $NewLength; $i ++) {
+                    $null | Write-Output
                 }
+                $Index += $NewLength
+            }
+            # 2 moved data
+            $Moved | Where-Object {
+                $_.to -eq $Position
+            } | Foreach-Object {
+                $LengthBeforeDefrag = $ClonedImage[$_.from]
+                $ValueBeforeDefrag = $_.from / 2
+                for($i=0; $i -lt $LengthBeforeDefrag; $i ++) {
+                    $ValueBeforeDefrag | Write-Output
+                }
+                $Index += $LengthBeforeDefrag
+            }
+            # 3 free space left
+            if($NewLength -lt 0 -and ($AbsNewLength = [Math]::Abs($NewLength)) -gt 0) {
+                for($i = 0; $i -lt $AbsNewLength; $i ++) {
+                    $null | Write-Output
+                }
+                $Index += $NewLength
             }
         }
         $Position ++
-    } |% {"'$_'"} ) -join ','
-
-<#    $p = 0
-    for($x = 0; $x -lt $ClonedImage.Count; $x++) {
-        $Defrag = $DiskImageInt[$x]
-        $Original = $ClonedImage[$x]
-
-        if($x %2 -eq 0) {
-            # Data
-            for($n = 0; $n -lt $Defrag; $n++) {
-                $Defrag * ($p++)    # Checksum      pas just
+    } | Tee-Object -Variable Defragmented | Foreach-Object -Begin { 
+            Write-Warning "CHECKSUM"
+            $ChecksumIndex = 0
+        } -Process {
+            # Write-Warning "($_) * ($ChecksumIndex) = $($_ * $ChecksumIndex)"
+            if($null -ne $_) {
+                $_ * ($ChecksumIndex ++) | Write-Output
             }
-        } else {
-            # Free space
-            $Moved | Where-Object {
-                $_.to -eq $p
-            } | ForEach-Object {
-                $oldIndex = $_.from
-                # Count blocks before the "from", this was the "file index"
-                $oldFileIndex = $ClonedImage|Where-Object{$_ -lt $oldIndex}|Measure-Object -Sum|Select-Object -ExpandProperty Sum
-                $oldLength = $ClonedImage[$oldIndex]
-                for($n = 0; $n -lt $oldLength; $n++) {
-                    $Defrag * ($p++)    # Checksum      pas juste
-                }
-            }
-            $p ++
-        }
-    }
-    #>
+        } -End {
+            Write-Warning "SUM"
+        } | Measure-Object -Sum | Select-Object -ExpandProperty Sum
 }
 Begin {
+
+    Function ExpandDefragmentedImage {
+        [CmdletBinding()]
+        [OutputType([object[]])]
+        param($DiskImageInt,$ClonedImage,$Moved,$FilePath = 'Output\Day9.2.Debug.txt')
+
+        Begin {
+            $DebugFile = New-Item -Force $FilePath -ItemType File
+            '' | Set-Content $DebugFile
+
+            $Width = 8
+        }
+        Process {
+            $Index = 0
+            $Position = 0
+            $DiskImageInt | Foreach-Object {
+                $OldLength = $ClonedImage[$Position]
+                $NewLength = $_
+                if($Position % 2 -eq 0) {
+                    # Length is the length of a block of data
+                    if($NewLength -eq 0) {
+                        for($i = 0; $i -lt $OldLength; $i ++) {
+                            '.'.PadLeft($Width,' ') | Write-Output
+                        }
+                    } else {
+                        for($i = 0; $i -lt $OldLength; $i ++) {
+                            "$($Position / 2)".PadLeft($Width,' ') | Write-Output
+                        }
+                    }
+                    $Index += $OldLength
+                } else {
+                    # Length is the length of a block of free space
+                    # 1 original data left
+                    if($NewLength -gt 0) {
+                        for($i = 0; $i -lt $NewLength; $i ++) {
+                            '.'.PadLeft($Width,' ') | Write-Output
+                        }
+                        $Index += $NewLength
+                    }
+                    # 2 moved data
+                    $Moved | Where-Object {
+                        $_.to -eq $Position
+                    } | Foreach-Object {
+                        $LengthBeforeDefrag = $ClonedImage[$_.from]
+                        $ValueBeforeDefrag = $_.from / 2
+                        for($i=0; $i -lt $LengthBeforeDefrag; $i ++) {
+                            "$($ValueBeforeDefrag)".PadLeft($Width,' ') | Write-Output
+                        }
+                        $Index += $LengthBeforeDefrag
+                    }
+                    # 3 free space left
+                    if($NewLength -lt 0 -and ($AbsNewLength = [Math]::Abs($NewLength)) -gt 0) {
+                        for($i = 0; $i -lt $AbsNewLength; $i ++) {
+                            '.'.PadLeft($Width,' ') | Write-Output
+                        }
+                        $Index += $NewLength
+                    }
+                }
+                $Position ++
+            } | Add-Content $DebugFile -NoNewline
+            '' | Add-Content $DebugFile
+        }
+    }
     Function Defrag {
         [CmdletBinding()]
         [OutputType([object[]])]
         param([ref]$InputData,[ref]$Moved)
 
-        $MovedNodes = @()
-        $LastVal = ([Math]::Truncate(($InputData.Value.Count)/2)) * 2
-        # Browse all value blocks form the end
-        for($z=$LastVal; $z -ge 0; $z -= 2) {
-            $DataLength = $InputData.Value[$z]
-            # Browse all free blocks form the start
-            for($a=1; $a -lt $InputData.Value.Count; $a += 2) {
-                $FreeLength = [Math]::Abs($InputData.Value[$a])
-                if($FreeLength -ge $DataLength) {
-                    # Found free space, move block
-                    $MovedNodes += [pscustomobject]@{from=$z;to=$a}
-                    $InputData.Value[$z] = $FreeLength - $DataLength
-                    $InputData.Value[$a] = -($FreeLength - $DataLength)
-                    break
-                }
-            }
+        Begin {
+            $DebugFile = New-Item -Force (Join-Path $PSScriptRoot 'Output\Day9.2.Debug.txt') -ItemType File
+            '' | Set-Content $DebugFile
         }
-        $Moved.Value = $MovedNodes
-        #return $InputData
+        End {
+            #return $InputData
+        }
+        Process {
+            $MovedNodes = @()
+            $LastVal = ([Math]::Truncate(($InputData.Value.Count)/2)) * 2
+
+            "Indexes         " | Add-Content $DebugFile -NoNewline
+            for($_x = 0; $_x -lt $InputData.Value.Count; $_x ++) {
+                "$($_x) ".PadLeft(8,' ') | Add-Content $DebugFile -NoNewline
+            }
+            "" | Add-Content $DebugFile
+
+            # Browse all value blocks form the end
+            for($z=$LastVal; $z -ge 0; $z -= 2) {
+
+                "?  ($z)`tA: (??)`t" | Add-Content $DebugFile -NoNewline
+                for($_x = 0; $_x -lt $InputData.Value.Count; $_x ++) {
+                    "$($InputData.Value[$_x]) ".PadLeft(8,' ') | Add-Content $DebugFile -NoNewline
+                }
+                "" | Add-Content $DebugFile
+                "" | Add-Content $DebugFile
+
+                $DataLength = $InputData.Value[$z]
+                # Browse all free blocks form the start
+                for($a=1; $a -lt $InputData.Value.Count; $a += 2) {
+                    $FreeLength = [Math]::Abs($InputData.Value[$a])
+                    if($DataLength -gt 0 -and $FreeLength -ge $DataLength) {
+
+                        Write-Warning "Moving from $z to $a (in $($InputData.Value.Count))"
+                        "  Moving from $("$z".PadLeft(6,' ')) ($($InputData.Value[$z]) -> 0)" | Add-Content $DebugFile
+                        "           to $("$a".PadLeft(6,' ')) ($($InputData.Value[$a]) -> $(-($FreeLength - $DataLength)))" | Add-Content $DebugFile
+                        
+                        # Found free space, move block
+                        $MovedNodes += [pscustomobject]@{from=$z;to=$a}
+                        $InputData.Value[$z] = 0
+                        $InputData.Value[$a] = -($FreeLength - $DataLength)
+
+                        "-> ($z)`tA: ($a)`t" | Add-Content $DebugFile -NoNewline
+                        for($_x = 0; $_x -lt $InputData.Value.Count; $_x ++) {
+                            "$($InputData.Value[$_x]) ".PadLeft(8,' ') | Add-Content $DebugFile -NoNewline
+                        }
+                        "" | Add-Content $DebugFile
+
+                        break
+                    }
+                }
+                "" | Add-Content $DebugFile
+            }
+            $Moved.Value = $MovedNodes
+
+
+        }
     }
 
     Function CtoI {
