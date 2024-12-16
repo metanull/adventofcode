@@ -1,7 +1,11 @@
 # https://adventofcode.com/2024/day/11
+[CmdletBinding()]
+[OutputType([long])]
+param(
+        [Parameter(Mandatory = $false)]
+        $blink = 6
+)
 Process {
-    $blink = 25
-
     for($i = 0; $i -lt $blink; $i++) {
         $Stones = Blink -Stones $Stones
         Write-Warning "Blink $i : $($Stones.Count)"

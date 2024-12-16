@@ -1,2 +1,7 @@
 **/Input/*
 **/Output/*
+*.obj
+*.ilk
+*.pdb
+*.exe
+.vscode

@@ -1,13 +1,38 @@
 # https://adventofcode.com/2024/day/11
+[CmdletBinding()]
+[OutputType([long])]
+param(
+        [Parameter(Mandatory = $false)]
+        $blink = 6
+)
 Process {
-    $blink = 35
+    #Write-Warning "Blink 0 : $($Stones.Count)"
+    #for($i = 0; $i -lt $blink; $i++) {
+    #    $Stones = Blink -Stones $Stones
+    #    Write-Warning "Blink $($i +1) : $($Stones.Count)"
+    #}
+    #$Stones.Count
 
-    Write-Warning "Blink 0 : $($Stones.Count)"
-    for($i = 0; $i -lt $blink; $i++) {
-        $Stones = Blink -Stones $Stones
-        Write-Warning "Blink $($i +1) : $($Stones.Count)"
-    }
+    $script:Cache = @{}
+
+    Write-Warning "Init : $($Stones.Count)"
     $Stones.Count
+    ($Stones |% { "$_" }) -join ', ' | Write-Warning
+
+    $Groups = BlinkGroup -Stones $Stones
+    Write-Warning "Blink 0 : $($Stones.Groups)"
+    $Groups | measure-object Count -sum|select-object -ExpandProperty Sum
+    #($Groups |% { for($k=0;$k -lt $_.Count; $k++) {$_.Name} }) -join ', ' | Write-Warning
+
+    for($i = 1; $i -lt $blink; $i++) {
+        # Write-Warning "Blink $i : $($Groups.Count)"
+        $BlinkTime = Measure-Command {$Groups = BlinkGroup -Groups $Groups}
+        # ($Groups |% { for($k=0;$k -lt $_.Count; $k++) {$_.Name} }) -join ', ' | Write-Warning
+        $CountTime = Measure-Command {$CountStones = $Groups | measure-object Count -sum|select-object -ExpandProperty Sum}
+        Write-Warning ("Blink {2,2} : {3,9}`t=>`t{4,2} = {5,12} `tin {0,12:n6} min`t(count: {1,12:n6} ms)" -f ($BlinkTime.TotalMinutes),($CountTime.TotalMinutes),$i,($Groups.Count),($i+1),$CountStones)
+        $CountStones | Write-Output
+    }
+    
 }
 Begin {
     $Year = 2024
@@ -27,24 +52,50 @@ Begin {
         }
     }
 
+    Function BlinkGroup {
+        [CmdletBinding(DefaultParameterSetName='Stones')]
+        [OutputType([object[]])]
+        param(
+            [Parameter(ParameterSetName = 'Stones', Mandatory,Position = 0)]
+            [long[]] $Stones,
+
+            [Parameter(ParameterSetName = 'Groups', Mandatory,Position = 0)]
+            [object[]] $Groups
+        )
+        if($null -ne $Stones) {
+            $Stones |% { $_ | Blink } | Group-Object
+        }
+        elseif($null -ne $Groups) {
+            $Groups |% { 
+                $Blinked = $_.Group | Blink
+                for($z=0;$z -lt $_.Count;$z++) {
+                    $Blinked | Write-Output
+                }
+            } | Group-Object
+        }
+    }
     Function Blink {
         [CmdletBinding()]
-        [OutputType([long[]])]
+        [OutputType([long])]
         param(
-            [long[]] $Stones
+            [parameter(Mandatory,Position = 0,ValueFromPipeline)]
+            [long] $Stone
         )
-        $Stones | ForEach-Object {
-            if($_ -eq 0) {
-                1 | Write-Output
-                return
+        
+        #if($null -ne $script:Cache[$Stone]) {
+        #    $ret = $script:Cache[$Stone]
+        #} else {
+            $ret = $null
+            if($Stone -eq 0) {
+                $ret = 1
+            } elseif(($Str = "$Stone").length % 2 -eq 0) {
+                $Div = [math]::Pow(10, $Str.length / 2)
+                $ret = @([math]::truncate($Stone / $Div), [math]::truncate($Stone % $Div))
+            } else {
+                $ret = $Stone * 2024
             }
-            if("$_".length % 2 -eq 0) {
-                $Div = [math]::Pow(10, "$_".length / 2)
-                [math]::truncate($_ / $Div) | Write-Output
-                [math]::truncate($_ % $Div) | Write-Output
-                return
-            }
-            $_ * 2024 | Write-Output
-        }
+        #   $script:Cache[$Stone] = $ret
+        #}
+        $ret | Write-Output
     }
 }
