@@ -81,6 +81,41 @@ std::ostream & operator<<(std::ostream & os, const stone & s) {
     return os;
 }
 
+const size_t stoneMemorySize = 4096;
+
+const int N = 75;
+
+stone stoneMemory[stoneMemorySize];
+uint64_t stoneMemoryIndex = 0;
+std::map<uint64_t,stone *> stones;
+stone * getStone(uint64_t value) {
+    try {
+        return stones.at(value);
+    } catch(const std::out_of_range & e) {
+        uint64_t newStoneIndex = stoneMemoryIndex++;
+        if(newStoneIndex > stoneMemorySize -1) {
+            throw std::bad_alloc();
+        }
+        stoneMemory[newStoneIndex] = stone(value);
+        stones[value] = &stoneMemory[newStoneIndex];
+        return &stoneMemory[newStoneIndex];
+    }
+}
+stone * getBlinkStone(uint64_t value) {
+    stone * ps = getStone(value);
+    if(nullptr == ps->blink_1) {
+        std::vector<uint64_t> newStoneValues = blink(value);
+        ps->blink_1 = getStone(newStoneValues[0]);
+        if(newStoneValues.size() == 2) {
+            ps->blink_2 = getStone(newStoneValues[1]);
+        }
+    }
+    return ps;
+}
+std::map<uint64_t,uint64_t>stoneCount[2];
+std::map<uint64_t,uint64_t> * pStoneCount = &stoneCount[0];
+std::map<uint64_t,uint64_t> * pStoneCountWorking = &stoneCount[1];
+
 int main(int argc, char ** argv, char ** envp) {
     std::cout << "AdventOfCode 2024 Day 11!" << std::endl;
 
@@ -91,139 +126,77 @@ int main(int argc, char ** argv, char ** envp) {
         while(getline(inputFile, line)) {
             inputString = line;
             std::cout << line << std::endl;
+            // Get only one line
             break;
         }
         inputFile.close();
     }
 
-    // List of known stones pointers
-    std::map<uint64_t,stone *> heads;
+    // Read stone values from the input file
+    std::vector<uint64_t> inputStones;
+    std::stringstream ss(inputString);
+    uint64_t number;
+    while(ss >> number) {
+        inputStones.push_back(number);
+        if(ss.peek() == ' ') {
+            ss.ignore();
+        }
+    }
 
-    // Memory to store the unique stones
-    stone allStones[1024];
-    uint64_t allStonesIndex = 0;
-
-    // Working vectors to store all stones in each iteration
-    // We use two vectors to avoid copying the vector at each iteration, by swapping one for the other instead
-    vector<uint64_t> _v = stringUintArray(inputString);
-    vector<uint64_t> _w;
-
-    // Keep track of all the stones we can get from the pool of known stones for each level
-    std::map<int,map<uint64_t,int>> refsByLevel;
-
-    // Perform the blink operation N times
-    int N = 25;
-    vector<uint64_t> * pv = &_v;
-    vector<uint64_t> * pw = &_w;
-    std::cout << *pv << std::endl;
-    for(auto i = 0; i < N; i++) {
-        uint64_t refs = 0;
-        map<uint64_t,int> stoneref;
-        std::cout << (i+1) << ": " << pv->size() << " -> ";
-        pw->clear();
-        for(auto currentStone : *pv) {
-            stone * ps = nullptr;
-            bool isref = false;
-            try {
-                ps = heads.at(currentStone);
-                isref = true;
-            } catch (const std::out_of_range & e) {
-                allStones[allStonesIndex] = stone(currentStone);
-                ps = &allStones[allStonesIndex++];
-                heads[currentStone] = ps;
+    // Process the first blink iteration
+    for(auto stoneVal : inputStones) {
+        stone * pCurStone = getBlinkStone(stoneVal);
+        (* pStoneCount)[pCurStone->val] ++;
+    }
+    
+    // Process N-1 iterations
+    try {
+        for(auto i = 1; i <= N; i++) {
+            std::cerr << "N: " << (i) << ", Distinct input stones: " << pStoneCount->size();
+            pStoneCountWorking->clear();
+            for(auto curStoneCount : *pStoneCount) {
+                // Value: curStoneCount.first
+                // Count: curStoneCount.second
+                stone * pCurStone = getBlinkStone(curStoneCount.first);
+                // std::cerr << curStoneCount.second << " x Stone(" << pCurStone->val << ") => " << "[";
+                (*pStoneCountWorking)[pCurStone->blink_1->val] += curStoneCount.second;
+                // std::cerr << "Stone(" << pCurStone->blink_1->val << ")(New count: "<< (*pStoneCountWorking)[pCurStone->blink_1->val] <<")";
+                if(nullptr != pCurStone->blink_2) {
+                    (*pStoneCountWorking)[pCurStone->blink_2->val] += curStoneCount.second;
+                    // std::cerr << ", " << "Stone(" << pCurStone->blink_2->val << ")(New count: "<< (*pStoneCountWorking)[pCurStone->blink_2->val] <<")";
+                }
+                // std::cerr << "]" << endl;
             }
-            if(ps->blink_1 == nullptr) {
-                vector<uint64_t> blinkedStones = blink(currentStone);
-                try {
-                    ps->blink_1 = heads.at(blinkedStones[0]);
-                } catch (const std::out_of_range & e) {
-                    allStones[allStonesIndex] = stone(blinkedStones[0]);
-                    ps->blink_1 = &allStones[allStonesIndex++];
-                    heads[blinkedStones[0]] = ps->blink_1;
-                }
-                if(blinkedStones.size() == 2) {
-                    try {
-                        ps->blink_2 = heads.at(blinkedStones[1]);
-                    } catch (const std::out_of_range & e) {
-                        allStones[allStonesIndex] = stone(blinkedStones[1]);
-                        ps->blink_2 = &allStones[allStonesIndex++];
-                        heads[blinkedStones[1]] = ps->blink_2;
-                    }
-                }
-                /*if(!isref) {*/
-                    pw->push_back(ps->blink_1->val);
-                    if(ps->blink_2 != nullptr) {
-                        pw->push_back(ps->blink_2->val);
-                    }
-               /* } else {
-                    if(ps->blink_2 != nullptr) {
-                        stoneref[ps->blink_2->val]++;
-                        refs = refs + 2;
-                    } else {
-                        stoneref[ps->blink_1->val]++;
-                        refs = refs ++;
-                    }
-                }*/
+
+            // Count the total number of stones
+            uint64_t count = 0;
+            // std::cerr << "Final: ";
+            for(auto sc : *pStoneCountWorking) {
+                count += sc.second;
+                // std::cerr << "(" << sc.second << " x " << sc.first << "),";
+            }
+            // std::cerr << std::endl;
+            std::cout << " ==> Output " << count << " stone(s). Stone memory: " << stoneMemoryIndex << "/" << stoneMemorySize << std::endl;
+
+            // Make "working list", the new current list
+            if(pStoneCount == &stoneCount[0]) {
+                pStoneCount = &stoneCount[1];
+                pStoneCountWorking = &stoneCount[0];
             } else {
-                if(ps->blink_2 != nullptr) {
-                    stoneref[ps->blink_2->val]++;
-                    refs = refs + 2;
-                } else {
-                    stoneref[ps->blink_1->val]++;
-                    refs = refs ++;
-                }
+                pStoneCount = &stoneCount[0];
+                pStoneCountWorking = &stoneCount[1];
             }
         }
-        
-        if(i > 0) {
-            // Expand all refs from the level above
-            for( const auto & j : refsByLevel[i-1] ) {
-                // j.first = stone
-                // j.second = count refs
-
-                // Get the next level starting from the level-1's stone
-                stone * prs = heads.at(j.first);
-
-                // when it leads to a stone that is also found in teh current level, increase the reference count as appropriate
-                if(stoneref.find(prs->blink_1->val) != stoneref.end()) {
-                    stoneref[prs->blink_1->val] += j.second;
-                } else {
-                    // otherwise, add the stone's next level to the current level
-                    stoneref[prs->blink_1->val] = j.second;
-                }
-                refs += j.second;
-
-                if(prs->blink_2 != nullptr) {
-                    if( stoneref.find(prs->blink_2->val) != stoneref.end()) {
-                        stoneref[prs->blink_2->val] += j.second;
-                    } else {
-                        // otherwise, add the stone's next level to the current level
-                        stoneref[prs->blink_2->val] = j.second;
-                    }
-                    refs += j.second;
-                }
-            }
-        }
-        // Store the references for this level
-        refsByLevel[i] = stoneref;
-
-        // Debug print
-        std::cout << pw->size() << ", refs: " << refs << ": " << *pw << std::endl;
-
-        // Swap the two vectors before the next iteration
-        vector<uint64_t> * pTemp = pv;
-        pv = pw;
-        pw = pTemp;
+    } catch (std::bad_alloc & e) {
+        std::cerr << std::endl << "Not enough room foreseen for the stones; try increasing stoneMemorySize (" << stoneMemorySize << ")" << std::endl;
+        return 1;
     }
-    for( const auto & i : refsByLevel ) {
-        // i.first = Level
-        std::cout << "Level " << i.first << ": ";
-        for( const auto & j : i.second ) {
-            // j.first = stone
-            // j.second = refs
-            std::cout << j.first << " -> " << j.second << ", ";
-        }
-        std::cout << std::endl;
+
+    /*
+    std::cerr << "Final: -----------------------------------";
+    for(auto sc : *pStoneCount) {
+        std::cerr << sc.second << "\t" << sc.first << std::endl;
     }
+    */
     return 0;
 }
