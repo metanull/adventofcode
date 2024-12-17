@@ -18,9 +18,10 @@ struct diskblock {
     uint32_t value = 0;
     uint32_t size = 0;
     uint32_t free = 0;
+    diskblock() = default;
+    diskblock(uint32_t v, uint32_t s, uint32_t f) : value(v), size(s), free(f) {}
 };
-std::map<uint32_t,diskblock> image;
-std::map<uint32_t,std::vector<diskblock>> moved;
+std::vector<diskblock> image;
 template<class Os, class Co> Os& operator<<(Os& os, const Co& co);
 
 const char * inputFilePath = "Input/Day9.txt";
@@ -36,114 +37,86 @@ int main(int argc, char ** argv, char ** envp) {
     char c;
     bool toggle = true;
     diskblock _t;
-    diskblock * pt = nullptr;
     uint32_t val = 0; 
     while(inputFile >> c ) {
         if(toggle) {
-            pt = & _t;
-            pt->size = (c - '0');
-            pt->value = val;
-            pt->free = 0;
+            image.push_back(diskblock(val,(c - '0'),0));
+            val++;
         } else {
-            pt->free = (c - '0');
-            image[val++] = *pt;
-            pt = nullptr;
+            image.push_back(diskblock(val,0,(c - '0')));
         }
         toggle = !toggle;
     }
     inputFile.close();
-    if(nullptr != pt) {
-        // Add the last element, if requrired
-        pt->free = 0;
-        image[val] = *pt;
-    }
 
-/*
-// Print the image of the disk
-for(auto b : image) {
-    std::cout << "{";
-    for (auto i = 0; i < b.second.size; i ++) {
-        std::cout << static_cast<char>(b.second.value + '0');
+/*    // Print the image of the disk
+    for(auto b : image) {
+        std::cout << "{";
+        for (auto i = 0; i < b.size; i ++) {    std::cout << static_cast<char>(b.value + '0'); }
+        for (auto i = 0; i < b.free; i ++) {    std::cout << '.'; }
+        std::cout << "}" << std::endl;
     }
-    std::cout << "}{";
-    for (auto i = 0; i < b.second.free; i ++) {
-        std::cout << '.';
-    }
-    std::cout << "}" << std::endl;
-}
-std::cout << std::endl;
+    std::cout << std::endl;
 */
-
-    // Defragment
-    uint32_t position = std::prev(image.end())->first;
-    while(position > 0) {
-        for( auto block : image ) {
-            if(block.first >= position) {
-                break;
-            }
-            if(block.second.free < image[position].size) {
-                continue;
-            } else {
-                moved[block.first].push_back(image[position]);
-                image[block.first].free -= image[position].size;
-                
-                
-                image[position-1].free += image[position].size;
-                image[position].size = 0;    
-
-                break;
-            }
+    int processed = 0;
+    auto endcur = image.end() - (1 + processed);
+    auto begincur = image.begin();
+    while(image.begin() < endcur ) {
+        if(endcur->size == 0) {
+            processed ++;
+            endcur --;
+            continue;
         }
-        position --;
+        begincur = image.begin();
+        while(begincur < endcur) {
+            if(begincur->free >= endcur->size) {
+                // Prepare a block for insertion
+                diskblock b(endcur->value, endcur->size, 0);
+                // Update the free space
+                begincur->free -= endcur->size;
+                endcur->free = endcur->size;
+                endcur->size = 0;
+                // Tidy up
+                auto it = endcur;
+                if(it < (image.end()-1) && (it +1)->free != 0) {
+                    it->free += (it + 1)->free;
+                    (it + 1)->free = 0;
+                }
+                if(it > (image.begin()) && (it -1 )->free != 0) {
+                    it->free += (it - 1)->free;
+                    (it - 1)->free = 0;
+                }
+                // Insert the block
+                image.insert(begincur, b);
+                break;
+            }
+            begincur++;
+        }
+        // endcur --;
+        processed ++;
+        endcur = image.end() - (1 + processed);
+    }
 /*
         // Print the image of the disk
         for(auto b : image) {
             std::cout << "{";
-            for (auto i = 0; i < b.second.size; i ++) {
-                std::cout << static_cast<char>(b.second.value + '0');
-            }
-            std::cout << "}{";
-            try {
-                for(auto m : moved.at(b.first)){
-                    for (auto i = 0; i < m.size; i ++) {
-                        std::cout << static_cast<char>(m.value + '0');
-                    }
-                }
-            } catch(const std::out_of_range & e) {
-                // Nothing moved here, just keep on
-            }
-            for (auto i = 0; i < b.second.free; i ++) {
-                std::cout << '.';
-            }
+            for (auto i = 0; i < b.size; i ++) {    std::cout << static_cast<char>(b.value + '0'); }
+            for (auto i = 0; i < b.free; i ++) {    std::cout << '.'; }
             std::cout << "}" << std::endl;
         }
         std::cout << std::endl;
 */
-    }
-
-    // Get the checksum
-    uint32_t checksumIndex = 0;
-    uint32_t checksum = 0;
-
+    // Checksum
+    uint64_t checksum = 0;
+    uint64_t i = 0;
     for(auto b : image) {
-        for (auto i = 0; i < b.second.size; i ++) {
-            checksum += (b.second.value) * (checksumIndex ++);
+        for (auto k = 0; k < b.size; k ++) { 
+            checksum += (b.value * (i++));
         }
-        try {
-            for(auto m : moved.at(b.first)){
-                for (auto i = 0; i < m.size; i ++) {
-                    checksum += (m.value) * (checksumIndex ++);
-                }
-            }
-        } catch(const std::out_of_range & e) {
-            // Nothing moved here, just keep on
-        }
-        for (auto i = 0; i < b.second.free; i ++) {
-            checksumIndex ++;
-        }
+        i += b.free;
     }
     std::cout << "Checksum: " << checksum << std::endl;
-    
+
     return 0;
 }
 
