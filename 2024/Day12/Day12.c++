@@ -22,6 +22,7 @@ std::vector<Point> mapIt(const Point & first, std::vector<std::vector<char>> & m
 
 int main(int argc, char ** argv, char ** envp) {
     std::cout << banner << std::endl;
+    std::cout << "CWD: " << std::filesystem::current_path() << std::endl;   // Requires c++ 17 (enabled via CMake configuration)
 
     std::vector<std::vector<char>> inputMap;
     // Read input file
