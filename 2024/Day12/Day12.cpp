@@ -60,7 +60,7 @@ std::vector<Point> mapIt(const Point & first, std::vector<std::vector<char>> & m
     Point cur(first);
     char Ref = map[first.y][first.x];
 
-    // A bold attempt: just browse the full list from O(Origin) to Z(End)
+    // A bold attempt: just browse the full list from O(Origin) to Z(End)... in zigzag
     std::cout << cur.x << " " << cur.y << " " << Ref << std::endl;
     bool inc = true;
     while(cur.inBounds(O,Z)) {
@@ -69,10 +69,10 @@ std::vector<Point> mapIt(const Point & first, std::vector<std::vector<char>> & m
             continue;
         }
         if(map[cur.y][cur.x] != Ref) {
-            std::cout << cur.x << " " << cur.y << " " << "DIFF: " << map[cur.y][cur.x] << std::endl;
+            std::cout << cur.x << " " << cur.y << " " << map[cur.y][cur.x] << std::endl;
         } else {
-            std::cout << cur.x << " " << cur.y << " " << "SAME" << std::endl;
-            region.push_back(cur);
+            std::cout << cur.x << " " << cur.y << " " << map[cur.y][cur.x] << std::endl;
+            // region.push_back(cur);
         }
         if(inc) {
             if(!cur.TryRight(O,Z)) {
