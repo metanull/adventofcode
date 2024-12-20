@@ -5,3 +5,9 @@
 *.pdb
 *.exe
 .vscode
+**/out
+**/CMakeFiles
+**/CMakeCache.txt
+**/.cmake
+**/.ninja*
+**/bin
