@@ -20,12 +20,12 @@ struct diskblock {
 };
 std::vector<diskblock> image;
 
-const char * banner = "AdventOfCode 2024 Day 12!";
+const char * banner = "AdventOfCode 2024 Day 9!";
 const char * inputFilePath = "C:/Users/phave/OneDrive/Documents/adventofcode/2024/Input/Day9.txt";
 
 int main(int argc, char ** argv, char ** envp) {
     std::cout << banner << std::endl;
-    std::cout << "CWD: " << std::filesystem::current_path() << std::endl;   // Requires c++ 17 (enabled via CMake configuration)
+    //std::cout << "CWD: " << std::filesystem::current_path() << std::endl;   // Requires c++ 17 (enabled via CMake configuration)
 
     // Read input file
     std::ifstream inputFile(inputFilePath);
