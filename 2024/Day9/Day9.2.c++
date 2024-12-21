@@ -7,12 +7,9 @@
 #include <fstream>
 #include <map>
 #include <stdexcept>
-// #include <compare>
+#include "../include/AdventOfCode.h"
 
 using namespace std;
-
-inline uint64_t count_digits(uint64_t n);
-inline bool count_digits_is_even(uint64_t n);
 
 struct diskblock {
     uint32_t value = 0;
@@ -22,11 +19,13 @@ struct diskblock {
     diskblock(uint32_t v, uint32_t s, uint32_t f) : value(v), size(s), free(f) {}
 };
 std::vector<diskblock> image;
-template<class Os, class Co> Os& operator<<(Os& os, const Co& co);
 
-const char * inputFilePath = "Input/Day9.txt";
+const char * banner = "AdventOfCode 2024 Day 12!";
+const char * inputFilePath = "C:/Users/phave/OneDrive/Documents/adventofcode/2024/Input/Day9.txt";
+
 int main(int argc, char ** argv, char ** envp) {
-    std::cout << "AdventOfCode 2024 Day 9!" << std::endl;
+    std::cout << banner << std::endl;
+    std::cout << "CWD: " << std::filesystem::current_path() << std::endl;   // Requires c++ 17 (enabled via CMake configuration)
 
     // Read input file
     std::ifstream inputFile(inputFilePath);
@@ -118,21 +117,4 @@ int main(int argc, char ** argv, char ** envp) {
     std::cout << "Checksum: " << checksum << std::endl;
 
     return 0;
-}
-
-template<class Os, class Co> Os& operator<<(Os& os, const Co& co)
-{
-    os << '{';
-    for (auto const& i : co)
-        os << ' ' << i;
-    return os << " } ";
-}
-inline uint64_t count_digits(uint64_t n) {
-    if(n == 0) {
-        return 1;
-    }
-    return (uint64_t)(std::floor(std::log10(n)) + 1);
-}
-inline bool count_digits_is_even(uint64_t n) {
-    return (count_digits(n) % 2 == 0) ? true : false;
 }
