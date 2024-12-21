@@ -18,8 +18,6 @@ using namespace std;
 const char * banner = "AdventOfCode 2024 Day 12!";
 const char * inputFilePath = "C:/Users/phave/OneDrive/Documents/adventofcode/2024/Input/Day12.txt";
 
-std::vector<Point> mapIt(const Point & first, std::vector<std::vector<char>> & map, const Point & O, const Point & Z);
-
 bool PointInList(const std::vector<Point> & v, const Point & t) {
     return std::find(v.begin(), v.end(), t) != v.end();
 }
@@ -32,48 +30,32 @@ long ProcessRegion(const Point & first, std::vector<std::vector<char>> & map, co
     long perimeter = 0;
     
     Point M = cur;
-    if(M.TryUp(O,Z)) {
-        char Needle = map[M.y][M.x];
-        if(Needle != Ref) {
-            perimeter++;
-        }
-        if(!PointInList(Region,M) && Needle == Ref) {
+    if(M.TryUp(O,Z) && Ref == map[M.y][M.x]) {
+        if(!PointInList(Region,M) ) {
             perimeter += ProcessRegion(M, map, O, Z, Region);
         }
     } else {
         perimeter++;
     }
     M = cur;
-    if(M.TryDown(O,Z)) {
-        char Needle = map[M.y][M.x];
-        if(Needle != Ref) {
-            perimeter++;
-        }
-        if(!PointInList(Region,M) && Needle == Ref) {
+    if(M.TryDown(O,Z) && Ref == map[M.y][M.x]) {
+        if(!PointInList(Region,M) ) {
             perimeter += ProcessRegion(M, map, O, Z, Region);
         }
     } else {
         perimeter++;
     }
     M = cur;
-    if(M.TryRight(O,Z)) {
-        char Needle = map[M.y][M.x];
-        if(Needle != Ref) {
-            perimeter++;
-        }
-        if(!PointInList(Region,M) && Needle == Ref) {
+    if(M.TryRight(O,Z) && Ref == map[M.y][M.x]) {
+        if(!PointInList(Region,M)) {
             perimeter += ProcessRegion(M, map, O, Z, Region);
         }
     } else {
         perimeter++;
     }
     M = cur;
-    if(M.TryLeft(O,Z)) {
-        char Needle = map[M.y][M.x];
-        if(Needle != Ref) {
-            perimeter++;
-        }
-        if(!PointInList(Region,M) && Needle == Ref) {
+    if(M.TryLeft(O,Z) && Ref == map[M.y][M.x]) {
+        if(!PointInList(Region,M)) {
             perimeter += ProcessRegion(M, map, O, Z, Region);
         }
     } else {
@@ -108,9 +90,6 @@ int main(int argc, char ** argv, char ** envp) {
     // Read the map, looking for regions
     Point O = Point::origin();
     Point Z = Point(inputMap[0].size(),inputMap.size());
-
-    mapIt(O, inputMap, O, Z);
-
 
     std::vector<Point> processed;
 
@@ -164,42 +143,4 @@ int main(int argc, char ** argv, char ** envp) {
     std::cout << "Total Price: " << totalPrice << std::endl;
 
     return 0;
-}
-
-std::vector<Point> mapIt(const Point & first, std::vector<std::vector<char>> & map, const Point & O, const Point & Z) {
-    if(!first.inBounds(O, Z)) {
-        throw std::out_of_range("Point is out of bounds");
-    }
-    std::vector<Point> region;
-
-    Point cur(first);
-    char Ref = map[first.y][first.x];
-
-    // A bold attempt: just browse the full list from O(Origin) to Z(End)... in zigzag
-    std::cout << cur.x << " " << cur.y << " " << Ref << std::endl;
-    bool inc = true;
-    while(cur.inBounds(O,Z)) {
-        if(cur == first) {
-            cur.TryRight(O,Z);
-            continue;
-        }
-        if(map[cur.y][cur.x] != Ref) {
-            std::cout << cur.x << " " << cur.y << " " << map[cur.y][cur.x] << std::endl;
-        } else {
-            std::cout << cur.x << " " << cur.y << " " << map[cur.y][cur.x] << std::endl;
-            // region.push_back(cur);
-        }
-        if(inc) {
-            if(!cur.TryRight(O,Z)) {
-                cur.Up();
-                inc = !inc;
-            }
-        } else {
-            if(!cur.TryLeft(O,Z)) {
-                cur.Up();
-                inc = !inc;
-            }
-        }
-    } 
-    return region;
 }

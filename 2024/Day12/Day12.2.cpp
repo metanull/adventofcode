@@ -30,48 +30,32 @@ long ProcessRegion(const Point & first, std::vector<std::vector<char>> & map, co
     long perimeter = 0;
     
     Point M = cur;
-    if(M.TryUp(O,Z)) {
-        char Needle = map[M.y][M.x];
-        if(Needle != Ref) {
-            perimeter++;
-        }
-        if(!PointInList(Region,M) && Needle == Ref) {
+    if(M.TryUp(O,Z) && Ref == map[M.y][M.x]) {
+        if(!PointInList(Region,M) ) {
             perimeter += ProcessRegion(M, map, O, Z, Region);
         }
     } else {
         perimeter++;
     }
     M = cur;
-    if(M.TryDown(O,Z)) {
-        char Needle = map[M.y][M.x];
-        if(Needle != Ref) {
-            perimeter++;
-        }
-        if(!PointInList(Region,M) && Needle == Ref) {
+    if(M.TryDown(O,Z) && Ref == map[M.y][M.x]) {
+        if(!PointInList(Region,M) ) {
             perimeter += ProcessRegion(M, map, O, Z, Region);
         }
     } else {
         perimeter++;
     }
     M = cur;
-    if(M.TryRight(O,Z)) {
-        char Needle = map[M.y][M.x];
-        if(Needle != Ref) {
-            perimeter++;
-        }
-        if(!PointInList(Region,M) && Needle == Ref) {
+    if(M.TryRight(O,Z) && Ref == map[M.y][M.x]) {
+        if(!PointInList(Region,M)) {
             perimeter += ProcessRegion(M, map, O, Z, Region);
         }
     } else {
         perimeter++;
     }
     M = cur;
-    if(M.TryLeft(O,Z)) {
-        char Needle = map[M.y][M.x];
-        if(Needle != Ref) {
-            perimeter++;
-        }
-        if(!PointInList(Region,M) && Needle == Ref) {
+    if(M.TryLeft(O,Z) && Ref == map[M.y][M.x]) {
+        if(!PointInList(Region,M)) {
             perimeter += ProcessRegion(M, map, O, Z, Region);
         }
     } else {
