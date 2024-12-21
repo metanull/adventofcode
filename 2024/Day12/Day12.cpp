@@ -20,9 +20,71 @@ const char * inputFilePath = "C:/Users/phave/OneDrive/Documents/adventofcode/202
 
 std::vector<Point> mapIt(const Point & first, std::vector<std::vector<char>> & map, const Point & O, const Point & Z);
 
+bool PointInList(const std::vector<Point> & v, const Point & t) {
+    return std::find(v.begin(), v.end(), t) != v.end();
+}
+
+long ProcessRegion(const Point & first, std::vector<std::vector<char>> & map, const Point & O, const Point & Z, std::vector<Point> &Region) {
+    char Ref = map[first.y][first.x];
+    Point cur(first);
+    Region.push_back(first);
+
+    long perimeter = 0;
+    
+    Point M = cur;
+    if(M.TryUp(O,Z)) {
+        char Needle = map[M.y][M.x];
+        if(Needle != Ref) {
+            perimeter++;
+        }
+        if(!PointInList(Region,M) && Needle == Ref) {
+            perimeter += ProcessRegion(M, map, O, Z, Region);
+        }
+    } else {
+        perimeter++;
+    }
+    M = cur;
+    if(M.TryDown(O,Z)) {
+        char Needle = map[M.y][M.x];
+        if(Needle != Ref) {
+            perimeter++;
+        }
+        if(!PointInList(Region,M) && Needle == Ref) {
+            perimeter += ProcessRegion(M, map, O, Z, Region);
+        }
+    } else {
+        perimeter++;
+    }
+    M = cur;
+    if(M.TryRight(O,Z)) {
+        char Needle = map[M.y][M.x];
+        if(Needle != Ref) {
+            perimeter++;
+        }
+        if(!PointInList(Region,M) && Needle == Ref) {
+            perimeter += ProcessRegion(M, map, O, Z, Region);
+        }
+    } else {
+        perimeter++;
+    }
+    M = cur;
+    if(M.TryLeft(O,Z)) {
+        char Needle = map[M.y][M.x];
+        if(Needle != Ref) {
+            perimeter++;
+        }
+        if(!PointInList(Region,M) && Needle == Ref) {
+            perimeter += ProcessRegion(M, map, O, Z, Region);
+        }
+    } else {
+        perimeter++;
+    }
+    return perimeter;
+}
+
 int main(int argc, char ** argv, char ** envp) {
     std::cout << banner << std::endl;
-    std::cout << "CWD: " << std::filesystem::current_path() << std::endl;   // Requires c++ 17 (enabled via CMake configuration)
+    //std::cout << "CWD: " << std::filesystem::current_path() << std::endl;   // Requires c++ 17 (enabled via CMake configuration)
 
     std::vector<std::vector<char>> inputMap;
     // Read input file
@@ -45,9 +107,61 @@ int main(int argc, char ** argv, char ** envp) {
 
     // Read the map, looking for regions
     Point O = Point::origin();
-    Point Z = Point(inputMap.size(),inputMap[0].size());
+    Point Z = Point(inputMap[0].size(),inputMap.size());
 
     mapIt(O, inputMap, O, Z);
+
+
+    std::vector<Point> processed;
+
+    Point first = O;
+    Point cur(first);
+    bool inc = true;
+
+    long totalPrice = 0;
+    while(cur.inBounds(O,Z)) {
+        if(PointInList(processed, cur)) {
+            if(inc) {
+                if(!cur.TryRight(O,Z)) {
+                    cur.Up();
+                    inc = !inc;
+                }
+            } else {
+                if(!cur.TryLeft(O,Z)) {
+                    cur.Up();
+                    inc = !inc;
+                }
+            }
+            continue;
+        }
+        std::vector<Point> region;
+        long perimeter = ProcessRegion(cur, inputMap, O, Z, region);
+        long area = region.size();
+        char v = inputMap[cur.y][cur.x];
+
+        std::cout << "Point: " << cur.x << " " << cur.y << std::endl;
+        std::cout << "Value: " << v << std::endl;
+        std::cout << "Area: " << area << std::endl;
+        std::cout << "Perimeter: " << perimeter << std::endl << std::endl;
+
+        totalPrice += area * perimeter;
+        
+        processed.insert( processed.end(), region.begin(), region.end() );
+        
+        if(inc) {
+            if(!cur.TryRight(O,Z)) {
+                cur.Up();
+                inc = !inc;
+            }
+        } else {
+            if(!cur.TryLeft(O,Z)) {
+                cur.Up();
+                inc = !inc;
+            }
+        }
+    }
+
+    std::cout << "Total Price: " << totalPrice << std::endl;
 
     return 0;
 }
