@@ -133,3 +133,13 @@ bool Point::TryLeft(const Point& O, const Point& Z) {
     *this = N;
     return true;
 }
+std::ostream& operator<< (std::ostream& stream, const Point & point) {
+    stream << "(" << point.x << "; " << point.y << ")";
+    return stream;
+}
+bool cmpX(const Point & a, const Point & b) {
+    return a.x < b.x;
+}
+bool cmpY(const Point & a, const Point & b) {
+    return a.y < b.y;
+}       

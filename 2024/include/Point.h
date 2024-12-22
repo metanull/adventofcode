@@ -1,6 +1,7 @@
 #ifndef POINT_H
 #define POINT_H
 
+#include <iostream>
 #include <cmath>
 
 struct Point {
@@ -39,6 +40,12 @@ struct Point {
     bool TryRight(const Point & O, const Point & Z);
     bool TryLeft(const Point & Z);
     bool TryLeft(const Point & O, const Point & Z);
+
+    friend std::ostream& operator<< (std::ostream& stream, const Point & point);
+    friend bool cmpX(const Point & a, const Point & b);
+    friend bool cmpY(const Point & a, const Point & b);
+
+
 };
 
 #endif // POINT_H

@@ -29,7 +29,8 @@ long ProcessRegion(const Point & first, std::vector<std::vector<char>> & map, co
 
     long perimeter = 0;
     
-    Point M = cur;
+    Point M;
+    M = cur;
     if(M.TryUp(O,Z) && Ref == map[M.y][M.x]) {
         if(!PointInList(Region,M) ) {
             perimeter += ProcessRegion(M, map, O, Z, Region);
@@ -92,6 +93,7 @@ int main(int argc, char ** argv, char ** envp) {
     Point Z = Point(inputMap[0].size(),inputMap.size());
 
     std::vector<Point> processed;
+    std::vector<std::vector<Point>> regions;
 
     Point first = O;
     Point cur(first);
@@ -115,6 +117,7 @@ int main(int argc, char ** argv, char ** envp) {
         }
         std::vector<Point> region;
         long perimeter = ProcessRegion(cur, inputMap, O, Z, region);
+        regions.push_back(region);
         long area = region.size();
         char v = inputMap[cur.y][cur.x];
 
@@ -141,6 +144,24 @@ int main(int argc, char ** argv, char ** envp) {
     }
 
     std::cout << "Total Price: " << totalPrice << std::endl;
+
+
+
+    for(auto r : regions) {
+        auto min_xvalue = *std::min_element(r.begin(),r.end(),cmpX);
+        auto min_yvalue = *std::min_element(r.begin(),r.end(),cmpY);
+        auto max_xvalue = *std::max_element(r.begin(),r.end(),cmpX);
+        auto max_yvalue = *std::max_element(r.begin(),r.end(),cmpY);
+        Point RegionO(min_xvalue.x, min_yvalue.y);
+        Point RegionZ(max_xvalue.x, max_yvalue.y);
+
+        std::cout << "Region: O=" << RegionO << " Z=" << RegionZ << std::endl;
+
+        for(auto p : r) {
+            std::cout << p << " ";
+        }
+        std::cout << std::endl;
+    }
 
     return 0;
 }
