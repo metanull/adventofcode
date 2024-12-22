@@ -74,7 +74,17 @@ Process {
             # Write-Warning "Solutions found: $(($Solutions|Select-Object -Unique A,B).Count)"
             $_ | Add-Member -MemberType NoteProperty -Name Solutions -Value ($Solutions|Select-Object -Unique A,B) -PassThru
         }
-    } | Where-Object {$_.Solutions.Count -gt 0} | ft
+    } | Where-Object {$_.Solutions.Count -gt 0} | Foreach-Object {
+        $Machine = $_
+        $BestSolution = $Machine.Solutions | ForEach-Object -Begin {
+                $CostA = 3
+                $CostB = 1
+            } -Process {
+                $Cost = ($_.A * $CostA) + ($_.B * $CostB)
+                $_ | Add-Member -MemberType NoteProperty -Name Cost -Value $Cost -PassThru
+            } | Sort-Object -Property Cost -Descending | Select-Object -First 1
+        $BestSolution.Cost | Write-Output
+    } | Measure-Object -Sum | Select-Object -ExpandProperty Sum
 }
 Begin {
     $Year = 2024
