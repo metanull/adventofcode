@@ -3,42 +3,17 @@ Process {
     $InputData | ForEach-Object {
         # Write-Warning "Prize($($_.Prize.X), $($_.Prize.Y)); A($($_.A.X), $($_.A.Y)); B($($_.B.X), $($_.B.Y))"
         $Solutions = @()
-        for($i = 0; $i -lt ([math]::Max(([math]::floor($_.Prize.x/$_.A.x)),([math]::floor($_.Prize.y/$_.A.y)))); $i ++) {
-            $MulA = $_.A.PSObject.Copy();       $MulA.X *= $i; $MulA.Y *= $i
-            $MulB = $_.B.PSObject.Copy();       $MulB.X *= $i; $MulB.Y *= $i
-            $SolA = $_.Prize.PSObject.Copy();   $SolA.X -= $MulA.X; $SolA.Y -= $MulA.Y
-            $SolB = $_.Prize.PSObject.Copy();   $SolB.X -= $MulB.X; $SolB.Y -= $MulB.Y
 
-            # Write-Warning "A*i($($MulA.X), $($MulA.Y)); B*i($($MulB.X), $($MulB.Y)); Prize-(A*i)($($SolA.X), $($SolA.Y)); Prize-(B*i)($($SolB.X), $($SolB.Y))"
-            if(($SolA.X -lt 0 -or $SolA.Y -lt 0) -and ($SolB.X -lt 0 -or $SolB.Y -lt 0)) {
-                #Write-Warning "No solution found"
-                break
-            }
-            if($SolA.X -eq 0 -and $SolA.Y -eq 0) {
-                #Write-Warning "Solution found: A=$i, B=0"
-                $Solutions += ,([pscustomobject]@{ A = $i; B = 0})
-            }
-            if($SolB.X -eq 0 -and $SolB.Y -eq 0) {
-                #Write-Warning "Solution found: A=0, B=$i"
-                $Solutions += ,([pscustomobject]@{ A = 0; B = $i})
-            }
-            if($SolA.X % $_.B.X -eq 0) {
-                $N = $SolA.X / $_.B.X
-                if($N -gt 0 -and $SolA.Y / $_.B.Y -eq $N) {
-                    #Write-Warning "Solution found (A): A=$i, B=$N"
-                    $Solutions += ,([pscustomobject]@{ A = $i; B = $N})
-                }
-            }
-            if($SolB.X % $_.A.X -eq 0) {
-                $N = $SolB.X / $_.A.X
-                if($N -gt 0 -and $SolB.Y / $_.A.Y -eq $N) {
-                    #Write-Warning "Solution found (B): A=$N, B=$i"
-                    $Solutions += ,([pscustomobject]@{ A = $N; B = $i})
-                }
+        $Riddle = $_
+        $Multiples = Find-Multiples -target ($Riddle.Prize.X) -a ($Riddle.A.X) -b ($Riddle.B.X)
+        $Multiples | Foreach-Object {
+            $Multiple = $_
+            if( $Riddle.Prize.Y -eq ($Multiple.X * $Riddle.A.Y + $Multiple.Y * $Riddle.B.Y)) {
+                $Solutions += ,([pscustomobject]@{ A = $_.X; B = $_.Y })
             }
         }
         if($Solutions) {
-            # Write-Warning "Solution(s) found: $(($Solutions|Select-Object -Unique A,B).Count)"
+            Write-Warning "Solution(s) found: $(($Solutions|Select-Object -Unique A,B).Count)"
             $_ | Add-Member -MemberType NoteProperty -Name Solutions -Value ($Solutions|Select-Object -Unique A,B) -PassThru
         }
     } | Where-Object {$_.Solutions.Count -gt 0} | Foreach-Object {
@@ -52,8 +27,9 @@ Process {
             } | Sort-Object -Property Cost | Select-Object -First 1
         $Machine | Add-Member -MemberType NoteProperty -Name BestSolution -Value $BestSolution
 
-        $Machine.BestSolution.Cost | Write-Output
-    } | Measure-Object -Sum | Select-Object -ExpandProperty Sum
+        $Machine 
+        #$Machine.BestSolution.Cost | Write-Output
+    } #| Measure-Object -Sum | Select-Object -ExpandProperty Sum
 }
 Begin {
     $Year = 2024
@@ -67,6 +43,25 @@ Begin {
     }
     "Instructions: $PuzzleUrl" | Write-Warning
 
+    function Find-Multiples {
+        param (
+            [long]$target,
+            [long]$a,
+            [long]$b
+        )
+        Write-Warning "Finding multiples of $a and $b to sum to $target"
+        $Multiples = @()
+        for ($x = 0; $x -le [math]::Floor($target / $a); $x++) {
+            for ($y = 0; $y -le [math]::Floor($target / $b); $y++) {
+                if (($a * $x + $b * $y) -eq $target) {
+                    $Multiples += ,([pscustomobject]@{ X = $x; Y = $y })
+                    Write-Warning "Found $x multiples of $a and $y multiples of $b; $target = $($a * $x) + $($b * $y)"
+                }
+            }
+        }
+        Write-Warning "Found $($Multiples.Count) multiples: $($Multiples|%{"$($_.X) multiples of $a and $($_.Y) multiples of $b; "})"
+        $Multiples | Write-Output
+    }    
     Function BufferToObject {
         [CmdletBinding()]
         [OutputType([pscustomobject])]
@@ -94,10 +89,13 @@ Begin {
             }
         }
         Process {
+            $Prize = RegexGroupToObject -Match $Parser.Match($Buffer[2])
+            $Prize.X += 10000000000000
+            $Prize.Y += 10000000000000
             [pscustomobject]@{
                 A = RegexGroupToObject -Match $Parser.Match($Buffer[0])
                 B = RegexGroupToObject -Match $Parser.Match($Buffer[1])
-                Prize = RegexGroupToObject -Match $Parser.Match($Buffer[2])
+                Prize = $Prize
             }
         }
     }
