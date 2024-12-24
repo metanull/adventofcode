@@ -21,7 +21,7 @@ using namespace std;
 
 const char * banner = "AdventOfCode 2024 Day 13 (thread)!";
 const char * inputFilePath = "C:/Users/phave/OneDrive/Documents/adventofcode/2024/Input/Day13.txt";
-const int nThreads = 8;
+const int nThreads = 1;
 
 struct XY {
     uint64_t x;
@@ -60,9 +60,9 @@ bool done = false;
 uint64_t TotalCost = 0;
 uint64_t HardLimit = 0;
 
-inline uint64_t gcd(uint64_t a, uint64_t b) { 
+inline int64_t gcd(int64_t a, int64_t b) { 
     while (b != 0) { 
-        uint64_t t = b; 
+        int64_t t = b; 
         b = a % b; 
         a = t; 
     }
@@ -70,31 +70,34 @@ inline uint64_t gcd(uint64_t a, uint64_t b) {
 }
 
 // Function to implement the Extended Euclidean Algorithm
-int extendedEuclidean(int a, int b, int &x, int &y) {
+int64_t extendedEuclidean(int64_t a, int64_t b, int64_t &x, int64_t &y) {
     if (b == 0) {
         x = 1;
         y = 0;
         return a;
     }
-    int x1, y1;
-    int gcd = extendedEuclidean(b, a % b, x1, y1);
+    int64_t x1, y1;
+    int64_t gcd = extendedEuclidean(b, a % b, x1, y1);
     x = y1;
     y = x1 - (a / b) * y1;
     return gcd;
 }
 
 // Function to find all pairs (A, B) that satisfy both equations
-std::vector<std::pair<int, int>> findSolutions(int x1, int y1, int C1, int x2, int y2, int C2) {
-    std::vector<std::pair<int, int>> solutions;
+// A*X1 + B*Y1 = C1 and A*X2 + B*Y2 = C2
+// Function to find the cheapest pair (A, B) that satisfies both equations
+std::pair<int64_t, int64_t> findCheapestSolution(int64_t x1, int64_t y1, int64_t C1, int64_t x2, int64_t y2, int64_t C2) {
+    std::pair<int64_t, int64_t> cheapestSolution;
+    int64_t minCost = std::numeric_limits<int64_t>::max();
 
     // Coefficients for the linear combination
-    int a1, b1, a2, b2;
-    int gcd1 = extendedEuclidean(x1, y1, a1, b1);
-    int gcd2 = extendedEuclidean(x2, y2, a2, b2);
+    int64_t a1, b1, a2, b2;
+    int64_t gcd1 = extendedEuclidean(x1, y1, a1, b1);
+    int64_t gcd2 = extendedEuclidean(x2, y2, a2, b2);
 
     // Check if solutions exist
     if (C1 % gcd1 != 0 || C2 % gcd2 != 0) {
-        return solutions;
+        return cheapestSolution;
     }
 
     // Adjust the coefficients for the given C1 and C2
@@ -103,41 +106,44 @@ std::vector<std::pair<int, int>> findSolutions(int x1, int y1, int C1, int x2, i
     a2 *= (C2 / gcd2);
     b2 *= (C2 / gcd2);
 
-    // Find all pairs (A, B) using the coefficients
-    for (int k1 = -10; k1 <= 10; ++k1) { // Adjust range as needed
-        for (int k2 = -10; k2 <= 10; ++k2) { // Adjust range as needed
-            int A = a1 + k1 * (y1 / gcd1);
-            int B = b2 + k2 * (x2 / gcd2);
-            if ((A * x1 + B * y1 == C1) && (A * x2 + B * y2 == C2)) {
-                solutions.emplace_back(A, B);
+    // Find the cheapest pair (A, B) using the coefficients
+    for (int64_t k1 = 0; ; ++k1) { 
+        for (int64_t k2 = 0; ; ++k2) { 
+            int64_t A = a1 + k1 * (y1 / gcd1);
+            int64_t B = b2 + k2 * (x2 / gcd2);
+            if (A >= 0 && B >= 0 && (A * x1 + B * y1 == C1) && (A * x2 + B * y2 == C2)) {
+                int64_t cost = 3 * A + 1 * B;
+                if (cost < minCost) {
+                    minCost = cost;
+                    cheapestSolution = {A, B};
+                } else {
+                    // If the current cost is higher than the minimum cost found, break the inner loop
+                    break;
+                }
             }
         }
-    }
-
-    return solutions;
-}
-/*
-int main() {
-    int x1, y1, C1, x2, y2, C2;
-    std::cout << "Enter values for x1, y1, and C1: ";
-    std::cin >> x1 >> y1 >> C1;
-    std::cout << "Enter values for x2, y2, and C2: ";
-    std::cin >> x2 >> y2 >> C2;
-
-    std::vector<std::pair<int, int>> solutions = findSolutions(x1, y1, C1, x2, y2, C2);
-
-    if (solutions.empty()) {
-        std::cout << "No solutions exist for the given equations." << std::endl;
-    } else {
-        std::cout << "Solutions (A, B) are:" << std::endl;
-        for (const auto& solution : solutions) {
-            std::cout << "(" << solution.first << ", " << solution.second << ")" << std::endl;
+        // If the current cost is higher than the minimum cost found, break the outer loop
+        if (3 * (a1 + k1 * (y1 / gcd1)) >= minCost) {
+            break;
         }
     }
 
-    return 0;
+    return cheapestSolution;
 }
-*/
+
+uint64_t SolveMachine2(const Machine & machine) {
+    std::pair<int, int> cheapestSolution = findCheapestSolution(machine.A.x, machine.B.x, machine.Prize.x, machine.A.y, machine.B.y, machine.Prize.y); 
+    if (cheapestSolution.first == 0 && cheapestSolution.second == 0) { 
+        std::stringstream ss;
+        ss << "No solutions exist for the given equations." << std::endl; 
+        std::cout << ss.str();
+        return 0;
+    }
+    std::stringstream ss;
+    ss << "Cheapest solution (A, B) is: (" << cheapestSolution.first << ", " << cheapestSolution.second << ")" << std::endl; std::cout << "Cost: " << 3 * cheapestSolution.first + 1 * cheapestSolution.second << "€" << std::endl; 
+    std::cout << ss.str();
+    return Machine::cost(cheapestSolution.first,cheapestSolution.second);
+}
 
 uint64_t SolveMachine(const Machine & machine) {
     uint64_t SolutionCost = 0;
@@ -271,8 +277,8 @@ int main(int argc, char ** argv, char ** envp) {
         machine.Prize.y = std::stoi(match[3]);
 
         // 13.2 Add 10^12 to Prize        
-        machine.Prize.x += 10000000000000;
-        machine.Prize.y += 10000000000000;
+        // machine.Prize.x += 10000000000000;
+        // machine.Prize.y += 10000000000000;
         
 
         std::unique_lock<std::mutex> lock(MachinesMutex);
