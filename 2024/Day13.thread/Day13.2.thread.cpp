@@ -16,12 +16,13 @@
 
 //#include "..\include\AdventOfCode.h"
 //#include "..\include\Point.h"
+#include "..\include\Vector2D.h"
 
 using namespace std;
 
 const char * banner = "AdventOfCode 2024 Day 13 (thread)!";
 const char * inputFilePath = "C:/Users/phave/OneDrive/Documents/adventofcode/2024/Input/Day13.txt";
-const int nThreads = 1;
+const int nThreads = 8;
 
 struct XY {
     uint64_t x;
@@ -131,6 +132,109 @@ std::pair<int64_t, int64_t> findCheapestSolution(int64_t x1, int64_t y1, int64_t
     return cheapestSolution;
 }
 
+uint64_t SolveMachine3(const Machine & machine, uint64_t & solutionA, uint64_t & solutionB) {
+    Vector2D A; A.x = (long long)machine.A.x; A.y = (long long)machine.A.y;
+    Vector2D B; B.x = (long long)machine.B.x; B.y = (long long)machine.B.y;
+    Vector2D O; O.x = 0; O.y = 0;
+    Vector2D M; M.x = (long long)machine.Prize.x; M.y = (long long)machine.Prize.y;
+    Vector2D R1;
+    Vector2D R2;    
+
+    solutionA = 0;
+    solutionB = 0;
+
+    if(A.isCollinear(B)) {
+        if(M.isCollinear(A)) {
+            std::stringstream ss;
+            ss << "A // B // M! MANY POTENTIAL SOLUTIONS **************" << std::endl;
+            ss << "********************************************************" << std::endl;
+            ss << "********************************************************" << std::endl;
+            ss << "********************************************************" << std::endl;
+            ss << "********************************************************" << std::endl;
+            ss << "********************************************************" << std::endl;
+            ss << "********************************************************" << std::endl;
+            ss << "********************************************************" << std::endl;
+            std::cout << ss.str();
+            return 0;
+        } else {
+            std:stringstream ss; 
+            ss << "A // B !// M! No solution found" << std::endl;
+            std::cout << ss.str();
+            return 0;
+        }
+    } else 
+    if(M.isCollinear(A)) {
+        uint64_t A = machine.Prize.x / machine.A.x;
+        uint64_t B = 0;
+        if(machine.Prize.x % machine.A.x == 0 && machine.Prize.y % machine.A.y == 0 && machine.Prize.x / machine.A.x == machine.Prize.y / machine.A.y) {
+            std::stringstream ss;
+            ss << "Solution found: " << A << ", " << B << std::endl;
+            std::cout << ss.str();
+
+            solutionA = A;
+            solutionB = B;
+            return Machine::cost(A,B);
+        } else {
+            std::stringstream ss;
+            ss << "A // M but not integer solution found." << std::endl;
+            std::cout << ss.str();
+            return 0;
+        }
+    } else
+    if(M.isCollinear(B)) {
+        uint64_t A = 0;
+        uint64_t B = machine.Prize.x / machine.B.x;
+        if(machine.Prize.x % machine.B.x == 0 && machine.Prize.y % machine.B.y == 0 && machine.Prize.x / machine.B.x == machine.Prize.y / machine.B.y) {
+            std::stringstream ss;
+            ss << "Solution found: " << A << ", " << B << std::endl;
+            std::cout << ss.str();
+
+            solutionA = A;
+            solutionB = B;
+            return Machine::cost(A,B);
+        } else {
+            std::stringstream ss;
+            ss << "B // M but not integer solution found." << std::endl;
+            std::cout << ss.str();
+            return 0;
+        }
+    } else {
+        auto t1 = solveForCoefficients(M,A,B,R1);
+        auto t2 = solveForCoefficients(M,A,B,R2);
+        if(t1) {
+            std::cout << "Solution found: " << R1.x << " " << R1.y << std::endl;
+        }
+        if(t2) {
+            std::cout << "Solution found: " << R2.x << " " << R2.y << std::endl;
+        }
+        if(t1 && t2) {
+            if(Machine::cost(R1.x,R1.y) < Machine::cost(R2.x,R2.y)) {
+                solutionA = R1.x;
+                solutionB = R1.y;
+                return Machine::cost(R1.x,R1.y);
+            } else {
+                solutionA = R2.x;
+                solutionB = R2.y;
+                return Machine::cost(R2.x,R2.y);
+            }
+        } else
+        if(t1) {
+            solutionA = R1.x;
+            solutionB = R1.y;
+            return Machine::cost(R1.x,R1.y);
+        } else
+        if(t2) {
+            solutionA = R2.x;
+            solutionB = R2.y;
+            return Machine::cost(R2.x,R2.y);
+        } else {
+            std::stringstream ss;
+            ss << "No solutions exist for the given equations." << std::endl;
+            std::cout << ss.str();
+            return 0;
+        }
+    }
+}
 uint64_t SolveMachine2(const Machine & machine) {
     std::pair<int, int> cheapestSolution = findCheapestSolution(machine.A.x, machine.B.x, machine.Prize.x, machine.A.y, machine.B.y, machine.Prize.y); 
     if (cheapestSolution.first == 0 && cheapestSolution.second == 0) { 
@@ -145,7 +249,7 @@ uint64_t SolveMachine2(const Machine & machine) {
     return Machine::cost(cheapestSolution.first,cheapestSolution.second);
 }
 
-uint64_t SolveMachine(const Machine & machine) {
+uint64_t SolveMachine(const Machine & machine, uint64_t & solutionA, uint64_t & solutionB) {
     uint64_t SolutionCost = 0;
 
     auto AMaxX = (machine.Prize.x / machine.A.x) + 1;
@@ -189,6 +293,8 @@ uint64_t SolveMachine(const Machine & machine) {
             auto A = (machine.Prize.x - (machine.B.x * M)) / machine.A.x;
             auto machineCost = Machine::cost(A,B);
             if(SolutionCost == 0 || machineCost < SolutionCost) {
+                solutionA = A;
+                solutionB = B;
                 SolutionCost = machineCost;
 /*
                 std::stringstream ss;
@@ -222,13 +328,15 @@ void worker(int id) {
             Machines.pop();
             lock.unlock();
 
-            auto solution = SolveMachine(machine);
+            uint64_t solutionA = 0;
+            uint64_t solutionB = 0;
+            auto solution = SolveMachine3(machine, solutionA, solutionB);
             { 
                 std::lock_guard<std::mutex> TotalCostLock(TotalCostMutex); 
                 TotalCost += solution; 
             }
             std::stringstream ss;
-            ss << "Worker " << id << ": " << machine << " - " << solution << std::endl;
+            ss << "Worker " << id << ": " << machine << std::endl << "=> A: " << solutionA << ", B: " << solutionB << ", Cost:" << solution << std::endl;
             std::cout << ss.str();
 
             lock.lock();
@@ -277,8 +385,8 @@ int main(int argc, char ** argv, char ** envp) {
         machine.Prize.y = std::stoi(match[3]);
 
         // 13.2 Add 10^12 to Prize        
-        // machine.Prize.x += 10000000000000;
-        // machine.Prize.y += 10000000000000;
+        machine.Prize.x += 10000000000000;
+        machine.Prize.y += 10000000000000;
         
 
         std::unique_lock<std::mutex> lock(MachinesMutex);
