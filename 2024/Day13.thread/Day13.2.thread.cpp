@@ -199,8 +199,8 @@ uint64_t SolveMachine3(const Machine & machine, uint64_t & solutionA, uint64_t &
             return 0;
         }
     } else {
-        auto t1 = solveForCoefficients(M,A,B,R1);
-        auto t2 = solveForCoefficients(M,A,B,R2);
+        auto t1 = FindIntersectionExact(M,A,B,R1);
+        auto t2 = FindIntersectionExact(M,A,B,R2);
         if(t1) {
             std::cout << "Solution found: " << R1.x << " " << R1.y << std::endl;
         }
