@@ -19,6 +19,9 @@ public:
     Vector2D(const Vector2D& other) = default;
     Vector2D& operator=(const Vector2D& other) = default;
 
+    // Get the Origin point
+    static Vector2D Origin();
+
     // Method to calculate the determinant of two vectors
     long long determinant(const Vector2D& other) const;
     static long long determinant(const Vector2D& a, const Vector2D& b);
@@ -31,11 +34,29 @@ public:
     // Multiplication operation accepting a long long parameter
     Vector2D operator*(long long scalar) const;
 
+    // Operator *=
+    Vector2D& operator*=(long long scalar);
+
+    // Test if Integer Division is possible
+    bool isDivisible(long long scalar) const;
+
+    // Division operation accepting a long long parameter
+    Vector2D operator/(long long scalar) const;
+
+    // Operator /=
+    Vector2D& operator/=(long long scalar);
+
     // Addition operator accepting another vector as parameter
     Vector2D operator+(const Vector2D& other) const;
 
+    // Operator +=
+    Vector2D& operator+=(const Vector2D& other);
+
     // Subtraction operator
     Vector2D operator-(const Vector2D& other) const;
+
+    // Operator -=
+    Vector2D& operator-=(const Vector2D& other);
 
     // Method to test collinearity with another vector
     bool isCollinear(const Vector2D& other) const;
@@ -81,7 +102,7 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const Vector2D& v);
 };
 
-/*
+
 class Line2D {
 public:
     // Direction vector of the line
@@ -111,24 +132,20 @@ public:
     long double distance(const Vector2D& point) const;
 
     // Find the projection of a point on a line
-    Vector2D projection(const Vector2D& point) const;
+    std::pair<long double,long double> projection(const Vector2D& point) const;
 
 
     // Get a perpendicular line passing through the position point of this line
-    inline Line2D perpendicular() const {
-        return Line2D(direction.normal(), position);
-    }
+    inline Line2D perpendicular() const;
 
     // Get a perpendicular line at a given point
-    inline Line2D perpendicular(const Vector2D& point) const {
-        return Line2D(direction.normal(), point);
-    }
+    inline Line2D perpendicular(const Vector2D& point) const;
 
     // Method to print the line (for debugging purposes)
     void print() const;
 
     friend std::ostream& operator<<(std::ostream& os, const Line2D& l); 
 };
-*/
+
 
 #endif // VECTOR2D_H
