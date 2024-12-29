@@ -15,7 +15,7 @@ public:
     long long y = (long long)0;
  
     Vector2D() = default;
-    Vector2D(long long x = 0, long long y = 0);
+    Vector2D(long long x, long long y);
     Vector2D(const Vector2D& other) = default;
     Vector2D& operator=(const Vector2D& other) = default;
 
