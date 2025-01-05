@@ -145,8 +145,7 @@ int main(int argc, char ** argv, char ** envp) {
 
     std::cout << "Total Price: " << totalPrice << std::endl;
 
-
-
+    long totalPriceWithDiscount = 0;
     for(auto r : regions) {
         auto min_xvalue = *std::min_element(r.begin(),r.end(),cmpX);
         auto min_yvalue = *std::min_element(r.begin(),r.end(),cmpY);
@@ -162,6 +161,9 @@ int main(int argc, char ** argv, char ** envp) {
         }
         std::cout << std::endl;
     }
+
+    std::cout << "Total Price: " << totalPrice << std::endl;
+    std::cout << "Total Price With Discount: " << totalPriceWithDiscount << std::endl;
 
     return 0;
 }
