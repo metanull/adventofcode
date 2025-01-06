@@ -12,6 +12,7 @@
 // #include <compare>
 
 #include "..\AdventOfCode.h"
+#include "..\Math.h"
 #include "..\Point.h"
 #include "..\Vector2D.h"
 
@@ -74,7 +75,7 @@ int main(int argc, char ** argv, char ** envp) {
 /*
     // Simulate N times
     long MaxN=100000000;
-    long MinN=23000000;
+    long MinN=35300000;
     long MaxCenterColumn = 0;
     for(auto N = MinN; N < MaxN; N++) {
         long quadrants[4] = {0,0,0,0};
@@ -137,60 +138,91 @@ int main(int argc, char ** argv, char ** envp) {
             std::cout << "\x1b[1;F - " << N << std::endl;
         }
 
-        if(axis[0] > Z.y / 4) {
+        if(axis[0] > Z.y / 5) {
             DumpPositions(newPositions, Z.x, Z.y);
             std::cout << "N: " << N << std::endl << std::endl;
             // break;
         }
         // DumpPositions(newPositions, Z.x, Z.y);
     }
-
+*/
     // std::cout << "New positions:" << newPositions.size() << std::endl;
     // std::cout << "Quadrants:" << quadrants[0] << " " << quadrants[1] << " " << quadrants[2] << " " << quadrants[3] << std::endl;
     // std::cout << "Safety factor: " << (quadrants[0] * quadrants[1] * quadrants[2] * quadrants[3]) << std::endl;
-*/
 
-    for(size_t i = 0; i < positions.size(); i++) {
-        /*
-        auto x = positions[i].first + (N*velocities[i].first);
-        auto y = positions[i].second + (N*velocities[i].second);
-        if(std::abs(x) > std::abs(Z.x)) {x = x % Z.x;}
-        if(std::abs(y) > std::abs(Z.y)) {y = y % Z.y;}
-        if(x < 0) {x += Z.x;}
-        if(y < 0) {y += Z.y;}
-        */
+    std::cout << std::endl;
+    long long maxSoFar = 0;
+    long long maxSolutions = 100000;
+    long long maxIteration = maxSolutions * 1000;
+    std::map<long long, long long> solutionCount;
+    for(long long i = 0; i < positions.size(); i++) {
+        std::cout << "\x1b[1;F" << std::setfill('0') << std::setw(7) << (positions.size() - i) << std::endl;
+        try {
+            // Solve the equation X + N * V ≡ (W-1) / 2 (mod W)
+            long long X = (long long)positions[i].first;
+            long long Velocity = (long long)velocities[i].first;
+            long long Limit = (long long)Z.x;
+            long long K = (((Limit - 1) / 2) - X + Limit) % Limit;     // We look for an X at the center thus at ((Limit - 1) / 2)
 
-        long long X = (long long)positions[i].first;
-        long long V = (long long)velocities[i].first;
-        long long M = (long long)Z.x;
-        long long k = ((M - 1) / 2) - X;
-        long long N = 0;
+            // auto Velocity_modInv = modInverseFermat(Velocity, Limit);
+            auto Velocity_modInv = modInverseExtendedEuclidian(Velocity, Limit);
+            // std::cout << "Velocity_modInv: " << Velocity_modInv << std::endl;
+            
+            vector<long long> solutions;
 
-        if(std::gcd(V, M) != 1) {
-           std::cout << "V: " << V << " and " << M << " are not coprime" << std::endl;
-        } else {
-            auto V_inv = modInverse(V, M);
-            if(V_inv == 0) {
-                std::cout << "V: " << V << " has no inverse modulo " << M << std::endl;
-            } else {
-                long long prev = 0;
-                for (int j = 0; j < 10; ++j) {
-                    N = ((k + j * M) * V_inv) % M;
-                    while(N != prev && N < 0) {
-                        prev = N;
-                        N = ((k + j * M) * V_inv) % M;
+            // Initial N
+            long long N = (K * Velocity_modInv) % Limit;
+            if (N < 0) {
+                N += Limit;
+            }
+            // std::cout << "N: " << N << std::endl;
+            solutionCount[N] ++;
+            solutions.push_back(N);
+
+            if(solutionCount[N] > maxSoFar) {
+                maxSoFar = solutionCount[N];
+                std::cout << "N: " << N << " - " << solutionCount[N] << " solutions" << std::endl << std::endl;
+            }
+
+            // Subsequent N
+            long long Period = Limit / gcdBasicEuclidian(Velocity, Limit);
+
+            for (long long i = 0; solutions.size() < maxSolutions && i < maxIteration; ++i) {
+                auto initialN = solutions.front();
+                N = (initialN + i * Period);
+                if (N > 0) {
+                    if( find(solutions.begin(), solutions.end(), N) == solutions.end()) {
+                        // std::cout << "N: " << N << std::endl;
+                        solutionCount[N] ++;
+                        solutions.push_back(N);
+
+                        if(solutionCount[N] > maxSoFar) {
+                            maxSoFar = solutionCount[N];
+                            std::cout << "N: " << N << " - " << solutionCount[N] << " solutions" << std::endl << std::endl;
+                        }
+                    } else {
+                        // std::cout << "N: " << N << " already found" << std::endl;
                     }
                 }
-                if( N > 0) {
-                    std::cout << "N: " << N << std::endl;
-                } else {
-                    std::cout << "No solution found" << std::endl;
-                }
             }
-            if(0) {}
+        } catch (const std::invalid_argument& e) {
+            // std::cerr << e.what() << std::endl;
         }
     }
 
+    // Sort Solution Count by value and print it
+    std::vector<std::pair<long long, long long>> sortedSolutionCount;
+    for (const auto& kv : solutionCount) {
+        sortedSolutionCount.push_back(kv);
+    }
+    std::sort(sortedSolutionCount.begin(), sortedSolutionCount.end(), [](const std::pair<long long, long long>& a, const std::pair<long long, long long>& b) {
+        return a.first > b.first;
+    });
+    for (const auto& kv : sortedSolutionCount) {
+        if(kv.second > 362) {
+            std::cout << "i: " << kv.first << " - " << kv.second << " solutions" << std::endl;
+        }
+    }
     return 0;
 }
 

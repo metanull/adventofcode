@@ -5,6 +5,7 @@ project(${TARGET_NAME} VERSION 0.1.0 LANGUAGES CXX)
 add_library(AdventOfCode STATIC ./AdventOfCode.cpp)
 add_library(Point STATIC ./Point.cpp)
 add_library(Vector2D STATIC ./Vector2D.cpp)
+add_library(Math STATIC ./Math.cpp)
 
 # Day 9.2
 # add_executable(${TARGET_NAME} Day9/Day9.2.cpp)
@@ -28,6 +29,6 @@ add_library(Vector2D STATIC ./Vector2D.cpp)
 add_executable(${TARGET_NAME} Day14/Day14.2.cpp)
 
 target_compile_features(${TARGET_NAME} PRIVATE cxx_std_17)
-target_link_libraries(${TARGET_NAME} AdventOfCode Point Vector2D)
+target_link_libraries(${TARGET_NAME} AdventOfCode Math Point Vector2D)
 
 set_property(TARGET ${TARGET_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/.")
