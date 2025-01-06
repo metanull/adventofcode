@@ -65,6 +65,200 @@ long ProcessRegion(const Point & first, std::vector<std::vector<char>> & map, co
     return perimeter;
 }
 
+long GetDownSides(Point & cur, const Point & O, const Point & Z, std::vector<std::vector<char>> & map, std::vector<Point> &Region) {
+    // Test if cur is found in region
+    long DownSides = 0;
+    try {
+        while(cur.inBounds(O,Z)) {
+            // Skip all points that are not in the region
+            if(!PointInList(Region, cur)) {
+                cur.Right();
+                continue;
+            }
+            // Test if the point has a fence on the bottom
+            auto curLookup = cur;
+            if(!curLookup.TryDown(O,Z) || !PointInList(Region, curLookup)) {
+                DownSides++;
+                // Skip all adjacent points that are in the region and have a fence on the bottom
+                while(true) {
+                    cur.Right();
+                    if(!PointInList(Region, cur)) {
+                        break;
+                    }
+                    curLookup = cur;
+                    if(!curLookup.TryDown(O,Z) || !PointInList(Region, curLookup)) {
+                        continue;
+                    }
+                    break;
+                }
+            } else {
+                // Move to the next point
+                cur.Right();
+            }
+        }
+    } catch(std::out_of_range & e) {
+        // std::cout << "Out of range: " << cur << std::endl;
+    }
+    return DownSides;
+}
+
+long GetUpSides(Point & cur, const Point & O, const Point & Z, std::vector<std::vector<char>> & map, std::vector<Point> &Region) {
+    // Test if cur is found in region
+    long UpSides = 0;
+    try {
+        while(cur.inBounds(O,Z)) {
+            // Skip all points that are not in the region
+            if(!PointInList(Region, cur)) {
+                cur.Right();
+                continue;
+            }
+            // Test if the point has a fence on the top
+            auto curLookup = cur;
+            if(!curLookup.TryUp(O,Z) || !PointInList(Region, curLookup)) {
+                UpSides++;
+                // Skip all adjacent points that are in the region and have a fence on the top
+                while(true) {
+                    cur.Right();
+                    if(!PointInList(Region, cur)) {
+                        break;
+                    }
+                    curLookup = cur;
+                    if(!curLookup.TryUp(O,Z) || !PointInList(Region, curLookup)) {
+                        continue;
+                    }
+                    break;
+                }
+            } else {
+                // Move to the next point
+                cur.Right();
+            }
+        }
+    } catch(std::out_of_range & e) {
+        // std::cout << "Out of range: " << cur << std::endl;
+    }
+    return UpSides;
+}
+
+long GetLeftSides(Point & cur, const Point & O, const Point & Z, std::vector<std::vector<char>> & map, std::vector<Point> &Region) {
+    // Test if cur is found in region
+    long LeftSides = 0;
+    try {
+        while(cur.inBounds(O,Z)) {
+            // Skip all points that are not in the region
+            if(!PointInList(Region, cur)) {
+                cur.Up();
+                continue;
+            }
+            // Test if the point has a fence on the left
+            auto curLookup = cur;
+            if(!curLookup.TryLeft(O,Z) || !PointInList(Region, curLookup)) {
+                LeftSides++;
+                // Skip all adjacent points that are in the region and have a fence on the left
+                while(true) {
+                    cur.Up();
+                    if(!PointInList(Region, cur)) {
+                        break;
+                    }
+                    curLookup = cur;
+                    if(!curLookup.TryLeft(O,Z) || !PointInList(Region, curLookup)) {
+                        continue;
+                    }
+                    break;
+                }
+            } else {
+                // Move to the next point
+                cur.Up();
+            }
+        }
+    } catch(std::out_of_range & e) {
+        // std::cout << "Out of range: " << cur << std::endl;
+    }
+    return LeftSides;
+}
+
+long GetRightSides(Point & cur, const Point & O, const Point & Z, std::vector<std::vector<char>> & map, std::vector<Point> &Region) {
+    // Test if cur is found in region
+    long RightSides = 0;
+    try {
+        while(cur.inBounds(O,Z)) {
+            // Skip all points that are not in the region
+            if(!PointInList(Region, cur)) {
+                cur.Up();
+                continue;
+            }
+            // Test if the point has a fence on the right
+            auto curLookup = cur;
+            if(!curLookup.TryRight(O,Z) || !PointInList(Region, curLookup)) {
+                RightSides++;
+                // Skip all adjacent points that are in the region and have a fence on the right
+                while(true) {
+                    cur.Up();
+                    if(!PointInList(Region, cur)) {
+                        break;
+                    }
+                    curLookup = cur;
+                    if(!curLookup.TryRight(O,Z) || !PointInList(Region, curLookup)) {
+                        continue;
+                    }
+                    break;
+                }
+            } else {
+                // Move to the next point
+                cur.Up();
+            }
+        }
+    } catch(std::out_of_range & e) {
+        // std::cout << "Out of range: " << cur << std::endl;
+    }
+    return RightSides;
+}
+
+long ProcessRegionApplyDiscount(std::vector<std::vector<char>> & map, std::vector<Point> &Region) {
+    long sides = 0;
+    auto min_xvalue = *std::min_element(Region.begin(),Region.end(),cmpX);
+    auto min_yvalue = *std::min_element(Region.begin(),Region.end(),cmpY);
+    auto max_xvalue = *std::max_element(Region.begin(),Region.end(),cmpX);
+    auto max_yvalue = *std::max_element(Region.begin(),Region.end(),cmpY);
+    Point RegionO(min_xvalue.x, min_yvalue.y);
+    Point RegionZ(max_xvalue.x+1, max_yvalue.y+1);
+
+    auto value = map[Region[0].y][Region[0].x];
+
+    std::cout << "Region: O=" << RegionO << " Z=" << RegionZ << std::endl;
+/*
+    for(auto p : Region) {
+        std::cout << p << " ";
+    }
+    std::cout << std::endl;
+*/
+    Point cur(RegionO);
+    
+    do {
+        sides += GetDownSides(cur, RegionO, RegionZ, map, Region);
+        cur.x = RegionO.x;
+    } while(cur.TryUp(RegionO,RegionZ));
+
+    cur = RegionO;
+    do {
+        sides += GetUpSides(cur, RegionO, RegionZ, map, Region);
+        cur.x = RegionO.x;
+    } while(cur.TryUp(RegionO,RegionZ));
+
+    cur = RegionO;
+    do {
+        sides += GetLeftSides(cur, RegionO, RegionZ, map, Region);
+        cur.y = RegionO.y;
+    } while(cur.TryRight(RegionO,RegionZ));
+
+    cur = RegionO;
+    do {
+        sides += GetRightSides(cur, RegionO, RegionZ, map, Region);
+        cur.y = RegionO.y;
+    } while(cur.TryRight(RegionO,RegionZ));
+
+    return sides;
+}
+
 int main(int argc, char ** argv, char ** envp) {
     std::cout << banner << std::endl;
     //std::cout << "CWD: " << std::filesystem::current_path() << std::endl;   // Requires c++ 17 (enabled via CMake configuration)
@@ -100,6 +294,7 @@ int main(int argc, char ** argv, char ** envp) {
     bool inc = true;
 
     long totalPrice = 0;
+    long totalPriceDiscount = 0;
     while(cur.inBounds(O,Z)) {
         if(PointInList(processed, cur)) {
             if(inc) {
@@ -126,7 +321,11 @@ int main(int argc, char ** argv, char ** envp) {
         std::cout << "Area: " << area << std::endl;
         std::cout << "Perimeter: " << perimeter << std::endl << std::endl;
 
+        long sides = ProcessRegionApplyDiscount(inputMap, region);
+        std::cout << "Sides: " << sides << std::endl;
+
         totalPrice += area * perimeter;
+        totalPriceDiscount += area * sides;
         
         processed.insert( processed.end(), region.begin(), region.end() );
         
@@ -144,26 +343,12 @@ int main(int argc, char ** argv, char ** envp) {
     }
 
     std::cout << "Total Price: " << totalPrice << std::endl;
+    std::cout << "Total Price with Discount: " << totalPriceDiscount << std::endl;
 
-    long totalPriceWithDiscount = 0;
+    /*long totalPriceWithDiscount = 0;
     for(auto r : regions) {
-        auto min_xvalue = *std::min_element(r.begin(),r.end(),cmpX);
-        auto min_yvalue = *std::min_element(r.begin(),r.end(),cmpY);
-        auto max_xvalue = *std::max_element(r.begin(),r.end(),cmpX);
-        auto max_yvalue = *std::max_element(r.begin(),r.end(),cmpY);
-        Point RegionO(min_xvalue.x, min_yvalue.y);
-        Point RegionZ(max_xvalue.x, max_yvalue.y);
-
-        std::cout << "Region: O=" << RegionO << " Z=" << RegionZ << std::endl;
-
-        for(auto p : r) {
-            std::cout << p << " ";
-        }
-        std::cout << std::endl;
-    }
-
-    std::cout << "Total Price: " << totalPrice << std::endl;
-    std::cout << "Total Price With Discount: " << totalPriceWithDiscount << std::endl;
+        ProcessRegionApplyDiscount(inputMap, r);
+    }*/
 
     return 0;
 }
