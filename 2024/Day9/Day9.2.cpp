@@ -7,7 +7,7 @@
 #include <fstream>
 #include <map>
 #include <stdexcept>
-#include "../include/AdventOfCode.h"
+#include "../AdventOfCode.h"
 
 using namespace std;
 

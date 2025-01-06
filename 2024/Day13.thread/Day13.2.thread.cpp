@@ -14,9 +14,9 @@
 #include <condition_variable>
 // #include <compare>
 
-//#include "..\include\AdventOfCode.h"
-//#include "..\include\Point.h"
-#include "..\include\Vector2D.h"
+//#include "..\AdventOfCode.h"
+//#include "..\Point.h"
+#include "..\Vector2D.h"
 
 using namespace std;
 

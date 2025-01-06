@@ -1,4 +1,4 @@
-#include "..\include\AdventOfCode.h"
+#include "AdventOfCode.h"
 
 template<class Os, class Co> Os& operator<<(Os& os, const Co& co)
 {

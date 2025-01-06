@@ -11,8 +11,8 @@
 #include <regex>
 // #include <compare>
 
-#include "..\include\AdventOfCode.h"
-#include "..\include\Point.h"
+#include "..\AdventOfCode.h"
+#include "..\Point.h"
 
 using namespace std;
 

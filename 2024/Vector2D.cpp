@@ -1,4 +1,4 @@
-#include "..\include\Vector2D.h"
+#include "Vector2D.h"
 
 
 Vector2D::Vector2D(long long x, long long y) : x(x), y(y) {
