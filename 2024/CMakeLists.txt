@@ -22,7 +22,10 @@ add_library(Vector2D STATIC ./Vector2D.cpp)
 # add_executable(${TARGET_NAME} Day13.thread/Day13.2.thread.cpp)
 
 # Day 14.1
-add_executable(${TARGET_NAME} Day14/Day14.1.cpp)
+# add_executable(${TARGET_NAME} Day14/Day14.1.cpp)
+
+# Day 14.2
+add_executable(${TARGET_NAME} Day14/Day14.2.cpp)
 
 target_compile_features(${TARGET_NAME} PRIVATE cxx_std_17)
 target_link_libraries(${TARGET_NAME} AdventOfCode Point Vector2D)
