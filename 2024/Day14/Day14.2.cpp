@@ -9,6 +9,8 @@
 #include <stdexcept>
 #include <filesystem>
 #include <numeric> // pour std::gcd
+#include <set>
+#include <unordered_map>
 // #include <compare>
 
 #include "..\AdventOfCode.h"
@@ -28,8 +30,70 @@ bool PointInList(const std::vector<Point> & v, const Point & t) {
 */
 void DumpPositions(const std::vector<std::pair<long, long>> & positions, long width, long height);
 
-// Fonction pour trouver l'inverse multiplicatif de V modulo M
-long long modInverse(long long V, long long M);
+#include <iostream>
+#include <set>
+#include <vector>
+#include <unordered_map>
+#include <algorithm> // for std::sort
+
+using namespace std;
+
+#include <iostream>
+#include <set>
+#include <vector>
+#include <algorithm>
+#include <unordered_map>
+
+using namespace std;
+
+// Function to find the value of X with the greatest number of consecutive vertically aligned points
+pair<long, int> findMostFrequentConsecutiveX(const set<pair<long, long>>& seen) {
+    // Convert set to vector for sorting
+    vector<pair<long, long>> vec(seen.begin(), seen.end());
+
+    // Sort the vector by X value first, then by Y value
+    sort(vec.begin(), vec.end(), [](const pair<long, long>& a, const pair<long, long>& b) {
+        if (a.first != b.first) {
+            return a.first < b.first;
+        }
+        return a.second < b.second;
+    });
+
+    // Count consecutive vertical points for each X value
+    unordered_map<long, int> frequency;
+    long prevX = -1;
+    long prevY = -1;
+    int consecutiveCount = 0;
+    int maxCount = 0;
+    long mostFrequentX = -1;
+
+    for (const auto& p : vec) {
+        if (p.first == prevX && p.second == prevY + 1) {
+            consecutiveCount++;
+        } else {
+            if (consecutiveCount > maxCount) {
+                maxCount = consecutiveCount;
+                mostFrequentX = prevX;
+            }
+            if (p.first == prevX) {
+                consecutiveCount = 1; // Reset the count for the next consecutive sequence
+            } else {
+                consecutiveCount = 1; // Reset the count for a new X value
+            }
+        }
+        prevX = p.first;
+        prevY = p.second;
+    }
+
+    // Check the last sequence
+    if (consecutiveCount > maxCount) {
+        maxCount = consecutiveCount;
+        mostFrequentX = prevX;
+    }
+
+    return {mostFrequentX, maxCount};
+}
+
 
 int main(int argc, char ** argv, char ** envp) {
     std::cout << banner << std::endl;
@@ -65,164 +129,46 @@ int main(int argc, char ** argv, char ** envp) {
     //Point Z = Point(11,7);
     Point Z = Point(101,103);
 
-    // Dump the input
-    /*
-    for(size_t i = 0; i < positions.size(); i++) {
-        std::cout << "pos=<" << positions[i].first << "," << positions[i].second << ">, vel=<" << velocities[i].first << "," << velocities[i].second << ">" << std::endl;
-    }
-    */
-
-/*
-    // Simulate N times
-    long MaxN=100000000;
-    long MinN=35300000;
-    long MaxCenterColumn = 0;
-    for(auto N = MinN; N < MaxN; N++) {
-        long quadrants[4] = {0,0,0,0};
-        long axis[2] = {0,0};
-        std::vector<std::pair<long, long>> newPositions;
-        for(size_t i = 0; i < positions.size(); i++) {
-            auto x = positions[i].first + (N*velocities[i].first);
-            auto y = positions[i].second + (N*velocities[i].second);
-
-            if(std::abs(x) > std::abs(Z.x)) {
-                x = x % Z.x;
-            }
-            if(std::abs(y) > std::abs(Z.y)) {
-                y = y % Z.y;
-            }
-            if(x < 0) {
-                x += Z.x;
-            }
-            if(y < 0) {
-                y += Z.y;
-            }
-
-            newPositions.push_back(std::make_pair(x, y));
-            // std::cout << "pos=<" << positions[i].first << "," << positions[i].second << ">" << "\t";
-            // std::cout << "<" << x << "," << y << ">" << "\t";
-            if(x != (Z.x -1) / 2 && y != (Z.y -1) / 2) {
-                if(x < (Z.x -1) / 2 && y < (Z.y -1) / 2) {
-                    // std::cout << "QUADRANT 1" << std::endl;
-                    quadrants[0] ++;
-                } else if(x > (Z.x -1) / 2 && y < (Z.y -1) / 2) {
-                    // std::cout << "QUADRANT 2" << std::endl;
-                    quadrants[1] ++;
-                } else if(x < (Z.x -1) / 2 && y > (Z.y -1) / 2) {
-                    // std::cout << "QUADRANT 3" << std::endl;
-                    quadrants[2] ++;
-                } else if(x > (Z.x -1) / 2 && y > (Z.y -1) / 2) {
-                    // std::cout << "QUADRANT 4" << std::endl;
-                    quadrants[3] ++;
-                }
-            } else {
-                if(x == (Z.x -1) / 2 ) {
-                    // std::cout << "CENTER COLOUMN" << std::endl;
-                    axis[0]++;
-                } else
-                if(y == (Z.y -1) / 2 ) {
-                    // std::cout << "CENTER ROW" << std::endl;
-                    axis[1]++;
-                } else {
-                    // std::cout << "CENTER" << std::endl;
-                    axis[0]++;
-                    axis[1]++;
-                }
-            }
-        }
-
-        if( axis[0] > MaxCenterColumn) {
-            MaxCenterColumn = axis[0];
-            std::cout << MaxCenterColumn << " @ " << N << std::endl << std::endl;
-        } else {
-            std::cout << "\x1b[1;F - " << N << std::endl;
-        }
-
-        if(axis[0] > Z.y / 5) {
-            DumpPositions(newPositions, Z.x, Z.y);
-            std::cout << "N: " << N << std::endl << std::endl;
-            // break;
-        }
-        // DumpPositions(newPositions, Z.x, Z.y);
-    }
-*/
-    // std::cout << "New positions:" << newPositions.size() << std::endl;
-    // std::cout << "Quadrants:" << quadrants[0] << " " << quadrants[1] << " " << quadrants[2] << " " << quadrants[3] << std::endl;
-    // std::cout << "Safety factor: " << (quadrants[0] * quadrants[1] * quadrants[2] * quadrants[3]) << std::endl;
-
+    int maxCount = 0;
     std::cout << std::endl;
-    long long maxSoFar = 0;
-    long long maxSolutions = 100000;
-    long long maxIteration = maxSolutions * 1000;
-    std::map<long long, long long> solutionCount;
-    for(long long i = 0; i < positions.size(); i++) {
-        std::cout << "\x1b[1;F" << std::setfill('0') << std::setw(7) << (positions.size() - i) << std::endl;
-        try {
-            // Solve the equation X + N * V ≡ (W-1) / 2 (mod W)
-            long long X = (long long)positions[i].first;
-            long long Velocity = (long long)velocities[i].first;
-            long long Limit = (long long)Z.x;
-            long long K = (((Limit - 1) / 2) - X + Limit) % Limit;     // We look for an X at the center thus at ((Limit - 1) / 2)
+    for(long long i = 0; i < 50000; i ++) {
+        std::cout << "\x1b[1;F - " << i << std::endl;
 
-            // auto Velocity_modInv = modInverseFermat(Velocity, Limit);
-            auto Velocity_modInv = modInverseExtendedEuclidian(Velocity, Limit);
-            // std::cout << "Velocity_modInv: " << Velocity_modInv << std::endl;
-            
-            vector<long long> solutions;
+        std::set<std::pair<long, long>> seen;
+        for(auto j = 0; j < positions.size(); j++) {
+            auto nx = (positions[j].first + i * velocities[j].first) % Z.x;
+            auto ny = (positions[j].second + i * velocities[j].second) % Z.y;
+            // Ensure nx and ny are non-negative
+            if (nx < 0) { nx += Z.x; }
+            if (ny < 0) { ny += Z.y; }
 
-            // Initial N
-            long long N = (K * Velocity_modInv) % Limit;
-            if (N < 0) {
-                N += Limit;
-            }
-            // std::cout << "N: " << N << std::endl;
-            solutionCount[N] ++;
-            solutions.push_back(N);
+            seen.emplace(nx, ny);
+        }
+        
+        // Let's bet that all robots are in a distinct X,Y position
+        // If it doesn't work, comment out the if; or replace with a lower value, e.g. (see.size() >= (positions.size() - 10 ))
+        if(seen.size() == positions.size()) {
+            // Find the trunc of the tree (would be a straight vertical line of a consequent size, let's say 24, it's X-Mas)
+            pair<long, int> result = findMostFrequentConsecutiveX(seen);
+            if(result.second > maxCount) {
+                maxCount = result.second;
+                std::cout << "X: " << result.first << " - consecutive Y: " << result.second << " - SEEN: " << seen.size() << std::endl << std::endl;
 
-            if(solutionCount[N] > maxSoFar) {
-                maxSoFar = solutionCount[N];
-                std::cout << "N: " << N << " - " << solutionCount[N] << " solutions" << std::endl << std::endl;
-            }
+                if(result.second >= 24) {
+                    std::cout << "TRYING AT " << i << std::endl << std::endl;    
+                    vector<pair<long, long>> vec(seen.begin(), seen.end());
+                    DumpPositions(vec, Z.x, Z.y);
 
-            // Subsequent N
-            long long Period = Limit / gcdBasicEuclidian(Velocity, Limit);
-
-            for (long long i = 0; solutions.size() < maxSolutions && i < maxIteration; ++i) {
-                auto initialN = solutions.front();
-                N = (initialN + i * Period);
-                if (N > 0) {
-                    if( find(solutions.begin(), solutions.end(), N) == solutions.end()) {
-                        // std::cout << "N: " << N << std::endl;
-                        solutionCount[N] ++;
-                        solutions.push_back(N);
-
-                        if(solutionCount[N] > maxSoFar) {
-                            maxSoFar = solutionCount[N];
-                            std::cout << "N: " << N << " - " << solutionCount[N] << " solutions" << std::endl << std::endl;
-                        }
-                    } else {
-                        // std::cout << "N: " << N << " already found" << std::endl;
-                    }
+                    std::cout << "Number of iterations: " << i << std::endl << std::endl;    
+                    // If that was not the right one, comment out
+                    break;
                 }
+                
             }
-        } catch (const std::invalid_argument& e) {
-            // std::cerr << e.what() << std::endl;
         }
+ 
     }
-
-    // Sort Solution Count by value and print it
-    std::vector<std::pair<long long, long long>> sortedSolutionCount;
-    for (const auto& kv : solutionCount) {
-        sortedSolutionCount.push_back(kv);
-    }
-    std::sort(sortedSolutionCount.begin(), sortedSolutionCount.end(), [](const std::pair<long long, long long>& a, const std::pair<long long, long long>& b) {
-        return a.first > b.first;
-    });
-    for (const auto& kv : sortedSolutionCount) {
-        if(kv.second > 362) {
-            std::cout << "i: " << kv.first << " - " << kv.second << " solutions" << std::endl;
-        }
-    }
+    
     return 0;
 }
 
@@ -272,31 +218,4 @@ void DumpPositions(const std::vector<std::pair<long, long>> & positions, long wi
         std::cout << "pos=<" << positions[i].first << "," << positions[i].second << ">" << std::endl;
     }
 */
-}
-
-
-// Fonction pour trouver l'inverse multiplicatif de V modulo M
-long long modInverse(long long V, long long M) {
-    long long m0 = M, t, q;
-    long long x0 = 0, x1 = 1;
-
-    if (M == 1) return 0;
-
-    while (V > 1) {
-        // quotient
-        q = V / M;
-        t = M;
-
-        // M est le reste maintenant, procédez comme dans l'algorithme d'Euclide
-        M = V % M, V = t;
-        t = x0;
-
-        x0 = x1 - q * x0;
-        x1 = t;
-    }
-
-    // Assurez-vous que x1 est positif
-    if (x1 < 0) x1 += m0;
-
-    return x1;
 }
