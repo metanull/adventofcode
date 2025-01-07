@@ -104,29 +104,29 @@ void MoveRobot(std::vector<std::vector<char>> & map, std::pair<int,int> & Robot,
         if(direction.first == 0) {
             if(direction.second > 0) {
                 if(p < ahead.size() - crateCount) {
-                    map[Robot.first][Robot.second + p] = EMPTY_CHAR;
+                    map[Robot.second + p + 1][Robot.first] = EMPTY_CHAR;
                 } else {
-                    map[Robot.first][Robot.second + p] = CRATE_CHAR;
+                    map[Robot.second + p + 1][Robot.first] = CRATE_CHAR;
                 }
             } else {
                 if(p < ahead.size() - crateCount) {
-                    map[Robot.first][Robot.second - p] = EMPTY_CHAR;
+                    map[Robot.second - p - 1][Robot.first] = EMPTY_CHAR;
                 } else {
-                    map[Robot.first][Robot.second - p] = CRATE_CHAR;
+                    map[Robot.second - p - 1][Robot.first] = CRATE_CHAR;
                 }
             }
         } else {
-        if(direction.first > 0) {
+            if(direction.first > 0) {
                 if(p < ahead.size() - crateCount) {
-                    map[Robot.first + p][Robot.second] = EMPTY_CHAR;
+                    map[Robot.second][Robot.first + p + 1] = EMPTY_CHAR;
                 } else {
-                    map[Robot.first + p][Robot.second] = CRATE_CHAR;
+                    map[Robot.second][Robot.first + p + 1] = CRATE_CHAR;
                 }
             } else {
                 if(p < ahead.size() - crateCount) {
-                    map[Robot.first - p][Robot.second] = EMPTY_CHAR;
+                    map[Robot.second][Robot.first - p - 1] = EMPTY_CHAR;
                 } else {
-                    map[Robot.first - p][Robot.second] = CRATE_CHAR;
+                    map[Robot.second][Robot.first - p - 1] = CRATE_CHAR;
                 }
             }
         }    
@@ -202,33 +202,30 @@ int main(int argc, char ** argv, char ** envp) {
     int distance = 1;
     for(auto p = 0; p < moves.size(); p++) {
         char direction = moves[p];
-        /*if(direction == lastDirection) {
+        if(lastDirection == 0) {
+            lastDirection = direction;
+            continue;
+        }
+        if( direction == lastDirection) {
             distance++;
             continue;
-        }*/
+        }
         std::pair<int,int> v = std::make_pair(
-              distance * (direction == '<' ? -1 : (direction == '>' ? 1 : 0))
-            , distance * (direction == '^' ? -1 : (direction == 'v' ? 1 : 0))
+              distance * (lastDirection == '<' ? -1 : (lastDirection == '>' ? 1 : 0))
+            , distance * (lastDirection == '^' ? -1 : (lastDirection == 'v' ? 1 : 0))
         );
-        lastDirection = direction;
-        distance = 1;
-
+        
         MoveRobot(map, Robot, v);
-        /*
-        if(Robot.first + v.first < O.first || Robot.first + v.first > Z.first) {
-            std::cout << "Hit a wall!" << std::endl;
-            return 1;
-        }
-        if(Robot.second + v.second < O.second || Robot.second + v.second > Z.second) {
-            std::cout << "Hit a wall!" << std::endl;
-            return 1;
-        }
-        */
 
         // Print the map
-        printCharMap(map);
         std::cout << "Moves:" << moves << std::endl;
         std::cout << "Robot:" << Robot << std::endl;
+        printCharMap(map);
+        std::cout << std::endl;
+
+        // Prepare next iteration
+        distance = 1;
+        lastDirection = direction;
     }
 
     return 0;
