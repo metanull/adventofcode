@@ -9,7 +9,7 @@
 #include <map>
 #include <stdexcept>
 #include <set>
-// #include <compare>
+#include <filesystem>
 
 #include "..\AdventOfCode.h"
 #include "..\Point.h"
@@ -26,9 +26,118 @@ using namespace std;
 #define EMPTY_CHAR '.'
 
 const char * banner = "AdventOfCode 2024 Day 15!";
-const char * inputFilePath = "C:/Users/phave/OneDrive/Documents/adventofcode/2024/Input/Day15.txt";
+const char * inputFilePath = "./Input/Day15.txt";
 
-void printCharVector(const std::vector<char> & vec, std::ostream & os = std::cout) {
+/**
+ * Color print a vector<char>
+ */
+void printCharVector(const std::vector<char> & vec, std::ostream & os = std::cout);
+/**
+ * Color print a vector<vector<char>>
+ */
+void printCharMap(const std::vector<std::vector<char>> & map, std::ostream & os = std::cout);
+/**
+ * Print a pair<int,int>
+ */
+std::ostream& operator<<(std::ostream& os, const std::pair<int,int> & p);
+/**
+ * Print a vector<char>
+ */
+std::ostream& operator<<(std::ostream& os, const std::vector<char> & vec);
+/**
+ * Print a vector<vector<char>>
+ */
+std::ostream& operator<<(std::ostream& os, const std::vector<std::vector<char>> & map);
+
+/**
+ * Move the robot on the map, following the received instructions
+ */
+void MoveRobot(std::vector<std::vector<char>> & map, std::vector<char> & moves);
+/**
+ * Perform one individual instruction
+ */
+void MoveRobot(std::vector<std::vector<char>> & map, std::pair<int,int> & Robot, std::pair<int,int> & direction);
+
+int main(int argc, char ** argv, char ** envp) {
+    std::cout << banner << std::endl;
+    // std::cout << std::filesystem::current_path() << std::endl;
+
+    std::vector<std::vector<char>> map;
+    std::vector<char> moves;
+
+    // Read input file
+    {
+        // Read input file
+        std::ifstream inputFile(inputFilePath);
+        if(!inputFile || !inputFile.is_open()) {
+            std::cerr << "Unable to open " << inputFilePath << "." << std::endl;
+            return 1;
+        }
+        // Read the map
+        std::string line;
+        while(getline(inputFile, line)) {
+            if(line.length() == 0) {
+                break;
+            }
+            std::vector<char> row;
+            for(char c : line) {
+                switch(c) {
+                    case ROBOT_CHAR:
+                        row.push_back(ROBOT_CHAR);
+                        row.push_back(EMPTY_CHAR);
+                        break;
+                    case CRATE_CHAR:
+                        row.push_back(CRATE_CHAR1);
+                        row.push_back(CRATE_CHAR2);
+                        break;
+                    case WALL_CHAR:
+                        row.push_back(WALL_CHAR);
+                        row.push_back(WALL_CHAR);
+                        break;
+                    case EMPTY_CHAR:
+                        row.push_back(EMPTY_CHAR);
+                        row.push_back(EMPTY_CHAR);
+                        break;
+                    default:
+                        std::cerr << "Invalid character in the map: " << c << std::endl;
+                        return 1;
+                }
+            }
+            map.push_back(row);
+        }
+        // Read the moves
+        while(getline(inputFile, line)) {
+            moves.insert(moves.end(), line.begin(), line.end());
+        }
+        inputFile.close();
+    }
+
+    // Print the initial state
+    printCharMap(map);
+
+    // Move the robot, following received instructions
+    MoveRobot(map, moves);
+
+    // Print the result
+    printCharMap(map);
+
+    // Calculate the Crate's Goods Positioning System coordinates
+    // std::set<std::pair<int,int>> GPS;
+    long long SumGPS = 0;
+    for(auto p = 0; p < map.size(); p++) {
+        for(auto q = 0; q < map[p].size(); q++) {
+            if(map[p][q] == CRATE_CHAR) {
+                SumGPS += (100 * p) + (1 * q);
+                // GPS.emplace(q,p);
+            }
+        }
+    }
+    std::cout << "SumGPS: " << SumGPS << std::endl;
+
+    return 0;
+}
+
+void printCharVector(const std::vector<char> & vec, std::ostream & os) {
     for(auto p = 0; p < vec.size(); p++) {
         switch(vec[p]) {
             case ROBOT_CHAR:
@@ -48,7 +157,7 @@ void printCharVector(const std::vector<char> & vec, std::ostream & os = std::cou
     }
     os << std::endl;
 }
-void printCharMap(const std::vector<std::vector<char>> & map, std::ostream & os = std::cout) {
+void printCharMap(const std::vector<std::vector<char>> & map, std::ostream & os) {
     for(auto p = 0; p < map.size(); p++) {
         printCharVector(map[p], os);
     }
@@ -71,6 +180,66 @@ std::ostream& operator<<(std::ostream& os, const std::vector<std::vector<char>> 
     return os;
 }
 
+/**
+ * Follow all move instructions
+ */
+void MoveRobot(std::vector<std::vector<char>> & map, std::vector<char> & moves) {
+    // Initialization
+    std::pair<int,int> O = std::make_pair(1,1);
+    std::pair<int,int> Z = std::make_pair(map[0].size()-2, map.size()-2);
+    std::pair<int,int> Robot = std::make_pair(0,0);
+    for(auto p = 0; p < map.size(); p++) {
+        for(auto q = 0; q < map[p].size(); q++) {
+            if(map[p][q] == ROBOT_CHAR) {
+                Robot = std::make_pair(q,p);
+                break;
+            }
+        }
+    }
+
+    // Print the initial state
+    // std::cout << "Moves:" << moves << std::endl;
+    // std::cout << "Robot:" << Robot << std::endl;
+    // std::cout << "Map:  " << std::endl << map << std::endl;
+    
+    // Read move instructions and Move the robot around
+    char lastDirection = 0;
+    int distance = 1;
+    for(auto p = 0; p < moves.size(); p++) {
+        // Collect move instruction
+        char direction = moves[p];
+        if(lastDirection == 0) {
+            lastDirection = direction;
+            continue;
+        }
+        if( direction == lastDirection) {
+            distance++;
+            continue;
+        }
+
+        // Move the Robot ahead as much as possible
+        std::pair<int,int> v = std::make_pair(
+              distance * (lastDirection == '<' ? -1 : (lastDirection == '>' ? 1 : 0))
+            , distance * (lastDirection == '^' ? -1 : (lastDirection == 'v' ? 1 : 0))
+        );
+        MoveRobot(map, Robot, v);
+
+        // Prepare next iteration
+        distance = 1;
+        lastDirection = direction;
+    }
+    // Do the last move
+    // Move the Robot ahead as much as possible
+    std::pair<int,int> v = std::make_pair(
+          distance * (lastDirection == '<' ? -1 : (lastDirection == '>' ? 1 : 0))
+        , distance * (lastDirection == '^' ? -1 : (lastDirection == 'v' ? 1 : 0))
+    );
+    MoveRobot(map, Robot, v);
+}
+
+/**
+ * Perform one individual move
+ */
 void MoveRobot(std::vector<std::vector<char>> & map, std::pair<int,int> & Robot, std::pair<int,int> & direction) {
 
     // Print the move meta data
@@ -212,132 +381,4 @@ void MoveRobot(std::vector<std::vector<char>> & map, std::pair<int,int> & Robot,
     // std::cout << "AFTER: Robot:" << Robot << std::endl;
     // std::cout << "AFTER: Actual move:" << direction << std::endl;
     // std::cout << std::endl;
-
-}
-
-int main(int argc, char ** argv, char ** envp) {
-    std::cout << banner << std::endl;
-
-    std::vector<std::vector<char>> map;
-    std::vector<char> moves;
-
-    // Read input file
-    {
-        // Read input file
-        std::ifstream inputFile(inputFilePath);
-        if(!inputFile || !inputFile.is_open()) {
-            std::cerr << "Unable to open " << inputFilePath << "." << std::endl;
-            return 1;
-        }
-        // Read the map
-        std::string line;
-        while(getline(inputFile, line)) {
-            if(line.length() == 0) {
-                break;
-            }
-            std::vector<char> row;
-            for(char c : line) {
-                switch(c) {
-                    case ROBOT_CHAR:
-                        row.push_back(ROBOT_CHAR);
-                        row.push_back(EMPTY_CHAR);
-                        break;
-                    case CRATE_CHAR:
-                        row.push_back(CRATE_CHAR1);
-                        row.push_back(CRATE_CHAR2);
-                        break;
-                    case WALL_CHAR:
-                        row.push_back(WALL_CHAR);
-                        row.push_back(WALL_CHAR);
-                        break;
-                    case EMPTY_CHAR:
-                        row.push_back(EMPTY_CHAR);
-                        row.push_back(EMPTY_CHAR);
-                        break;
-                    default:
-                        std::cerr << "Invalid character in the map: " << c << std::endl;
-                        return 1;
-                }
-            }
-            map.push_back(row);
-        }
-        // Read the moves
-        while(getline(inputFile, line)) {
-            moves.insert(moves.end(), line.begin(), line.end());
-        }
-        inputFile.close();
-    }
-
-    // Initialization
-    std::pair<int,int> O = std::make_pair(1,1);
-    std::pair<int,int> Z = std::make_pair(map[0].size()-2, map.size()-2);
-    std::pair<int,int> Robot = std::make_pair(0,0);
-    for(auto p = 0; p < map.size(); p++) {
-        for(auto q = 0; q < map[p].size(); q++) {
-            if(map[p][q] == ROBOT_CHAR) {
-                Robot = std::make_pair(q,p);
-                break;
-            }
-        }
-    }
-
-    // Print the initial state
-    // std::cout << "Moves:" << moves << std::endl;
-    // std::cout << "Robot:" << Robot << std::endl;
-    // std::cout << "Map:  " << std::endl << map << std::endl;
-    printCharMap(map);
-
-    return 0;
-    
-    // Read move instructions and Move the robot around
-    char lastDirection = 0;
-    int distance = 1;
-    for(auto p = 0; p < moves.size(); p++) {
-        // Collect move instruction
-        char direction = moves[p];
-        if(lastDirection == 0) {
-            lastDirection = direction;
-            continue;
-        }
-        if( direction == lastDirection) {
-            distance++;
-            continue;
-        }
-
-        // Move the Robot ahead as much as possible
-        std::pair<int,int> v = std::make_pair(
-              distance * (lastDirection == '<' ? -1 : (lastDirection == '>' ? 1 : 0))
-            , distance * (lastDirection == '^' ? -1 : (lastDirection == 'v' ? 1 : 0))
-        );
-        MoveRobot(map, Robot, v);
-
-        // Prepare next iteration
-        distance = 1;
-        lastDirection = direction;
-    }
-    // Do the last move
-    // Move the Robot ahead as much as possible
-    std::pair<int,int> v = std::make_pair(
-          distance * (lastDirection == '<' ? -1 : (lastDirection == '>' ? 1 : 0))
-        , distance * (lastDirection == '^' ? -1 : (lastDirection == 'v' ? 1 : 0))
-    );
-    MoveRobot(map, Robot, v);
-    
-    // Print the result
-    printCharMap(map);
-
-    // Calculate the Crate's Goods Positioning System coordinates
-    // std::set<std::pair<int,int>> GPS;
-    long long SumGPS = 0;
-    for(auto p = 0; p < map.size(); p++) {
-        for(auto q = 0; q < map[p].size(); q++) {
-            if(map[p][q] == CRATE_CHAR) {
-                SumGPS += (100 * p) + (1 * q);
-                // GPS.emplace(q,p);
-            }
-        }
-    }
-    std::cout << "SumGPS: " << SumGPS << std::endl;
-
-    return 0;
 }
