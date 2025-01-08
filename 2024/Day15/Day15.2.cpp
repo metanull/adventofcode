@@ -26,7 +26,7 @@ using namespace std;
 #define EMPTY_CHAR '.'
 
 const char * banner = "AdventOfCode 2024 Day 15!";
-const char * inputFilePath = "./Input/Day15.txt";
+const char * inputFilePath = "../../../Input/Day15.txt";
 
 /**
  * Color print a vector<char>
@@ -56,11 +56,150 @@ void MoveRobot(std::vector<std::vector<char>> & map, std::vector<char> & moves);
 /**
  * Perform one individual instruction
  */
-void MoveRobot(std::vector<std::vector<char>> & map, std::pair<int,int> & Robot, std::pair<int,int> & direction);
+void MoveRobot(std::vector<std::vector<char>> & map, std::pair<int,int> & Robot, std::pair<int,int> & Direction);
+
+std::pair<int,int> TryMove(std::vector<std::vector<char>> & map, std::pair<int,int> From, std::pair<int,int> Direction) {
+    if(Direction.first == 0 && Direction.second == 0) {
+        // Null move
+        return std::make_pair(0,0);
+    }
+    if(Direction.first == 0) {
+        // Vertical Move
+        if(Direction.second > 0) {
+            // Move Up
+            std::pair<int,int> move = std::make_pair(0,1);
+            if(From.second == map.size() -1) {
+                // Going out of bounds
+                return std::make_pair(0,0);
+            }
+            switch(map[From.second + 1][From.first]) {
+                case EMPTY_CHAR: {
+                    // Empty, try further, keeping track of the number of successfull moves
+                    std::pair<int,int> nextMove = TryMove(map,std::make_pair(From.first, From.second + 1),std::make_pair(Direction.first, Direction.second - 1));
+                    move.second += nextMove.second;
+                    return move;
+                }
+                case CRATE_CHAR1: {
+                    // Crate ahead, try further, keeping track of the number of successfull moves (! creates span over two horizontal cells)
+                    std::pair<int,int> nextMoveL = TryMove(map,std::make_pair(From.first,     From.second + 1),std::make_pair(Direction.first, Direction.second - 1));
+                    std::pair<int,int> nextMoveR = TryMove(map,std::make_pair(From.first + 1, From.second + 1),std::make_pair(Direction.first, Direction.second - 1));
+                    move.second += std::min(nextMoveL.second,nextMoveR.second);
+                    return move;
+                } break;
+                case CRATE_CHAR2: {
+                    // Crate ahead, try further, keeping track of the number of successfull moves (! creates span over two horizontal cells)
+                    std::pair<int,int> nextMoveL = TryMove(map,std::make_pair(From.first - 1, From.second + 1),std::make_pair(Direction.first, Direction.second - 1));
+                    std::pair<int,int> nextMoveR = TryMove(map,std::make_pair(From.first,     From.second + 1),std::make_pair(Direction.first, Direction.second - 1));
+                    move.second += std::min(nextMoveL.second,nextMoveR.second);
+                    return move;
+                } break;
+                case WALL_CHAR: {
+                    // Hitting a wall
+                    return std::make_pair(0,0);
+                } break;
+            }
+            throw std::out_of_range("Character was unexpected");
+        } else {
+            // Move Down
+            std::pair<int,int> move = std::make_pair(0,-1);
+            if(From.second == 0) {
+                // Going out of bounds
+                return std::make_pair(0,0);
+            }
+            switch(map[From.second - 1][From.first]) {
+                case EMPTY_CHAR: {
+                    // Empty, try further, keeping track of the number of successfull moves
+                    std::pair<int,int> nextMove = TryMove(map,std::make_pair(From.first, From.second - 1),std::make_pair(Direction.first, Direction.second - 1));
+                    move.second -= nextMove.second;
+                    return move;
+                }
+                case CRATE_CHAR1: {
+                    // Crate ahead, try further, keeping track of the number of successfull moves (! creates span over two horizontal cells)
+                    std::pair<int,int> nextMoveL = TryMove(map,std::make_pair(From.first,     From.second - 1),std::make_pair(Direction.first, Direction.second - 1));
+                    std::pair<int,int> nextMoveR = TryMove(map,std::make_pair(From.first + 1, From.second - 1),std::make_pair(Direction.first, Direction.second - 1));
+                    move.second -= std::max(nextMoveL.second,nextMoveR.second);
+                    return move;
+                } break;
+                case CRATE_CHAR2: {
+                    // Crate ahead, try further, keeping track of the number of successfull moves (! creates span over two horizontal cells)
+                    std::pair<int,int> nextMoveL = TryMove(map,std::make_pair(From.first - 1, From.second - 1),std::make_pair(Direction.first, Direction.second - 1));
+                    std::pair<int,int> nextMoveR = TryMove(map,std::make_pair(From.first,     From.second - 1),std::make_pair(Direction.first, Direction.second - 1));
+                    move.second -= std::max(nextMoveL.second,nextMoveR.second);
+                    return move;
+                } break;
+                case WALL_CHAR: {
+                    // Hitting a wall
+                    return std::make_pair(0,0);
+                } break;
+            }
+            throw std::out_of_range("Character was unexpected");
+        }
+    } else {
+        // Horizontal Move
+        if(Direction.first > 0) {
+            // Move right
+            std::pair<int,int> move = std::make_pair(1,0);
+            if(From.first == map[From.second].size() - 1) {
+                // Going out of bounds
+                return std::make_pair(0,0);
+            }
+            switch(map[From.second][From.first + 1] ) {
+                case EMPTY_CHAR: {
+                    // Empty, try further, keeping track of the number of successfull moves
+                    std::pair<int,int> nextMove = TryMove(map,std::make_pair(From.first + 1, From.second),std::make_pair(Direction.first - 1, Direction.second));
+                    move.first += nextMove.first;
+                    return move;
+                }
+                case CRATE_CHAR1: {
+                    // Crate ahead, try further, keeping track of the number of successfull moves (! creates span over two horizontal cells)
+                    std::pair<int,int> nextMove = TryMove(map,std::make_pair(From.first + 2, From.second),std::make_pair(Direction.first, Direction.second));
+                    /*if(nextMove.first > 0) {
+                        move.first += (nextMove.first - 1);
+                    }*/
+                    move.first += nextMove.first;
+                    return move;
+                } break;
+                case WALL_CHAR: {
+                    // Hitting a wall
+                    return std::make_pair(0,0);
+                } break;
+            }
+            throw std::out_of_range("Character was unexpected");
+        } else {
+            // Move left
+            std::pair<int,int> move = std::make_pair(-1,0);
+            if(From.first == 0) {
+                // Going out of bounds
+                return std::make_pair(0,0);
+            }
+            switch(map[From.second][From.first - 1] ) {
+                case EMPTY_CHAR: {
+                    // Empty, try further, keeping track of the number of successfull moves
+                    std::pair<int,int> nextMove = TryMove(map,std::make_pair(From.first - 1, From.second),std::make_pair(Direction.first + 1, Direction.second));
+                    move.first += nextMove.first;
+                    return move;
+                }
+                case CRATE_CHAR2: {
+                    // Crate ahead, try further, keeping track of the number of successfull moves (! creates span over two horizontal cells)
+                    std::pair<int,int> nextMove = TryMove(map,std::make_pair(From.first - 2, From.second),std::make_pair(Direction.first, Direction.second));
+                    /*if(nextMove.first < 0) {
+                        move.first += (nextMove.first + 1);
+                    }*/
+                    move.first += nextMove.first;
+                    return move;
+                } break;
+                case WALL_CHAR: {
+                    // Hitting a wall
+                    return std::make_pair(0,0);
+                } break;
+            }
+            throw std::out_of_range("Character was unexpected");
+        }
+    }
+}
 
 int main(int argc, char ** argv, char ** envp) {
     std::cout << banner << std::endl;
-    // std::cout << std::filesystem::current_path() << std::endl;
 
     std::vector<std::vector<char>> map;
     std::vector<char> moves;
@@ -71,6 +210,7 @@ int main(int argc, char ** argv, char ** envp) {
         std::ifstream inputFile(inputFilePath);
         if(!inputFile || !inputFile.is_open()) {
             std::cerr << "Unable to open " << inputFilePath << "." << std::endl;
+            std::cerr << "Current working directory: " << std::filesystem::current_path() << std::endl;
             return 1;
         }
         // Read the map
@@ -116,7 +256,14 @@ int main(int argc, char ** argv, char ** envp) {
     printCharMap(map);
 
     // Move the robot, following received instructions
-    MoveRobot(map, moves);
+    // MoveRobot(map, moves);
+
+    std::pair<int,int> t = {0,0};
+    t = TryMove(map, std::make_pair(12,6), std::make_pair( 6,0));
+    t = TryMove(map, std::make_pair(12,6), std::make_pair(-6,0));
+    t = TryMove(map, std::make_pair(12,6), std::make_pair(0, 6));
+    t = TryMove(map, std::make_pair(12,6), std::make_pair(0,-6));
+
 
     // Print the result
     printCharMap(map);
