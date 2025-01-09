@@ -58,72 +58,6 @@ void MoveRobot(std::vector<std::vector<char>> & map, std::vector<char> & moves);
  */
 void MoveRobot(std::vector<std::vector<char>> & map, std::pair<int,int> & Robot, std::pair<int,int> & Direction);
 
-std::vector<char> Get(const std::vector<std::vector<char>> & map, int x, int y, int vX, int vY, int N = 1) {
-    if(N < 0) {
-        throw std::invalid_argument("N < 0");
-    }
-    if(vX != 0 && vY != 0) {
-        throw std::invalid_argument("Get: vX and vY cannot be both non-zero.");
-    }
-    
-    int xOffStart = 0, yOffStart = 0;
-    int xOffEnd = 0, yOffEnd = 0;
-    if(vX < 0) {
-        xOffStart = x + vX;
-        xOffEnd = x + vX + N;
-    } else 
-    if(vX > 0) {
-        xOffStart = x + vX - 1;
-        xOffEnd = x + vX + N - 1;
-    } else
-    if(vY < 0) {
-        yOffStart = y + vY;
-        yOffEnd = y + vY + N;
-    } else {
-        yOffStart = y + vY - 1;
-        yOffEnd = y + vY + N - 1;
-    }
-
-    if(xOffStart < 0 || yOffStart < 0 || xOffEnd >= map[0].size() || yOffEnd >= map.size()) {
-        throw std::invalid_argument("Get: coordinates mst be within the map.");
-    }
-
-    std::vector<char> n;
-    if(vX != 0) {
-        n = std::vector<char>(map[y].begin() + xOffStart, map[y].begin() + xOffEnd);
-    } else {
-        for(int iY = yOffStart; iY < yOffEnd; iY++) {
-            n.push_back(map[iY][x]);
-        }
-    }
-        
-    return n;
-}
-void Set(std::vector<std::vector<char>> & map, int x, int y, int vX, int vY, const std::vector<char> & n) {
-    if(vX == 0 && vY == 0) {
-        throw std::invalid_argument("Set: vX and vY cannot be both zero.");
-    }
-    if(vX != 0 && vY != 0) {
-        throw std::invalid_argument("Set: vX and vY cannot be both non-zero.");
-    }
-    if(x < 0 || y < 0 || x >= map[0].size() || y >= map.size()) {
-        throw std::invalid_argument("Set: x and y must be within the map.");
-    }
-    if(x + vX < 0 || y + vY < 0 || x + vX >= map[0].size() || y + vY >= map.size()) {
-        throw std::invalid_argument("Set: x + vX and y + vY must be within the map.");
-    }
-    if(n.size() != std::abs(vX + vY)) {
-        throw std::invalid_argument("Set: n must have the same size as the distance between the two points.");
-    }
-    if(vX != 0) {
-        std::copy(n.begin(), n.end(), map[y].begin() + x + vX);
-    } else {
-        for(int i = 0; i < n.size(); i++) {
-            map[y + vY + i][x] = n[i];
-        }
-    }
-}
-
 int MoveNUp(std::vector<std::vector<char>> & map, std::pair<int,int> From, int N = 1, int amount = 1) {
     if(amount == 0) {
         return 0;
@@ -214,6 +148,55 @@ int MoveNUp(std::vector<std::vector<char>> & map, std::pair<int,int> From, int N
 
     // Recurse
     return MoveNUp(map, std::make_pair(From.first, From.second + 1), N, amount - 1);
+}
+
+int PushUp(const std::vector<std::vector<char>> & map, const std::pair<int,int> point, int depth = 0) {
+    char c = map[point.second][point.first];
+    char next = map[point.second + 1][point.first];
+
+    // Test if there is room ahead to move "c"
+    if(EMPTY_CHAR == next) {
+        return 1;
+    }
+    if(WALL_CHAR == next) {
+        return 0;
+    }
+    if(CRATE_CHAR2 == next) {
+        return std::min(
+              testPushUp(map, std::make_pair(point.first - 1,point.second +1), depth + 1)
+            , testPushUp(map, std::make_pair(point.first,point.second +1), depth + 1)
+        );
+    }
+    if(CRATE_CHAR1 == next) {
+        return std::min(
+              testPushUp(map, std::make_pair(point.first,point.second +1), depth + 1)
+            , testPushUp(map, std::make_pair(point.first + 1,point.second +1), depth + 1)
+        );
+    }
+}
+int testPushUp(const std::vector<std::vector<char>> & map, const std::pair<int,int> point, int depth = 0) {
+    char c = map[point.second][point.first];
+    char next = map[point.second + 1][point.first];
+
+    // Test if there is room ahead to move "c"
+    if(EMPTY_CHAR == next) {
+        return 1;
+    }
+    if(WALL_CHAR == next) {
+        return 0;
+    }
+    if(CRATE_CHAR2 == next) {
+        return std::min(
+              testPushUp(map, std::make_pair(point.first - 1,point.second +1), depth + 1)
+            , testPushUp(map, std::make_pair(point.first,point.second +1), depth + 1)
+        );
+    }
+    if(CRATE_CHAR1 == next) {
+        return std::min(
+              testPushUp(map, std::make_pair(point.first,point.second +1), depth + 1)
+            , testPushUp(map, std::make_pair(point.first + 1,point.second +1), depth + 1)
+        );
+    }
 }
 
 int main(int argc, char ** argv, char ** envp) {
