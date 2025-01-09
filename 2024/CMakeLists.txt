@@ -32,7 +32,10 @@ add_library(Math STATIC ./Math.cpp)
 # add_executable(${TARGET_NAME} Day15/Day15.1.cpp)
 
 # Day 15.2
-add_executable(${TARGET_NAME} Day15/Day15.2.cpp)
+# add_executable(${TARGET_NAME} Day15/Day15.2.cpp)
+
+# Day 16.1
+add_executable(${TARGET_NAME} Day16/Day16.1.cpp)
 
 target_compile_features(${TARGET_NAME} PRIVATE cxx_std_17)
 target_link_libraries(${TARGET_NAME} AdventOfCode Math Point Vector2D)
