@@ -35,7 +35,7 @@ add_library(Math STATIC ./Math.cpp)
 # add_executable(${TARGET_NAME} Day15/Day15.2.cpp)
 
 # Day 16.1
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /HEAP:524288000") # Set heap size to 500MB
+# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /HEAP:524288000") # Set heap size to 500MB
 add_executable(${TARGET_NAME} Day16/Day16.1.cpp)
 
 target_compile_features(${TARGET_NAME} PRIVATE cxx_std_17)
