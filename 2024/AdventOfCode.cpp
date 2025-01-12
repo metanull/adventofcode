@@ -32,3 +32,21 @@ std::vector<T> factorize(T num) {   // works great for smooth numbers
     }
     return v;
 }
+
+
+std::ostream& operator<<(std::ostream& os, const std::pair<int,int> & p) {
+    os << "(" << p.first << "," << p.second << ")";
+    return os;
+}
+std::ostream& operator<<(std::ostream& os, const std::vector<char> & vec) {
+    for(auto p = 0; p < vec.size(); p++) {
+        os << vec[p];
+    }
+    return os;
+}
+std::ostream& operator<<(std::ostream& os, const std::vector<std::vector<char>> & map) {
+    for(auto p = 0; p < map.size(); p++) {
+        os << map[p] << std::endl;
+    }
+    return os;
+}
