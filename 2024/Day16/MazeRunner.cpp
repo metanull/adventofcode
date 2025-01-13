@@ -157,6 +157,10 @@ void MazeRunner::SaveCrosspoint() {
     currentSegment.end = current;
     segments.push(currentSegment);
     currentSegment = {current, MazeRunnerPosition(), std::vector<MazeRunnerPosition>()};
+
+/*
+##### IL Y A DES SEGMENTS EN DOUBLE!!!
+*/
 }
 
 bool MazeRunner::RestoreFromLastCrosspoint() {
