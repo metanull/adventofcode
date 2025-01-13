@@ -10,6 +10,7 @@
 
 #include "Maze.h"
 #include "Compass.h"
+#include "MazeRunner.h"
 // #include "Reindeer.h"
 
 // ---------------------------------------------------------
@@ -24,238 +25,7 @@ std::ostream& operator<<(std::ostream& os, const std::vector<char> & vec);
 // Print a vector<vector<char>>
 std::ostream& operator<<(std::ostream& os, const std::vector<std::vector<char>> & map);
 
-// ---------------------------------------------------------
-struct Reindeer {
-    std::pair<int,int> c = {0,0};   // Cursor Position
-    Compass d = Compass::EAST;      // Direction (N,E,S,W)
-    long score = 0;                 // Score
-    
-    // When storing in the stack, keep track of the number of choices made from there
-    int choiceMade = 0;
-    int maxChoices = 0;
 
-    Reindeer() = default;
-    Reindeer(const Reindeer& other) = default;
-    Reindeer& operator=(const Reindeer& other) = default;
-    
-
-    operator std::pair<int, int>() const {
-        return c;
-    }
-};
-
-bool DoTheNextStep(const Maze & maze, Reindeer & reindeer, Reindeer & nextStep) {
-    int firstChoice = -1;
-    int firstChoiceScore = 0;
-    int secondChoice = -1;
-    int secondChoiceScore = 0;
-    int thirdChoice = -1;
-    int thirdChoiceScore = 0;
-    reindeer.maxChoices = 0;
-    if(maze.GetTileForward(reindeer.c, reindeer.d) != Maze::WALL_CHAR) {
-        reindeer.maxChoices++;
-        firstChoice = 0;
-        firstChoiceScore = 1;
-    }
-    if(maze.GetTileClockwise(reindeer.c, reindeer.d) != Maze::WALL_CHAR) {
-        reindeer.maxChoices++;
-        if(firstChoice == -1) {
-            firstChoice = 1;
-            firstChoiceScore = 1001;
-        }
-        secondChoice = 1;
-        secondChoiceScore = 1001;
-    }
-    if(maze.GetTileCounterClockwise(reindeer.c, reindeer.d) != Maze::WALL_CHAR) {
-        reindeer.maxChoices++;
-        if(firstChoice == -1) {
-            firstChoice = 2;
-            firstChoiceScore = 1001;
-        }
-        if(secondChoice == -1) {
-            secondChoice = 2;
-            secondChoiceScore = 1001;
-        }
-        thirdChoice = 2;
-        thirdChoiceScore = 1001;
-    }
-
-    if(reindeer.maxChoices == 0) {
-        // Reindeer is in a dead end
-        return false;
-    }
-    if(reindeer.choiceMade > reindeer.maxChoices) {
-        // Reindeer has tested all possible choices
-        return false;
-    }
-
-    // Increment the counter of choices
-    reindeer.choiceMade++;
-
-    // Rotate as appropriate and update score accordingly
-    nextStep = reindeer;
-    if(reindeer.choiceMade == 3) {
-        if(thirdChoice == 2) {
-            nextStep.score += thirdChoiceScore;
-            nextStep.d.CounterClockwise();
-        }
-    } else
-    if(reindeer.choiceMade == 2) {
-        if(secondChoice == 1) {
-            nextStep.score += secondChoiceScore;
-            nextStep.d.Clockwise();
-        }
-        if(secondChoice == 2) {
-            nextStep.score += secondChoiceScore;
-            nextStep.d.CounterClockwise();
-        }
-    } else {
-        if(firstChoice == 0) {
-            nextStep.score += firstChoiceScore;
-            // No rotation
-        }
-        if(firstChoice == 1) {
-            nextStep.score += firstChoiceScore;
-            nextStep.d.Clockwise();
-        }
-        if(firstChoice == 2) {
-            nextStep.score += firstChoiceScore;
-            nextStep.d.CounterClockwise();
-        }
-    }
-    if(reindeer.d == Compass::NORTH) {
-        std::cout << "^";
-    }
-    if(reindeer.d == Compass::EAST) {
-        std::cout << ">";
-    }
-    if(reindeer.d == Compass::SOUTH) {
-        std::cout << "v";
-    }
-    if(reindeer.d == Compass::WEST) {
-        std::cout << "<";
-    }
-
-    // Update the position of the nextStep accordingly (but not choiceMage and maxChoices!)
-    nextStep.c = maze.Move(nextStep.c, nextStep.d);
-    nextStep.choiceMade = 0;
-    nextStep.maxChoices = 1;
-    return true;
-}
-
-int CrosspointBranches(const Maze & maze, const Reindeer & reindeer) {
-    int c = 0;
-    if(maze.GetTileForward(reindeer.c, reindeer.d) != Maze::WALL_CHAR) {
-        c++;
-    }
-    if(maze.GetTileClockwise(reindeer.c, reindeer.d) != Maze::WALL_CHAR) {
-        c++;
-    }
-    if(maze.GetTileCounterClockwise(reindeer.c, reindeer.d) != Maze::WALL_CHAR) {
-        c++;
-    }
-    return c;
-}
-
-std::stack<Reindeer> restoreInner;
-std::stack<Reindeer> restoreOuter;
-std::vector<Reindeer> crosspoints;
-long MazeRunner(const Maze & maze) {
-    static long bestScore = LONG_MAX;
-    Reindeer reindeer = {maze.Start(), Compass::EAST, 0, 0, 0};
-
-    // Let the reindeer run in the maze from start to the end
-    // Exploring all path
-    while(true) {
-        // Explore one individual path
-        while(true) {
-            // Exit reached ?
-
-            if(reindeer.c.first == 1 && reindeer.c.second == 13) {
-                std::cout << "Reindeer " << reindeer.c << " -> " << reindeer.d << " (" << reindeer.choiceMade << ")" << std::endl;
-            }
-            if(maze.IsExit(reindeer)) {
-                std::cout << std::endl << "EXIT: " << reindeer.score << std::endl;
-                if(reindeer.score < bestScore) {
-                    bestScore = reindeer.score;
-                    std::cout << "BEST SCORE: " << bestScore << std::endl;
-                }
-                break;
-            }
-
-            // Handle Crosspoints
-            if(CrosspointBranches(maze, reindeer) > 1) {
-/*                if(reindeer.score > bestScore) {
-                    // No need to explore further
-                    std::cout << " !!! TOO Expensive, skip" << std::endl;
-                    if(crosspoints.empty()) {
-                        std::cout << "EXHAUSTED" << std::endl;
-                        break;
-                    }
-                    reindeer = crosspoints.back();
-                    crosspoints.pop_back();
-                    std::cout << "POP " << reindeer.c << " " << reindeer.d << " score " << reindeer.score << std::endl;
-                    continue;
-                }
-*/
-                if(reindeer.choiceMade > reindeer.maxChoices) {
-                    // All options exhausted
-                }
-                if(!crosspoints.empty()) {
-                    auto it = std::find_if(crosspoints.begin(), crosspoints.end(), [&reindeer](const Reindeer& r) {
-                        return r.c.first == reindeer.c.first && r.c.second == reindeer.c.second;
-                    });
-                    if (it != crosspoints.end()) {
-                        // The cross point was already visited
-                        Reindeer nextStep;
-                        bool stepSuccess = DoTheNextStep(maze, *it, nextStep);
-                        if(false == stepSuccess) {
-                            reindeer = crosspoints.back();
-                            crosspoints.pop_back();
-                            std::cout << std::endl << "POP " << reindeer.c << " " << reindeer.d << " score " << reindeer.score << std::endl;
-                            continue;
-                        } else {
-                            reindeer = nextStep;
-                        }
-                        // Next iteration
-                        continue;
-                    } else {
-                        // The cross point is new, see below
-                    }
-                }
-                // The cross point is new
-                Reindeer nextStep;
-                bool stepSuccess = DoTheNextStep(maze, reindeer, nextStep);
-                if(false == stepSuccess) {
-                    break;      // Dead end
-                } else {
-                    crosspoints.push_back(reindeer);    // Add to the stack of crosspoints
-                    reindeer = nextStep;
-                }
-            } else {
-                // Not a cross point
-                Reindeer nextStep;
-                bool stepSuccess = DoTheNextStep(maze, reindeer, nextStep);
-                if(false == stepSuccess) {
-                    break;      // Dead end
-                } else {
-                    reindeer = nextStep;
-                }
-            }
-        }
-        // We have reached the end (or a dead end), are there other path to explore?
-        if(crosspoints.empty()) {
-            // No, let's leave
-            break;
-        }
-        // Yes, restore position at the previous cross point
-        reindeer = crosspoints.back();
-        // And go on
-        continue;
-    }
-
-    return bestScore;
-}
 
 // ---------------------------------------------------------
 const char * banner = "AdventOfCode 2024 Day 16!";
@@ -285,7 +55,50 @@ int main(int argc, char ** argv, char ** envp) {
 
         // Load the maze from the input map
         Maze maze(inputMap);
-        std::cout << MazeRunner(maze);
+        MazeRunner runner(maze);
+
+        runner.Run([](std::stack<MazeSegment> segments, long score) {
+            std::cout << "== EXIT REACHED ==" << std::endl;
+            std::cout << "== Score: " << score << std::endl;
+            std::cout << "== Path: " << std::endl;
+
+            Compass prev = Compass::EAST;   // Tracks the previous direction
+
+            // transform the segment stack into a vector, in reverse order
+            std::vector<MazeRunnerPosition> path;
+            while(!segments.empty()) {
+                if(segments.top().origin.position == segments.top().end.position && segments.top().moves.empty()) {
+                    // The very first segment is empty (containing the initial direction)
+                    prev = segments.top().origin.direction;
+                    segments.pop();
+                    continue;
+                }
+                while(!segments.top().moves.empty()) {
+                    path.push_back(segments.top().moves.back());
+                    segments.top().moves.pop_back();
+                }
+                segments.pop();
+            }
+            std::reverse(path.begin(), path.end());
+            // print the path
+            long turns = 0;
+            long steps = 0;
+            
+            for(auto move : path) {
+                if(move.direction != prev) {
+                    turns ++;
+                    prev = move.direction;
+                    std::cout << "TURN ";
+                }
+                steps ++;
+                std::cout << move.direction << " ";
+            }
+            std::cout << std::endl;
+            std::cout << "CALCULATED SCORE: " << ((turns * 1001) + steps - turns) << std::endl;
+            std::cout << "==================" << std::endl;
+        });
+
+        
     }
 }
 
