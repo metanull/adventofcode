@@ -21,6 +21,8 @@ long MazeRunner::Run(std::function<void(std::stack<MazeSegment>,long)> callback)
     while(true) {
         while(true) {
             if(IsExit()) {
+                std::cout << "\033[31m;[---> EXIT EXIT EXIT EXIT EXIT EXIT EXIT]\033[0m;" << std::endl;
+
                 std::cout << "(" << current.position.first << ", " << current.position.second << ") EXIT REACHED." << std::endl;
                 // Exit reached
                 // Close and push the last segment (it is popped immediatelly after, at the end of this block)
@@ -29,6 +31,7 @@ long MazeRunner::Run(std::function<void(std::stack<MazeSegment>,long)> callback)
 
                 // Update the best path and counter
                 if(current.score < bestScore) {
+                    std::cout << "\033[34m;[---> BEST BEST BEST BEST BEST BEST BEST]\033[0m;" << std::endl;
                     std::cout << "(" << current.position.first << ", " << current.position.second << ") BEST SCORE FOUND." << std::endl;
                     bestPath = segments;
                     bestScore = current.score;
@@ -44,6 +47,7 @@ long MazeRunner::Run(std::function<void(std::stack<MazeSegment>,long)> callback)
             }
 
             if(IsStart() && !currentSegment.moves.empty()) {
+                std::cout << "\033[32m;[---> START START START START START START START]\033[0m;]" << std::endl;
                 std::cout << "(" << current.position.first << ", " << current.position.second << ") STARTING POINT (LOOP)." << std::endl;
                 // We have returned to the starting point, go back to the last crosspoint, and try another path (by removing the first path that we had initially tried)                
                 if(!RestoreFromLastCrosspoint()) {
@@ -54,6 +58,7 @@ long MazeRunner::Run(std::function<void(std::stack<MazeSegment>,long)> callback)
             }
 
             if(IsDeadEnd()) {
+                std::cout << "\033[31m;[---> DEAD DEAD DEAD DEAD DEAD DEAD DEAD]\033[0m;" << std::endl;
                 std::cout << "(" << current.position.first << ", " << current.position.second << ") DEAD END." << std::endl;
                 // Dead end reached, go back to the last crosspoint, and try another path (by removing the first path that we had initially tried)
                 if(!RestoreFromLastCrosspoint()) {
@@ -64,6 +69,7 @@ long MazeRunner::Run(std::function<void(std::stack<MazeSegment>,long)> callback)
             }
             
             if(IsCrosspoint()) {
+                std::cout << "\033[33m;[---> X-POINT X-POINT X-POINT X-POINT X-POINT X-POINT]\033[0m;" << std::endl;
                 if(IsStart()) {
                     std::cout << "(" << current.position.first << ", " << current.position.second << ") STARTING POINT." << std::endl;
                     // Cross point at the starting point, we should only add it once
@@ -98,6 +104,7 @@ long MazeRunner::Run(std::function<void(std::stack<MazeSegment>,long)> callback)
                 choice = cp->options.front();
 
                 // Remove the option from the crosspoint
+                std::cout << "\033[32m;[USE & ERASE OPTION " << choice << "]\033[0m;" << std::endl;
                 cp->options.erase(cp->options.begin());
             } else {
                 std::vector<Compass> options = Options();
@@ -112,27 +119,32 @@ long MazeRunner::Run(std::function<void(std::stack<MazeSegment>,long)> callback)
                 current.score += 1;
             }
             current.position = maze.Move(current.position, current.direction);
+            std::cout << "\033[32m;[---> CURRENT SEGMENT += " << current.position.first << ", " << current.position.second << "]\033[0m;" << std::endl;
             currentSegment.moves.push_back(current);
         }
         
         // Done processing a whole path... Are there other for us to explore?.
         if(crosspoints.empty()) {
+            std::cout << "\033[31m;[---> LEAVE LEAVE LEAVE LEAVE LEAVE LEAVE LEAVE]\033[0m;";
             std::cout << "(" << current.position.first << ", " << current.position.second << ") ALL CROSSPOINTS HAVE BEEN TRAVERSED." << std::endl;
             // No, let's leave
             break;
         }
 
         // Yes, restore position at the previous cross point
+        std::cout << "\033[31m;[>>>>> EXPLORE OTHER PATH\033[0m;" << std::endl;
+        
         /*current = crosspoints.back().origin;
         currentSegment = segments.top();
         segments.pop();*/
         if(!RestoreFromLastCrosspoint()) {
+            std::cout << "\033[31m;[---> DONE RESUME DONE RESUME DONE RESUME DONE RESUME]\033[0m;" << std::endl;
             std::cout << "(" << current.position.first << ", " << current.position.second << ") EXPLORE MORE CROSSPOINTS." << std::endl;
             break;
         }
         if(crosspoints.begin() == crosspoints.end() - 1) {
-            std::cout << "CLEAR CURRENT SEGMENT" << std::endl;
             // We returned to the initial cross point, wipe the current segment (as the segment is only added the moment the end of it is discovered)
+            std::cout << "\033[32m;[---> CURRENT SEGMENT = [] #############################\033[0m;" << std::endl;
             currentSegment.moves.clear();
         }
         
@@ -143,7 +155,7 @@ long MazeRunner::Run(std::function<void(std::stack<MazeSegment>,long)> callback)
 }
 
 void MazeRunner::SaveCrosspoint() {
-
+    std::cout << "\033[32m;[---> PUSH PUSH PUSH PUSH PUSH PUSH PUSH PUSH]\033[0m;" << std::endl;
     std::cout << "PUSH CROSSPOINT " << current.position.first << ", " << current.position.second << " (" << current.direction << ", " << current.score << ") Options: ";
     for(auto opt : Options()) {
         std::cout << opt << " ";
@@ -153,9 +165,20 @@ void MazeRunner::SaveCrosspoint() {
     // New crosspoint
     crosspoints.push_back({current,Options()});
 
+    if(currentSegment.end.position == currentSegment.origin.position) {
+        // The current segment is empty, we should not add it to the stack
+        std::cout << "\033[32m;[---> CURRENT SEGMENT : Origin == End]\033[0m;" << std::endl;
+    }
+    if(segments.empty()) {
+        // The first segment is empty, we should not add it to the stack
+        std::cout << "\033[32m;[---> CURRENT SEGMENT : SEGMENTS[] is EMPTY]\033[0m;" << std::endl;
+    }
+
     // Between two crosspoints, that is a segment, we want to keep track of it
+    std::cout << "\033[32m;[---> CURRENT SEGMENT : CLOSE]\033[0m;" << std::endl;
     currentSegment.end = current;
     segments.push(currentSegment);
+    std::cout << "\033[32m;[---> CURRENT SEGMENT : NEW]\033[0m;" << std::endl;
     currentSegment = {current, MazeRunnerPosition(), std::vector<MazeRunnerPosition>()};
 
 /*
@@ -164,6 +187,7 @@ void MazeRunner::SaveCrosspoint() {
 }
 
 bool MazeRunner::RestoreFromLastCrosspoint() {
+    std::cout << "\033[32m;[---> POP POP POP POP POP POP POP POP POP]\033[0m;" << std::endl;
     if(crosspoints.empty()) {
         std::cout << "POP CROSSPOINT > No crosspoints in the stack" << std::endl;
         return false;
@@ -184,6 +208,12 @@ bool MazeRunner::RestoreFromLastCrosspoint() {
         currentSegment = segments.top();
         crosspoints.pop_back();
         segments.pop();
+
+        std::cout << "\033[32m;[---> CURRENT SEGMENT = [";
+        for(auto move : currentSegment.moves) {
+            std::cout << move.position.first << ", " << move.position.second << " ";
+        }
+        std::cout << "]\033[0m;" << std::endl;
         
         return RestoreFromLastCrosspoint();
     }
@@ -191,13 +221,19 @@ bool MazeRunner::RestoreFromLastCrosspoint() {
     // Update the current position, remove the last option from the crosspoint
     current = crosspoints.back().origin;
     currentSegment = segments.top();
+
+    std::cout << "\033[32m;[---> CURRENT SEGMENT = [";
+    for(auto move : currentSegment.moves) {
+        std::cout << move.position.first << ", " << move.position.second << " ";
+    }
+    std::cout << "]\033[0m;" << std::endl;
     
     std::cout << "POPPED > " << crosspoints.back().origin.position.first << ", " << crosspoints.back().origin.position.second << " Score: (" << crosspoints.back().origin.score << ", Crosspoint Options: {";
     if(crosspoints.back().options.empty()) {
-        std::cout << "NO OPTIONS LEFT";
+        std::cout << "\033[31m;NO OPTIONS LEFT\033[0m;";
     } else {
         for(auto opt : crosspoints.back().options) {
-            std::cout << opt << " ";
+            std::cout << "\033[33m;" << opt << "\033[0m; ";
         }
     }
     std::cout << "}" << std::endl;

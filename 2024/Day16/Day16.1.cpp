@@ -58,6 +58,7 @@ int main(int argc, char ** argv, char ** envp) {
         MazeRunner runner(maze);
 
         runner.Run([](std::stack<MazeSegment> segments, long score) {
+            std::cout << "\033[42;30;1m";
             std::cout << "== EXIT REACHED ==" << std::endl;
             std::cout << "== Score: " << score << std::endl;
             std::cout << "== Path: " << std::endl;
@@ -95,7 +96,7 @@ int main(int argc, char ** argv, char ** envp) {
             }
             std::cout << std::endl;
             std::cout << "CALCULATED SCORE: " << ((turns * 1001) + steps - turns) << std::endl;
-            std::cout << "==================" << std::endl;
+            std::cout << "==================\033[0m" << std::endl;
         });
 
         
