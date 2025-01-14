@@ -31,7 +31,9 @@ std::ostream& operator<<(std::ostream& os, const std::vector<std::vector<char>> 
 const char * banner = "AdventOfCode 2024 Day 16!";
 const char * inputFilePath = "../../2024/Input/Day16.txt";
 int main(int argc, char ** argv, char ** envp) {
-    std::cout << banner << std::endl << std::endl;
+    std::cout << "\033[41;30;1m" << "################################################################################" << "\033[0m" << std::endl;
+    std::cout << banner << std::endl;
+    std::cout << "\033[41;30;1m" << "################################################################################" << "\033[0m" << std::endl;
 
     // Read the input file, and initialize the maze
     {
@@ -58,10 +60,19 @@ int main(int argc, char ** argv, char ** envp) {
         MazeRunner runner(maze);
 
         runner.Run([](std::stack<MazeSegment> segments, long score) {
+            std::cout << "\033[41;30;1m";
+            std::cout << "== EXIT REACHED ==";
+            std::cout << "\033[0m" << std::endl; 
+            
             std::cout << "\033[42;30;1m";
-            std::cout << "== EXIT REACHED ==" << std::endl;
-            std::cout << "== Score: " << score << std::endl;
-            std::cout << "== Path: " << std::endl;
+            std::cout << "== Score: " << score;
+            std::cout << "\033[0m" << std::endl; 
+            
+            std::cout << "\033[42;30;1m";
+            std::cout << "== SEGMENTS: " << segments.size();
+            std::cout << "\033[0m" << std::endl; 
+
+            MazeRunner::DumpSegment(segments, "\033[33m");
 
             Compass prev = Compass::EAST;   // Tracks the previous direction
 
@@ -81,7 +92,9 @@ int main(int argc, char ** argv, char ** envp) {
                 segments.pop();
             }
             std::reverse(path.begin(), path.end());
+            
             // print the path
+            std::cout << "== PATH: " << std::endl;
             long turns = 0;
             long steps = 0;
             

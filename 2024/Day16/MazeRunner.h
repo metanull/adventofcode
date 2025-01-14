@@ -7,6 +7,7 @@
 #include <stack>
 #include <algorithm>
 #include <functional>
+#include <iomanip>
 
 #include "Compass.h"
 #include "Maze.h"
@@ -58,6 +59,15 @@ public:
 
     long Run(std::function<void(std::stack<MazeSegment>,long)> callback);
 
+    /*//template<typename C, typename T = typename C::value_type>
+    template<typename C, typename T = std::decay_t<decltype(*begin(std::declval<C>()))>>
+    static void DumpSegment(C const & c, std::string ansi = "\033[0m");
+    */
+    static void DumpSegment(const std::stack<MazeSegment> & segments, std::string ansi = "\033[0m");
+    static void DumpSegment(const MazeSegment & segment, std::string ansi = "\033[0m");
+
+    static void DumpCrosspoint(const std::vector<MazeRunnerCrosspoint> & crosspoint, std::string ansi = "\033[0m");
+    static void DumpCrosspoint(const MazeRunnerCrosspoint & crosspoint, std::string ansi = "\033[0m");
 protected:
     /**
      * @brief Save the current position as a crosspoint

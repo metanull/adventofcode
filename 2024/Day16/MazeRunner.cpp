@@ -21,9 +21,7 @@ long MazeRunner::Run(std::function<void(std::stack<MazeSegment>,long)> callback)
     while(true) {
         while(true) {
             if(IsExit()) {
-                std::cout << "\033[31m;[---> EXIT EXIT EXIT EXIT EXIT EXIT EXIT]\033[0m;" << std::endl;
-
-                std::cout << "(" << current.position.first << ", " << current.position.second << ") EXIT REACHED." << std::endl;
+                std::cout << "\033[7;31m;[---> EXIT FOUND (" << current.position.first << ", " << current.position.second << ") \033[0m." << std::endl;
                 // Exit reached
                 // Close and push the last segment (it is popped immediatelly after, at the end of this block)
                 currentSegment.end = current;
@@ -31,8 +29,7 @@ long MazeRunner::Run(std::function<void(std::stack<MazeSegment>,long)> callback)
 
                 // Update the best path and counter
                 if(current.score < bestScore) {
-                    std::cout << "\033[34m;[---> BEST BEST BEST BEST BEST BEST BEST]\033[0m;" << std::endl;
-                    std::cout << "(" << current.position.first << ", " << current.position.second << ") BEST SCORE FOUND." << std::endl;
+                    std::cout << "\033[7;34m;[---> BEST SCORE (" << current.position.first << ", " << current.position.second << ") \033[0m." << std::endl;
                     bestPath = segments;
                     bestScore = current.score;
                 }
@@ -47,8 +44,7 @@ long MazeRunner::Run(std::function<void(std::stack<MazeSegment>,long)> callback)
             }
 
             if(IsStart() && !currentSegment.moves.empty()) {
-                std::cout << "\033[32m;[---> START START START START START START START]\033[0m;]" << std::endl;
-                std::cout << "(" << current.position.first << ", " << current.position.second << ") STARTING POINT (LOOP)." << std::endl;
+                std::cout << "\033[7;32m;[---> START (" << current.position.first << ", " << current.position.second << ") STARTING POINT (LOOP).\033[0m." << std::endl;
                 // We have returned to the starting point, go back to the last crosspoint, and try another path (by removing the first path that we had initially tried)                
                 if(!RestoreFromLastCrosspoint()) {
                     break;
@@ -58,8 +54,7 @@ long MazeRunner::Run(std::function<void(std::stack<MazeSegment>,long)> callback)
             }
 
             if(IsDeadEnd()) {
-                std::cout << "\033[31m;[---> DEAD DEAD DEAD DEAD DEAD DEAD DEAD]\033[0m;" << std::endl;
-                std::cout << "(" << current.position.first << ", " << current.position.second << ") DEAD END." << std::endl;
+                std::cout << "\033[7;31m;[---> DEAD END (" << current.position.first << ", " << current.position.second << ") \033[0m." << std::endl;
                 // Dead end reached, go back to the last crosspoint, and try another path (by removing the first path that we had initially tried)
                 if(!RestoreFromLastCrosspoint()) {
                     break;
@@ -69,16 +64,15 @@ long MazeRunner::Run(std::function<void(std::stack<MazeSegment>,long)> callback)
             }
             
             if(IsCrosspoint()) {
-                std::cout << "\033[33m;[---> X-POINT X-POINT X-POINT X-POINT X-POINT X-POINT]\033[0m;" << std::endl;
+                std::cout << "\033[7;33m[---> ON A CROSS-POINT (" << current.position.first << ", " << current.position.second << ") \033[0m." << std::endl;
                 if(IsStart()) {
-                    std::cout << "(" << current.position.first << ", " << current.position.second << ") STARTING POINT." << std::endl;
+                    std::cout << "\033[7;31m       >> STARTING POINT << \033[0m." << std::endl;
                     // Cross point at the starting point, we should only add it once
                     if(crosspoints.empty()) {
                         SaveCrosspoint();
                     }
                 } else {
                     // Regular Crosspoint reached, it should be saved
-                    std::cout << "(" << current.position.first << ", " << current.position.second << ") CROSS POINT." << std::endl;
 
                     // Find the crosspoint in the list of crosspoints...
                     auto cp = std::find_if(crosspoints.begin(), crosspoints.end(), [&](const MazeRunnerCrosspoint & cp) {
@@ -125,14 +119,15 @@ long MazeRunner::Run(std::function<void(std::stack<MazeSegment>,long)> callback)
         
         // Done processing a whole path... Are there other for us to explore?.
         if(crosspoints.empty()) {
-            std::cout << "\033[31m;[---> LEAVE LEAVE LEAVE LEAVE LEAVE LEAVE LEAVE]\033[0m;";
+            std::cout << "\033[7;31m;[---> LEAVING" << std::endl;
             std::cout << "(" << current.position.first << ", " << current.position.second << ") ALL CROSSPOINTS HAVE BEEN TRAVERSED." << std::endl;
+            std::cout << "\033[0m";
             // No, let's leave
             break;
         }
 
         // Yes, restore position at the previous cross point
-        std::cout << "\033[31m;[>>>>> EXPLORE OTHER PATH\033[0m;" << std::endl;
+        std::cout << "\033[7;31m;[>>>>> EXPLORE OTHER PATH\033[0m;" << std::endl;
         
         /*current = crosspoints.back().origin;
         currentSegment = segments.top();
@@ -155,15 +150,15 @@ long MazeRunner::Run(std::function<void(std::stack<MazeSegment>,long)> callback)
 }
 
 void MazeRunner::SaveCrosspoint() {
-    std::cout << "\033[32m;[---> PUSH PUSH PUSH PUSH PUSH PUSH PUSH PUSH]\033[0m;" << std::endl;
-    std::cout << "PUSH CROSSPOINT " << current.position.first << ", " << current.position.second << " (" << current.direction << ", " << current.score << ") Options: ";
+    std::cout << "\033[7;32m[---> PUSH CROSSPOINT & SEGMENTT (" << current.position.first << ", " << current.position.second << " [" << current.direction << "], [" << current.score << "], [Options: ";
     for(auto opt : Options()) {
-        std::cout << opt << " ";
+        std::cout << opt << ", ";
     }
-    std::cout << std::endl;
+    std::cout << "]" << "\033[0m" << std::endl;
 
     // New crosspoint
     crosspoints.push_back({current,Options()});
+DumpCrosspoint(crosspoints.back(), "\033[43m");
 
     if(currentSegment.end.position == currentSegment.origin.position) {
         // The current segment is empty, we should not add it to the stack
@@ -177,9 +172,12 @@ void MazeRunner::SaveCrosspoint() {
     // Between two crosspoints, that is a segment, we want to keep track of it
     std::cout << "\033[32m;[---> CURRENT SEGMENT : CLOSE]\033[0m;" << std::endl;
     currentSegment.end = current;
+DumpSegment(currentSegment,"\033[42m");
     segments.push(currentSegment);
     std::cout << "\033[32m;[---> CURRENT SEGMENT : NEW]\033[0m;" << std::endl;
     currentSegment = {current, MazeRunnerPosition(), std::vector<MazeRunnerPosition>()};
+DumpSegment(segments);
+DumpSegment(currentSegment,"\033[43m");
 
 /*
 ##### IL Y A DES SEGMENTS EN DOUBLE!!!
@@ -187,33 +185,29 @@ void MazeRunner::SaveCrosspoint() {
 }
 
 bool MazeRunner::RestoreFromLastCrosspoint() {
-    std::cout << "\033[32m;[---> POP POP POP POP POP POP POP POP POP]\033[0m;" << std::endl;
     if(crosspoints.empty()) {
-        std::cout << "POP CROSSPOINT > No crosspoints in the stack" << std::endl;
+        std::cout << "POP CROSSPOINT > \033[7;31mNO CROSSPOINTS!\033[0m" << std::endl;
         return false;
     }
     auto lastCp = crosspoints.back();
+DumpCrosspoint(crosspoints.back(), "\033[42m");
     
-    std::cout << "POPPING > " << lastCp.origin.position.first << ", " << lastCp.origin.position.second << " (" << lastCp.origin.direction << ", " << lastCp.origin.score << ", {";
-    for(auto opt : lastCp.options) {
-        std::cout << opt << " ";
-    }
-    std::cout << "})" << std::endl;
     
     // Does the last crosspoint have any options left?
     if(lastCp.options.empty()) {
+        std::cout << "POP CROSSPOINT > \033[7;31mCrosspoint has NO MORE OPTIONS\033[0m" << std::endl;
         std::cout << "POPPED > CROSSPOINT HAD NO OPTIONS LEFT" << std::endl;
+
+DumpSegment(segments.top(),"\033[41m");
+DumpCrosspoint(crosspoints.back(), "\033[41m");
 
         current = crosspoints.back().origin;
         currentSegment = segments.top();
         crosspoints.pop_back();
         segments.pop();
 
-        std::cout << "\033[32m;[---> CURRENT SEGMENT = [";
-        for(auto move : currentSegment.moves) {
-            std::cout << move.position.first << ", " << move.position.second << " ";
-        }
-        std::cout << "]\033[0m;" << std::endl;
+DumpSegment(segments);
+DumpSegment(currentSegment,"\033[43m");
         
         return RestoreFromLastCrosspoint();
     }
@@ -222,12 +216,9 @@ bool MazeRunner::RestoreFromLastCrosspoint() {
     current = crosspoints.back().origin;
     currentSegment = segments.top();
 
-    std::cout << "\033[32m;[---> CURRENT SEGMENT = [";
-    for(auto move : currentSegment.moves) {
-        std::cout << move.position.first << ", " << move.position.second << " ";
-    }
-    std::cout << "]\033[0m;" << std::endl;
-    
+DumpCrosspoint(crosspoints.back(), "\033[43m");
+DumpSegment(currentSegment,"\033[43m");
+
     std::cout << "POPPED > " << crosspoints.back().origin.position.first << ", " << crosspoints.back().origin.position.second << " Score: (" << crosspoints.back().origin.score << ", Crosspoint Options: {";
     if(crosspoints.back().options.empty()) {
         std::cout << "\033[31m;NO OPTIONS LEFT\033[0m;";
@@ -354,4 +345,74 @@ Compass MazeRunner::Option(int choice, bool & rotation) const {
         }
     }
     return Compass::UNKNOWN;
+}
+
+void MazeRunner::DumpSegment(const std::stack<MazeSegment> & segments, std::string ansi) {
+    auto copy = segments;
+    while(!copy.empty()) {
+        DumpSegment(copy.top(),ansi);
+        copy.pop();
+    }
+}
+
+/*
+//template<typename C, typename T = typename C::value_type>
+template<typename C, typename T = std::decay_t<decltype(*begin(std::declval<C>()))>>
+void MazeRunner::DumpSegment(C const & c, std::string ansi) {
+    for(auto s : c) {
+        DumpSegment(s);
+    }
+}
+*/
+
+void MazeRunner::DumpSegment(const MazeSegment & segment, std::string ansi) {
+    std::cout << ansi;
+
+    std::cout << "\033[7m" << std::endl;
+    std::cout << "FROM  : ";
+    std::cout << "\033[1m(" << std::setw(5) << segment.origin.position.first << ", " << std::setw(5) << segment.origin.position.second << ") \033[22m";
+    std::cout << "[" << segment.origin.direction << "]";
+    std::cout << "[" << std::setw(10) << segment.origin.score << "]";
+    std::cout << "\033[27m" << std::endl;
+    if(!segment.moves.empty()) {
+        for(auto m: segment.moves) {
+            std::cout << "\t";
+            std::cout << "\033[1m(" << std::setw(5) << m.position.first << ", " << std::setw(5) << m.position.second << ") \033[22m";
+            std::cout << "[" << m.direction << "]";
+            std::cout << "[" << std::setw(10) << m.score << "]";
+            std::cout << std::endl;
+        }
+    }
+    std::cout << "\033[7m";
+    std::cout << "TO    : ";
+    std::cout << "\033[1m(" << std::setw(5) << segment.end.position.first << ", " << std::setw(5) << segment.end.position.second << ") \033[22m";
+    std::cout << "[" << segment.end.direction << "]";
+    std::cout << "[" << std::setw(10) << segment.end.score << "]";
+    std::cout << "\033[27m" << std::endl;
+
+    std::cout << "\033[0m" << std::endl;
+}
+
+static void DumpCrosspoint(const std::vector<MazeRunnerCrosspoint> & crosspoint, std::string ansi){
+    for(auto cp = crosspoint.begin(); cp < crosspoint.end(); cp++) {
+        MazeRunner::DumpCrosspoint(*cp, ansi);
+    }
+}
+
+void MazeRunner::DumpCrosspoint(const MazeRunnerCrosspoint & crosspoint, std::string ansi) {
+    std::cout << ansi;
+
+    std::cout << "\033[7m" << std::endl;
+    std::cout << "X-POINT:";
+    std::cout << "\033[1m(" << std::setw(5) << crosspoint.origin.position.first << ", " << std::setw(5) << crosspoint.origin.position.second << ") \033[22m";
+    std::cout << "[" << crosspoint.origin.direction << "]";
+    std::cout << "[" << std::setw(10) << crosspoint.origin.score << "]";
+    std::cout << "[";
+    if(!crosspoint.options.empty()) {
+        for(auto m: crosspoint.options) {
+            std::cout << "\033[7;1m" << m << "\033[27;22m ";
+        }
+    }
+    std::cout << "]";
+    std::cout << "\033[0m" << std::endl;
 }
