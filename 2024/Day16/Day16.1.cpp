@@ -11,6 +11,7 @@
 #include "Maze.h"
 #include "Compass.h"
 #include "MazeRunner.h"
+
 // #include "Reindeer.h"
 
 // ---------------------------------------------------------
@@ -59,6 +60,11 @@ int main(int argc, char ** argv, char ** envp) {
         Maze maze(inputMap);
         MazeRunner runner(maze);
 
+        runner.Run2([](std::stack<MazeSegment> segments, long score) {
+            std::cout << "\033[41;30;1mEXIT REACHED, SCORE: " << score << "\033[0m" << std::endl;
+            MazeRunner::DumpSegment(segments, "\033[33m");
+        });
+/*
         runner.Run([](std::stack<MazeSegment> segments, long score) {
             std::cout << "\033[41;30;1m";
             std::cout << "== EXIT REACHED ==";
@@ -111,7 +117,7 @@ int main(int argc, char ** argv, char ** envp) {
             std::cout << "CALCULATED SCORE: " << ((turns * 1001) + steps - turns) << std::endl;
             std::cout << "==================\033[0m" << std::endl;
         });
-
+*/
         
     }
 }

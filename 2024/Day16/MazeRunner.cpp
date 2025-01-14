@@ -1,22 +1,179 @@
 #include "MazeRunner.h"
 
+long MazeRunner::Run2(std::function<void(std::stack<MazeSegment>,long)> callback) {
+    Reset();
+
+    long localbestscore = LONG_MAX;
+    while(true) {
+        if(IsExit()) {
+            if(current.score < localbestscore) {
+                localbestscore = current.score;
+            }
+            if(!OnExit(callback)) {
+                break;
+            }
+            continue;
+        }
+        if(IsStart()) {
+            if(!OnStart()) {
+                break;
+            }
+            //continue;
+        }
+        if(IsDeadEnd()) {
+            if(!OnDeadEnd()) {
+                break;
+            }
+            continue;
+        }
+        
+        Compass choice = Compass::UNKNOWN;
+        if(IsCrosspoint()) {
+            if(!OnCrosspoint()) {
+                break;
+            }
+            
+            choice = UseCrosspoint();
+            if(choice == Compass::UNKNOWN) {
+                if(!OnCrosspoint()) {
+                    break;
+                }
+                continue;
+            }
+        } else {
+            choice = Options().front();
+        }
+
+        Move2(choice);
+    }
+    return localbestscore;
+}
+
+long MazeRunner::Move2(Compass choice) {
+    if(choice == Compass::UNKNOWN) {
+        throw std::runtime_error("Invalid choice");
+    }
+    long localscore = (choice == current.direction) ? 1 : 1001;
+    current.score += localscore;
+    current.position = maze.Move(current.position, current.direction);
+    currentSegment.moves.push_back(current);
+    return localscore;
+}
+
+Compass MazeRunner::UseCrosspoint() {
+    if(!CrosspointExists()) {
+        throw std::runtime_error("No crosspoints to use");
+    }
+    return crosspoints.back().EraseOption();
+}
+
+void MazeRunner::OnError(std::runtime_error & e) {
+    std::cerr << "ERROR: " << e.what() << std::endl;
+}
+
+bool MazeRunner::OnCrosspoint() {
+    try {
+        if(CrosspointExists()) {
+            PopSegment();
+            PopCrosspoint();
+        } else {
+            PushSegment();
+            PushCrosspoint();
+        }
+    } catch(std::runtime_error & e) {
+        return false;
+    }
+    return true;
+}
+bool MazeRunner::OnExit(std::function<void(std::stack<MazeSegment>,long)> callback) {
+    PushSegment();
+    callback(segments, current.score);
+    PopSegment();
+
+    try {
+        PopSegment();
+        PopCrosspoint();
+    } catch(std::runtime_error & e) {
+        return false;
+    }
+    return true;
+}
+bool MazeRunner::OnDeadEnd() {
+    try {
+        PopSegment();
+        PopCrosspoint();
+    } catch(std::runtime_error & e) {
+        return false;
+    }
+    return true;
+}
+bool MazeRunner::OnStart() {
+    if(IsCrosspoint()) {
+        if(CrosspointExists()) {
+            try {
+                PopSegment();
+                PopCrosspoint();
+            } catch(std::runtime_error & e) {
+                return false;
+            }
+        } else {
+            PushSegment();
+            PushCrosspoint();
+        }
+    } else {
+        PushSegment();
+    }
+    return true;
+}
+
+bool MazeRunner::CrosspointExists() const {
+    return std::find_if(crosspoints.begin(), crosspoints.end(), [this](const MazeRunnerCrosspoint & c) {
+        return c.origin.position == current.position;
+    }) != crosspoints.end();
+}
+void MazeRunner::PushCrosspoint(){
+    crosspoints.push_back({current,Options()});
+}
+MazeRunnerCrosspoint MazeRunner::PopCrosspoint() {
+    if(crosspoints.empty()) {
+        throw std::runtime_error("No crosspoints to pop");
+    }
+    MazeRunnerCrosspoint cp = crosspoints.back();
+    crosspoints.pop_back();
+    current = cp.origin;
+    return cp;
+}
+
+void MazeRunner::PushSegment() {
+    if(segments.empty()) {
+        MazeSegment segment = {current, current, std::vector<MazeRunnerPosition>()};
+        segments.push(segment);
+    } else {
+        MazeSegment segment = currentSegment;
+        segment.end = current;
+        segments.push(segment);
+    }
+    currentSegment = {current, current, std::vector<MazeRunnerPosition>()};
+}
+MazeSegment MazeRunner::PopSegment() {
+    currentSegment = segments.top();
+    segments.pop();
+    return currentSegment;
+}
+size_t MazeRunner::CountSegment() {
+    return segments.size();
+}
+MazeRunnerPosition MazeRunner::GetPosition() const {
+    return current;
+}
+
 MazeRunner::MazeRunner(const Maze & map) {
     maze = map;
-    current = {maze.Start(), Compass::EAST, 0};
-    crosspoints.clear();
-    segments = std::stack<MazeSegment>();
-    currentSegment = {current, current, std::vector<MazeRunnerPosition>()};
-    bestScore = LONG_MAX;
-    bestPath = std::stack<MazeSegment>();
+    Reset();
 }
 
 long MazeRunner::Run(std::function<void(std::stack<MazeSegment>,long)> callback) {
-    current = {maze.Start(), Compass::EAST, 0};
-    crosspoints.clear();
-    segments = std::stack<MazeSegment>();
-    currentSegment = {current, current, std::vector<MazeRunnerPosition>()};
-    bestScore = LONG_MAX;
-    bestPath = std::stack<MazeSegment>();
+    Reset();
 
     while(true) {
         while(true) {
@@ -347,6 +504,30 @@ Compass MazeRunner::Option(int choice, bool & rotation) const {
     return Compass::UNKNOWN;
 }
 
+Compass MazeRunnerCrosspoint::GetOption() {
+    if(options.empty()) {
+        return Compass::UNKNOWN;
+    }
+    return options.front();
+}
+Compass MazeRunnerCrosspoint::EraseOption() {
+    if(options.empty()) {
+        return Compass::UNKNOWN;
+    }
+    Compass choice = options.front();
+    options.erase(options.begin());
+    return choice;
+}
+
+void MazeRunner::Reset() {
+    current = {maze.Start(), Compass::EAST, 0};
+    crosspoints.clear();
+    segments = std::stack<MazeSegment>();
+    currentSegment = {current, current, std::vector<MazeRunnerPosition>()};
+    bestScore = LONG_MAX;
+    bestPath = std::stack<MazeSegment>();
+}
+
 void MazeRunner::DumpSegment(const std::stack<MazeSegment> & segments, std::string ansi) {
     auto copy = segments;
     while(!copy.empty()) {
@@ -416,3 +597,54 @@ void MazeRunner::DumpCrosspoint(const MazeRunnerCrosspoint & crosspoint, std::st
     std::cout << "]";
     std::cout << "\033[0m" << std::endl;
 }
+
+/*
+std::ostream & MazeRunnerCrosspoint::operator<<(std::ostream & os) const {
+    os << "\033[7;1mCROSSPOINT\033[27;22m" << std::endl;
+    os << "\033[1m(" << std::setw(5) << origin.position.first << ", " << std::setw(5) << origin.position.second << ") \033[22m";
+    os << "[" << origin.direction << "]";
+    os << "[" << std::setw(10) << origin.score << "]";
+    os << "[";
+    if(!options.empty()) {
+        for(auto m: options) {
+            os << "\033[7;1m" << m << "\033[27;22m ";
+        }
+    }
+    os << "]";
+    return os;
+}
+
+std::ostream & MazeRunnerPosition::operator<<(std::ostream & os) const {
+    os << "\033[7;1mPOSITION\033[27;22m" << std::endl;
+    os << "\033[1m(" << std::setw(5) << position.first << ", " << std::setw(5) << position.second << ") \033[22m";
+    os << "[" << direction << "]";
+    os << "[" << std::setw(10) << score << "]";
+    return os;
+}
+
+std::ostream & MazeSegment::operator<<(std::ostream & os) const {
+    os << "\033[7;1mSEGMENT\033[27;22m" << std::endl;
+    os << "\033[7m" << std::endl;
+    os << "FROM  : ";
+    os << "\033[1m(" << std::setw(5) << origin.position.first << ", " << std::setw(5) << origin.position.second << ") \033[22m";
+    os << "[" << origin.direction << "]";
+    os << "[" << std::setw(10) << origin.score << "]";
+    os << "\033[27m" << std::endl;
+    if(!moves.empty()) {
+        for(auto m: moves) {
+            os << "\t";
+            os << "\033[1m(" << std::setw(5) << m.position.first << ", " << std::setw(5) << m.position.second << ") \033[22m";
+            os << "[" << m.direction << "]";
+            os << "[" << std::setw(10) << m.score << "]";
+            os << std::endl;
+        }
+    }
+    os << "\033[7m";
+    os << "TO    : ";
+    os << "\033[1m(" << std::setw(5) << end.position.first << ", " << std::setw(5) << end.position.second << ") \033[22m";
+    os << "[" << end.direction << "]";
+    os << "[" << std::setw(10) << end.score << "]";
+    os << "\033[27m";
+    return os;
+}
+*/

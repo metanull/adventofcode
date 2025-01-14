@@ -29,6 +29,15 @@ struct MazeRunnerCrosspoint {
     MazeRunnerCrosspoint() = default;
     MazeRunnerCrosspoint(const MazeRunnerCrosspoint & other) = default;
     MazeRunnerCrosspoint & operator=(const MazeRunnerCrosspoint & other) = default;
+
+    /**
+     * @brief Get the next option to try
+     */
+    Compass GetOption();
+    /**
+     * @brief Erase the next option to try (and return it)
+     */
+    Compass EraseOption();
 };
 
 struct MazeSegment {
@@ -68,7 +77,33 @@ public:
 
     static void DumpCrosspoint(const std::vector<MazeRunnerCrosspoint> & crosspoint, std::string ansi = "\033[0m");
     static void DumpCrosspoint(const MazeRunnerCrosspoint & crosspoint, std::string ansi = "\033[0m");
+
+    long Run2(std::function<void(std::stack<MazeSegment>,long)> callback);
 protected:
+    long Move2(Compass choice);
+    bool OnCrosspoint();
+    bool OnExit(std::function<void(std::stack<MazeSegment>,long)> callback);
+    bool OnDeadEnd();
+    bool OnStart();
+    void OnError(std::runtime_error & e);
+
+    void PushSegment();
+    MazeSegment PopSegment();
+    size_t CountSegment();
+
+    bool CrosspointExists() const;
+    void PushCrosspoint();
+    MazeRunnerCrosspoint PopCrosspoint();
+    Compass UseCrosspoint();
+
+    MazeRunnerPosition GetPosition() const;
+
+    void Reset();
+
+    // iterator => iterates over all segments
+    // iterator => iterates over all moves
+    // iterator => iterates over all crosspoints
+
     /**
      * @brief Save the current position as a crosspoint
      */
