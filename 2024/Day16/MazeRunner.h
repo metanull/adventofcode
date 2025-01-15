@@ -20,6 +20,8 @@ struct MazeRunnerPosition {
     MazeRunnerPosition() = default;
     MazeRunnerPosition(const MazeRunnerPosition & other) = default;
     MazeRunnerPosition & operator=(const MazeRunnerPosition & other) = default;
+
+    friend std::ostream& operator<<(std::ostream& os, const MazeRunnerPosition & p);
 };
 
 struct MazeRunnerCrosspoint {
@@ -38,6 +40,8 @@ struct MazeRunnerCrosspoint {
      * @brief Erase the next option to try (and return it)
      */
     Compass EraseOption();
+
+    friend std::ostream & operator<<(std::ostream & os, const MazeRunnerCrosspoint & cp);
 };
 
 struct MazeSegment {
@@ -48,6 +52,8 @@ struct MazeSegment {
     MazeSegment() = default;
     MazeSegment(const MazeSegment & other) = default;
     MazeSegment & operator=(const MazeSegment & other) = default;
+
+    friend std::ostream & operator<<(std::ostream & os, const MazeSegment & s);
 };
 
 class MazeRunner {
@@ -59,6 +65,7 @@ protected:
     MazeRunnerPosition current;
     MazeSegment currentSegment;
     long bestScore = LONG_MAX;
+    bool justRestored = false;
 
 public:
     MazeRunner() = default;
@@ -67,25 +74,14 @@ public:
     MazeRunner(const Maze & map);
 
     long Run(std::function<void(std::stack<MazeSegment>,long)> callback);
+    long MazeRunner::Run2(std::function<void(std::stack<MazeSegment>,long)> exitCallback);
 
-    /*//template<typename C, typename T = typename C::value_type>
-    template<typename C, typename T = std::decay_t<decltype(*begin(std::declval<C>()))>>
-    static void DumpSegment(C const & c, std::string ansi = "\033[0m");
-    */
-    static void DumpSegment(const std::stack<MazeSegment> & segments, std::string ansi = "\033[0m");
-    static void DumpSegment(const MazeSegment & segment, std::string ansi = "\033[0m");
-
-    static void DumpCrosspoint(const std::vector<MazeRunnerCrosspoint> & crosspoint, std::string ansi = "\033[0m");
-    static void DumpCrosspoint(const MazeRunnerCrosspoint & crosspoint, std::string ansi = "\033[0m");
-
-    long Run2(std::function<void(std::stack<MazeSegment>,long)> callback);
 protected:
-    long Move2(Compass choice);
-    bool OnCrosspoint();
-    bool OnExit(std::function<void(std::stack<MazeSegment>,long)> callback);
-    bool OnDeadEnd();
-    bool OnStart();
-    void OnError(std::runtime_error & e);
+    bool OnCrosspointReached();
+    bool OnTileReached(MazeRunnerPosition & cur, const MazeRunnerPosition & prev);
+    bool OnExitReached(std::function<void(std::stack<MazeSegment>,long)> onexit);
+    bool OnDeadEndReached();
+    bool OnLoopDetected();
 
     void PushSegment();
     MazeSegment PopSegment();
@@ -94,7 +90,6 @@ protected:
     bool CrosspointExists() const;
     void PushCrosspoint();
     MazeRunnerCrosspoint PopCrosspoint();
-    Compass UseCrosspoint();
 
     MazeRunnerPosition GetPosition() const;
 
@@ -140,6 +135,17 @@ protected:
      * @brief Check if the current position is the start
      */
     bool IsStart() const;
+
+public: 
+/*//template<typename C, typename T = typename C::value_type>
+    template<typename C, typename T = std::decay_t<decltype(*begin(std::declval<C>()))>>
+    static void DumpSegment(C const & c, std::string ansi = "\033[0m");
+    */
+    static void DumpSegment(const std::stack<MazeSegment> & segments, std::string ansi = "\033[0m");
+    static void DumpSegment(const MazeSegment & segment, std::string ansi = "\033[0m");
+
+    static void DumpCrosspoint(const std::vector<MazeRunnerCrosspoint> & crosspoint, std::string ansi = "\033[0m");
+    static void DumpCrosspoint(const MazeRunnerCrosspoint & crosspoint, std::string ansi = "\033[0m");
 
 };
 

@@ -77,13 +77,13 @@ char Compass::Reverse(char Compass) {
     throw std::runtime_error("Invalid direction");
 }
 
-std::ostream& Compass::operator<<(std::ostream& os) const {
-    switch(d) {
-        case NORTH: os << "North"; break;
-        case EAST: os << "East"; break;
-        case SOUTH: os << "South"; break;
-        case WEST: os << "West"; break;
-        case UNKNOWN: os << "Unknown"; break;
+std::ostream& operator<<(std::ostream& os, const Compass & c) {
+    switch(c) {
+        case Compass::NORTH: os << "^"; break;
+        case Compass::EAST: os << ">"; break;
+        case Compass::SOUTH: os << "v"; break;
+        case Compass::WEST: os << "<"; break;
+        case Compass::UNKNOWN: os << "{?}"; break;
     }
     return os;
 }

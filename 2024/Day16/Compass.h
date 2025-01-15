@@ -51,7 +51,8 @@ struct Compass {
     */
     static char Reverse(char d);
 
-    std::ostream& operator<<(std::ostream& os) const;
+    friend std::ostream& operator<<(std::ostream& os, const Compass & c);
 };
+
 
 #endif // __DAY16_DIRECTION_H__
