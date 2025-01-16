@@ -88,6 +88,27 @@ bool Maze::IsStart(std::pair<int,int> p) const {
     return GetTile(p) == START_CHAR;
 }
 
+bool Maze::IsDeadEnd(std::pair<int,int> p, Compass d) const {
+    return Options(p,d).empty();
+}
+bool Maze::IsCrossPoint(std::pair<int,int> p, Compass d) const {
+    return Options(p,d).size() > 1;
+}
+std::vector<Compass> Maze::Options(std::pair<int,int> p, Compass d) const {
+    std::vector<Compass> options;
+
+    if(!IsWall(Move(p,d))) {
+        options.push_back(d);
+    }
+    if(!IsWall(Move(p,Compass::Clockwise(d)))) {   
+        options.push_back(Compass::Clockwise(d));
+    }
+    if(!IsWall(Move(p,Compass::CounterClockwise(d)))) {   
+        options.push_back(Compass::CounterClockwise(d));
+    }
+    return options;
+}
+
 char Maze::GetTileForward(std::pair<int,int> p, Compass d) const {
     return GetTile(Move(p,d));
 }

@@ -12,10 +12,13 @@
 #include "Compass.h"
 #include "Maze.h"
 
+
 struct MazeRunnerPosition {
     std::pair<int,int> position = std::make_pair(0,0);
     Compass direction = Compass::UNKNOWN;
     long score = 0;
+
+    std::pair<int,int> GetNextPosition();
 
     MazeRunnerPosition() = default;
     MazeRunnerPosition(const MazeRunnerPosition & other) = default;
@@ -75,6 +78,8 @@ public:
 
     long Run(std::function<void(std::stack<MazeSegment>,long)> callback);
     long MazeRunner::Run2(std::function<void(std::stack<MazeSegment>,long)> exitCallback);
+
+    long MazeRunner::Run3(std::function<void(std::vector<MazeSegment>,long)> exitCallback);
 
 protected:
     bool OnCrosspointReached();

@@ -48,6 +48,10 @@ public:
     bool IsExit(std::pair<int,int> p) const;
     bool IsStart(std::pair<int,int> p) const;
 
+    bool IsDeadEnd(std::pair<int,int> p, Compass d) const;
+    bool IsCrossPoint(std::pair<int,int> p, Compass d) const;
+    std::vector<Compass>Options(std::pair<int,int> p, Compass d) const;
+
     char GetTileForward(std::pair<int,int> p, Compass d) const;
     char GetTileClockwise(std::pair<int,int> p, Compass d) const;
     char GetTileCounterClockwise(std::pair<int,int> p, Compass d) const;

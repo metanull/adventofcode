@@ -60,10 +60,21 @@ int main(int argc, char ** argv, char ** envp) {
         Maze maze(inputMap);
         MazeRunner runner(maze);
 
-        runner.Run2([](std::stack<MazeSegment> segments, long score) {
+        auto b = runner.Run3([](std::vector<MazeSegment> segments, long score) {
+            std::cout << "\033[41;30;1mEXIT REACHED, SCORE: " << score << "\033[0m" << std::endl;
+            
+            for(auto s : segments) {
+                std::cout << s << std::endl;
+            }
+        });
+        std::cout << std::endl;
+        std::cout << "SCORE: " << b << std::endl;
+
+/*        runner.Run2([](std::stack<MazeSegment> segments, long score) {
             std::cout << "\033[41;30;1mEXIT REACHED, SCORE: " << score << "\033[0m" << std::endl;
             MazeRunner::DumpSegment(segments, "\033[33m");
         });
+        */
 /*
         runner.Run([](std::stack<MazeSegment> segments, long score) {
             std::cout << "\033[41;30;1m";

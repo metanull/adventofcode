@@ -1,5 +1,199 @@
 #include "MazeRunner.h"
 
+std::pair<int,int> MazeRunnerPosition::GetNextPosition() {
+    switch(direction) {
+        case Compass::NORTH: return std::make_pair(position.first, position.second - 1);
+        case Compass::EAST: return std::make_pair(position.first + 1, position.second);
+        case Compass::SOUTH: return std::make_pair(position.first, position.second + 1);
+        case Compass::WEST: return std::make_pair(position.first - 1, position.second);
+    }
+    throw std::runtime_error("Direction is unknown");
+}
+
+long MazeRunner::Run3(std::function<void(std::vector<MazeSegment>,long)> exitCallback) {
+    std::vector<MazeSegment> segments;
+    std::vector<MazeRunnerCrosspoint> crosspoints;
+    MazeSegment currentSegment;
+    MazeRunnerPosition start = {maze.Start(), Compass::EAST, 0};
+    MazeRunnerPosition current = start;
+    long bestScore = LONG_MAX;
+    std::vector<MazeSegment> bestPath;
+
+
+    while(true) {
+
+        // Is the current segment closed?
+        bool closed = (currentSegment.origin.position != currentSegment.end.position);
+
+        // Is it a regular tile or a special tile (START,END,CROSS-POINT,DEAD-END)
+        bool regular = !(
+               maze.IsCrossPoint(current.position,current.direction)
+            || maze.IsExit(current.position) 
+            || maze.IsStart(current.position) 
+            || maze.IsDeadEnd(current.position,current.direction)
+        );
+
+        // Are we just starting?
+        bool first = segments.size() == 0 && currentSegment.moves.empty();
+        
+        if(!regular && !first) {
+            // close the segment
+            currentSegment.end = current;
+            segments.push_back(currentSegment);
+            currentSegment = {current,current,std::vector<MazeRunnerPosition>()};
+
+            // process the segment
+            bool shouldPop = false; // If true, after processing, pop/return to the previous segment
+
+            // Found the exit
+            if(maze.IsExit(currentSegment.end.position)) {
+                exitCallback(segments,current.score);
+
+                if(current.score < bestScore) {
+                    bestPath = segments;
+                    bestScore = current.score;
+                }
+                shouldPop = true;
+            } else {
+                // Anti loop
+                if(maze.IsStart(currentSegment.end.position)) {
+                    // Segment ends on the start tile. This is a loop
+                    shouldPop = true;
+                } else {
+                    auto sff = std::find_if(segments.begin(), segments.end(), [currentSegment](const MazeSegment & s) {
+                        // Look for identical segment
+                        return currentSegment.origin.position == s.origin.position && currentSegment.end.position == s.end.position;
+                    });
+                    if(sff != segments.end() && sff < segments.end() - 1) {
+                        // Found an identical segment. This is a loop
+                        shouldPop = true;
+                    } else {
+                        auto srw = std::find_if(segments.begin(), segments.end(), [currentSegment](const MazeSegment & s) {
+                            // Look for identical segment (in reverse direction)
+                            return currentSegment.origin.position == s.end.position && currentSegment.end.position == s.origin.position;
+                        });
+                        if(srw != segments.end() && sff < segments.end() - 1) {
+                            // Found an identical segment (inverted). This is a loop
+                            shouldPop = true;
+                        }
+                    }
+                }
+                // Speed enhancement (could be even better placed on top, but beware of the "closed segments" logic)
+                if(current.score > bestScore) {
+                    // This path is too costly, no need to keep on
+                    shouldPop = true;
+                }
+            }
+
+            if(!shouldPop) {
+                // Nothing to pop, just move ahead
+                // Update the runner's orientation
+                auto options = maze.Options(current.position,current.direction);
+                if(options.empty()) {
+                    throw std::runtime_error("Unexpected state, this shouldn't be a dead end");
+                }
+                if(options.front() != current.direction) {
+                    current.score += 1000;
+                    current.direction = options.front();
+                }
+
+                // Move the runner one step ahead in the chosen direction
+                current.position = current.GetNextPosition();
+                current.score += 1;
+                currentSegment.moves.push_back(current);
+
+            } else {
+                bool exhausted = false;
+                while(shouldPop && !exhausted) {        
+                    // There is a need to abandon the current segment and to return to the one before
+                    shouldPop = false;
+
+                    if(segments.empty()) {
+                        // Nothing left, we are done
+                        exhausted = true;
+                        break;
+                    }
+
+                    // What direction should we take, knowing that it is evaluated in the order: Forward, Clockwise, CounterClockwise?
+                    // -> Compare the direction we were going at the end of segment before last (atEndPrevLast)
+                    //    with the direction we were going at the beginning of last segment (atBeginLast)
+                    // Capture their respective values
+                    auto atEndPrevLast = start;
+                    auto atBeginLast = segments.back().origin;
+                    if(segments.size()>1) {     // If there are 2 or more  segments, then it was the end position of the segments before (as the beginning position of the current segment is already oriented possibly in a different direction)
+                        auto i = segments.end() - 2;
+                        atEndPrevLast = i->end;
+                    } else 
+                    if(segments.size() == 1){   // If there is only one segment, then take the "start" 
+                        atEndPrevLast = start;
+                    }
+                    // Drop the last segment
+                    segments.pop_back();
+
+                    // Chose the "next" direction option
+                    auto options = maze.Options(atEndPrevLast.position,atEndPrevLast.direction);
+                    if(options.empty()) {
+                        throw std::runtime_error("Unexpected state, this shouldn't be a dead end");
+                    }
+                    Compass choice;
+                    for(auto c = options.begin(); c < options.end(); c++ ) {
+                        if(*c == atBeginLast.direction) {
+                            // This is the option we took last time; take the next one (if any)
+                            if(c < options.end() - 1) {
+                                choice = *(c + 1);
+                            }
+                            break;
+                        }
+                    }
+                    if(choice == Compass::UNKNOWN) {
+                        // No suitable option, we should pop again, immediatelly
+                        shouldPop = true;
+                        continue;
+                    }
+
+                    // Move the runner at the segment's end
+                    current = atEndPrevLast;
+
+                    // Update its orientation
+                    if(current.direction != choice) {
+                        current.score += 1000;
+                        current.direction = choice;
+                    }
+
+                    // Move the runner one step ahead in the chosen direction
+                    current.position = current.GetNextPosition();
+                    current.score += 1;
+                    currentSegment.moves.push_back(current);
+                }
+                if(exhausted) {
+                    // All options/segments exhausted; leave
+                    break;
+                }
+            }
+        } else {
+            // Just a regular tile; move ahead
+
+            // Update the orientation
+            auto options = maze.Options(current.position,current.direction);
+            if(options.empty()) {
+                throw std::runtime_error("Unexpected state, this shouldn't be a dead end");
+            }
+            if(options.front() != current.direction) {
+                current.score += 1000;
+                current.direction = options.front();
+            }
+
+            // Move the runner one step ahead in the chosen direction
+            current.position = current.GetNextPosition();
+            current.score += 1;
+            currentSegment.moves.push_back(current);
+        }
+
+    }
+
+    return bestScore;
+}
+
 long MazeRunner::Run2(std::function<void(std::stack<MazeSegment>,long)> exitCallback) {
     Reset();
     PushSegment();
