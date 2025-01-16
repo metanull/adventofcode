@@ -1,21 +1,11 @@
 #include "MazeRunner.h"
 
-std::pair<int,int> MazeRunnerPosition::GetNextPosition() {
-    switch(direction) {
-        case Compass::NORTH: return std::make_pair(position.first, position.second - 1);
-        case Compass::EAST: return std::make_pair(position.first + 1, position.second);
-        case Compass::SOUTH: return std::make_pair(position.first, position.second + 1);
-        case Compass::WEST: return std::make_pair(position.first - 1, position.second);
-    }
-    throw std::runtime_error("Direction is unknown");
-}
-
 long MazeRunner::Run3(std::function<void(std::vector<MazeSegment>,long)> exitCallback) {
     std::vector<MazeSegment> segments;
     std::vector<MazeRunnerCrosspoint> crosspoints;
-    MazeSegment currentSegment;
     MazeRunnerPosition start = {maze.Start(), Compass::EAST, 0};
     MazeRunnerPosition current = start;
+    MazeSegment currentSegment = {current, current, std::vector<MazeRunnerPosition>()};
     long bestScore = LONG_MAX;
     std::vector<MazeSegment> bestPath;
 
@@ -98,7 +88,7 @@ long MazeRunner::Run3(std::function<void(std::vector<MazeSegment>,long)> exitCal
                 }
 
                 // Move the runner one step ahead in the chosen direction
-                current.position = current.GetNextPosition();
+                current.position = maze.Move(current.position,current.direction);
                 current.score += 1;
                 currentSegment.moves.push_back(current);
 
@@ -108,6 +98,10 @@ long MazeRunner::Run3(std::function<void(std::vector<MazeSegment>,long)> exitCal
                     // There is a need to abandon the current segment and to return to the one before
                     shouldPop = false;
 
+                    // Skip all previously abandonne segments (not containing any moves)
+                    while(!segments.empty() && segments.back().moves.empty()) {
+                        segments.pop_back();
+                    }
                     if(segments.empty()) {
                         // Nothing left, we are done
                         exhausted = true;
@@ -120,6 +114,7 @@ long MazeRunner::Run3(std::function<void(std::vector<MazeSegment>,long)> exitCal
                     // Capture their respective values
                     auto atEndPrevLast = start;
                     auto atBeginLast = segments.back().origin;
+                    auto atBeginLastDirection = segments.back().moves.front().direction;    // This is the direction we had chosen after the last segment
                     if(segments.size()>1) {     // If there are 2 or more  segments, then it was the end position of the segments before (as the beginning position of the current segment is already oriented possibly in a different direction)
                         auto i = segments.end() - 2;
                         atEndPrevLast = i->end;
@@ -137,8 +132,8 @@ long MazeRunner::Run3(std::function<void(std::vector<MazeSegment>,long)> exitCal
                     }
                     Compass choice;
                     for(auto c = options.begin(); c < options.end(); c++ ) {
-                        if(*c == atBeginLast.direction) {
-                            // This is the option we took last time; take the next one (if any)
+                        if(*c == atBeginLastDirection /*atBeginLast.direction*/) {
+                            // *c is the option we took initially,  last time; take the next one (if any)
                             if(c < options.end() - 1) {
                                 choice = *(c + 1);
                             }
@@ -161,7 +156,7 @@ long MazeRunner::Run3(std::function<void(std::vector<MazeSegment>,long)> exitCal
                     }
 
                     // Move the runner one step ahead in the chosen direction
-                    current.position = current.GetNextPosition();
+                    current.position = maze.Move(current.position,current.direction);
                     current.score += 1;
                     currentSegment.moves.push_back(current);
                 }
@@ -184,7 +179,7 @@ long MazeRunner::Run3(std::function<void(std::vector<MazeSegment>,long)> exitCal
             }
 
             // Move the runner one step ahead in the chosen direction
-            current.position = current.GetNextPosition();
+            current.position = maze.Move(current.position,current.direction);
             current.score += 1;
             currentSegment.moves.push_back(current);
         }

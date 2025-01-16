@@ -18,8 +18,6 @@ struct MazeRunnerPosition {
     Compass direction = Compass::UNKNOWN;
     long score = 0;
 
-    std::pair<int,int> GetNextPosition();
-
     MazeRunnerPosition() = default;
     MazeRunnerPosition(const MazeRunnerPosition & other) = default;
     MazeRunnerPosition & operator=(const MazeRunnerPosition & other) = default;
