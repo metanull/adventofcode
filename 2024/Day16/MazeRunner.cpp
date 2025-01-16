@@ -27,6 +27,8 @@ long MazeRunner::Run3(std::function<void(std::vector<MazeSegment>,long)> exitCal
         bool first = segments.size() == 0 && currentSegment.moves.empty();
         
         if(!regular && !first) {
+            std::cout << "\033[7;1m;[---> SPECIAL TILE (" << current.position.first << ", " << current.position.second << ") \033[22;27m." << std::endl;
+
             // close the segment
             currentSegment.end = current;
             segments.push_back(currentSegment);
@@ -37,6 +39,8 @@ long MazeRunner::Run3(std::function<void(std::vector<MazeSegment>,long)> exitCal
 
             // Found the exit
             if(maze.IsExit(currentSegment.end.position)) {
+                std::cout << "\033[7;1m;[---> EXIT FOUND (" << current.position.first << ", " << current.position.second << ") \033[22;27m." << std::endl;
+                std::cout << "\033[7;33;1m;[---> SCORE: " << current.score << "\033[0m." << std::endl;
                 exitCallback(segments,current.score);
 
                 if(current.score < bestScore) {
@@ -45,31 +49,41 @@ long MazeRunner::Run3(std::function<void(std::vector<MazeSegment>,long)> exitCal
                 }
                 shouldPop = true;
             } else {
-                // Anti loop
-                if(maze.IsStart(currentSegment.end.position)) {
+                // Anti loop - Anti Dead End - Anti return to start
+                if(maze.IsStart(segments.back().end.position)) {
+                    std::cout << "\033[7;1m;[---> LOOP DETECTED (thru start) (" << current.position.first << ", " << current.position.second << ") \033[22;27m." << std::endl;
                     // Segment ends on the start tile. This is a loop
                     shouldPop = true;
+                } else 
+                if(maze.IsDeadEnd(segments.back().end.position,segments.back().end.direction)) {
+                    std::cout << "\033[31;1m;[---> DEAD END DETECTED (" << current.position.first << ", " << current.position.second << ") \033[22;27m." << std::endl;
+                    // Segment ends on a dead end.
+                    shouldPop = true;
                 } else {
-                    auto sff = std::find_if(segments.begin(), segments.end(), [currentSegment](const MazeSegment & s) {
+                    auto sff = std::find_if(segments.begin(), segments.end(), [segments](const MazeSegment & s) {
                         // Look for identical segment
-                        return currentSegment.origin.position == s.origin.position && currentSegment.end.position == s.end.position;
+                        return segments.back().origin.position == s.origin.position && segments.back().end.position == s.end.position;
                     });
                     if(sff != segments.end() && sff < segments.end() - 1) {
+                        std::cout << "\033[7;1m;[---> LOOP DETECTED (thru forward segment) (" << current.position.first << ", " << current.position.second << ") \033[22;27m." << std::endl;
                         // Found an identical segment. This is a loop
                         shouldPop = true;
                     } else {
-                        auto srw = std::find_if(segments.begin(), segments.end(), [currentSegment](const MazeSegment & s) {
+                        auto srw = std::find_if(segments.begin(), segments.end(), [segments](const MazeSegment & s) {
                             // Look for identical segment (in reverse direction)
-                            return currentSegment.origin.position == s.end.position && currentSegment.end.position == s.origin.position;
+                            return segments.back().origin.position == s.end.position && segments.back().end.position == s.origin.position;
                         });
-                        if(srw != segments.end() && sff < segments.end() - 1) {
+                        if(srw != segments.end() && srw < segments.end() - 1) {
+                            std::cout << "\033[7;1m;[---> LOOP DETECTED (thru backward segment) (" << current.position.first << ", " << current.position.second << ") \033[22;27m." << std::endl;
                             // Found an identical segment (inverted). This is a loop
                             shouldPop = true;
                         }
                     }
                 }
-                // Speed enhancement (could be even better placed on top, but beware of the "closed segments" logic)
+                // Speed enhancement
                 if(current.score > bestScore) {
+                    std::cout << "\033[7;1m;[---> SCORE EXCEEDED DETECTED (" << current.position.first << ", " << current.position.second << ") \033[22;27m." << std::endl;
+                    std::cout << "\033[7;31;1m;[---> SCORE: " << current.score << "\033[0m." << std::endl;
                     // This path is too costly, no need to keep on
                     shouldPop = true;
                 }
@@ -93,9 +107,11 @@ long MazeRunner::Run3(std::function<void(std::vector<MazeSegment>,long)> exitCal
                 currentSegment.moves.push_back(current);
 
             } else {
+                // There is a need to abandon the current segment and to return to the one before
                 bool exhausted = false;
                 while(shouldPop && !exhausted) {        
-                    // There is a need to abandon the current segment and to return to the one before
+                    std::cout << "\033[7;33;1m;[---> POP REQUESTED\033[22;27m." << std::endl;
+
                     shouldPop = false;
 
                     // Skip all previously abandonne segments (not containing any moves)
@@ -146,8 +162,10 @@ long MazeRunner::Run3(std::function<void(std::vector<MazeSegment>,long)> exitCal
                         continue;
                     }
 
-                    // Move the runner at the segment's end
+                    // Move the runner at the segment's end, update the currentSegment's origin accordingly
                     current = atEndPrevLast;
+                    currentSegment.origin = current; // -------------------------------------------------------<<<
+                    std::cout << "\033[7;32;1m;[---> POPPED @ (" << current.position.first << ", " << current.position.second << ") \033[22;27m." << std::endl;
 
                     // Update its orientation
                     if(current.direction != choice) {
@@ -161,12 +179,14 @@ long MazeRunner::Run3(std::function<void(std::vector<MazeSegment>,long)> exitCal
                     currentSegment.moves.push_back(current);
                 }
                 if(exhausted) {
+                    std::cout << "\033[7;1m;[---> SEGMENTS DEPLETED (" << current.position.first << ", " << current.position.second << ") \033[22;27m." << std::endl;
                     // All options/segments exhausted; leave
                     break;
                 }
             }
         } else {
             // Just a regular tile; move ahead
+            std::cout << "\033[1m;[---> REGULAR TILE (" << current.position.first << ", " << current.position.second << ") \033[22;27m." << std::endl;
 
             // Update the orientation
             auto options = maze.Options(current.position,current.direction);
@@ -830,8 +850,7 @@ std::ostream & operator<<(std::ostream & os, const MazeRunnerPosition & p) {
 
 std::ostream & operator<<(std::ostream & os, const MazeSegment & s){
     os << "\033[7;1mSEGMENT\033[27;22m" << std::endl;
-    os << "\033[7m" << std::endl;
-    os << "FROM  : ";
+    os << "\033[7mFROM  : ";
     os << "\033[1m(" << std::setw(5) << s.origin.position.first << ", " << std::setw(5) << s.origin.position.second << ") \033[22m";
     os << "[" << s.origin.direction << "]";
     os << "[" << std::setw(10) << s.origin.score << "]";

@@ -69,66 +69,6 @@ int main(int argc, char ** argv, char ** envp) {
         });
         std::cout << std::endl;
         std::cout << "SCORE: " << b << std::endl;
-
-/*        runner.Run2([](std::stack<MazeSegment> segments, long score) {
-            std::cout << "\033[41;30;1mEXIT REACHED, SCORE: " << score << "\033[0m" << std::endl;
-            MazeRunner::DumpSegment(segments, "\033[33m");
-        });
-        */
-/*
-        runner.Run([](std::stack<MazeSegment> segments, long score) {
-            std::cout << "\033[41;30;1m";
-            std::cout << "== EXIT REACHED ==";
-            std::cout << "\033[0m" << std::endl; 
-            
-            std::cout << "\033[42;30;1m";
-            std::cout << "== Score: " << score;
-            std::cout << "\033[0m" << std::endl; 
-            
-            std::cout << "\033[42;30;1m";
-            std::cout << "== SEGMENTS: " << segments.size();
-            std::cout << "\033[0m" << std::endl; 
-
-            MazeRunner::DumpSegment(segments, "\033[33m");
-
-            Compass prev = Compass::EAST;   // Tracks the previous direction
-
-            // transform the segment stack into a vector, in reverse order
-            std::vector<MazeRunnerPosition> path;
-            while(!segments.empty()) {
-                if(segments.top().origin.position == segments.top().end.position && segments.top().moves.empty()) {
-                    // The very first segment is empty (containing the initial direction)
-                    prev = segments.top().origin.direction;
-                    segments.pop();
-                    continue;
-                }
-                while(!segments.top().moves.empty()) {
-                    path.push_back(segments.top().moves.back());
-                    segments.top().moves.pop_back();
-                }
-                segments.pop();
-            }
-            std::reverse(path.begin(), path.end());
-            
-            // print the path
-            std::cout << "== PATH: " << std::endl;
-            long turns = 0;
-            long steps = 0;
-            
-            for(auto move : path) {
-                if(move.direction != prev) {
-                    turns ++;
-                    prev = move.direction;
-                    std::cout << "TURN ";
-                }
-                steps ++;
-                std::cout << move.direction << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "CALCULATED SCORE: " << ((turns * 1001) + steps - turns) << std::endl;
-            std::cout << "==================\033[0m" << std::endl;
-        });
-*/
         
     }
 }
