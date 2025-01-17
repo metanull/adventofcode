@@ -63,9 +63,11 @@ int main(int argc, char ** argv, char ** envp) {
         auto b = runner.Run3([](std::vector<MazeSegment> segments, long score) {
             std::cout << "\033[41;30;1mEXIT REACHED, SCORE: " << score << "\033[0m" << std::endl;
             
-            for(auto s : segments) {
-                std::cout << s << std::endl;
-            }
+            #ifdef DEBUG
+                for(auto s : segments) {
+                    std::cout << s << std::endl;
+                }
+            #endif
         });
         std::cout << std::endl;
         std::cout << "SCORE: " << b << std::endl;
