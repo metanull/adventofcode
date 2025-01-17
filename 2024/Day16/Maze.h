@@ -41,6 +41,7 @@ public:
 
     char GetTile(std::pair<int,int> p) const;
     char SetTile(std::pair<int,int> p, char c);
+    
     std::pair<int,int> Move(std::pair<int,int> c, Compass d) const;
 
     bool IsWall(std::pair<int,int> p) const;
@@ -50,6 +51,7 @@ public:
 
     bool IsDeadEnd(std::pair<int,int> p, Compass d) const;
     bool IsCrossPoint(std::pair<int,int> p, Compass d) const;
+
     std::vector<Compass>Options(std::pair<int,int> p, Compass d) const;
 
     char GetTileForward(std::pair<int,int> p, Compass d) const;

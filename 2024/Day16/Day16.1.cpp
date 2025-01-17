@@ -8,6 +8,10 @@
 #include <algorithm>
 #include <filesystem>
 
+// #define UPPERLIMIT 491760
+// #define UPPERLIMIT 200000
+#define NEW_METHOD 0
+
 #include "Maze.h"
 #include "Compass.h"
 #include "MazeRunner.h"
@@ -26,15 +30,14 @@ std::ostream& operator<<(std::ostream& os, const std::vector<char> & vec);
 // Print a vector<vector<char>>
 std::ostream& operator<<(std::ostream& os, const std::vector<std::vector<char>> & map);
 
-
-
 // ---------------------------------------------------------
 const char * banner = "AdventOfCode 2024 Day 16!";
 const char * inputFilePath = "../../2024/Input/Day16.txt";
 int main(int argc, char ** argv, char ** envp) {
-    std::cout << "\033[41;30;1m" << "################################################################################" << "\033[0m" << std::endl;
+    std::cout << "\033[41;30;1m";
+    std::cout << "################################################################################" << std::endl;
     std::cout << banner << std::endl;
-    std::cout << "\033[41;30;1m" << "################################################################################" << "\033[0m" << std::endl;
+    std::cout << "################################################################################" << "\033[0m" << std::endl << std::endl;
 
     // Read the input file, and initialize the maze
     {
@@ -60,17 +63,21 @@ int main(int argc, char ** argv, char ** envp) {
         Maze maze(inputMap);
         MazeRunner runner(maze);
 
-        auto b = runner.Run3([](std::vector<MazeSegment> segments, long score) {
-            std::cout << "\033[41;30;1mEXIT REACHED, SCORE: " << score << "\033[0m" << std::endl;
-            
-            #ifdef DEBUG
-                for(auto s : segments) {
-                    std::cout << s << std::endl;
-                }
-            #endif
-        });
-        std::cout << std::endl;
-        std::cout << "SCORE: " << b << std::endl;
+        #if defined(NEW_METHOD) && NEW_METHOD != 0
+            std::cout << runner.Run() << std::endl;
+        #else
+            auto b = runner.Run3([](std::vector<MazeSegment> segments, long score) {
+                std::cout << "\033[41;30;1mEXIT REACHED, SCORE: " << score << "\033[0m" << std::endl;
+                
+                #ifdef DEBUG
+                    for(auto s : segments) {
+                        std::cout << s << std::endl;
+                    }
+                #endif
+            });
+            std::cout << std::endl;
+            std::cout << "SCORE: " << b << std::endl;
+        #endif
         
     }
 }
