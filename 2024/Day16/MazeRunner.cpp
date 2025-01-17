@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <map>
 #include <sstream>
+#include <chrono>
 
 #ifndef UPPERLIMIT
     #define UPPERLIMIT LONG_MAX
@@ -210,6 +211,8 @@ long MazeRunner::Run3(std::function<void(std::vector<MazeSegment>,long)> exitCal
     std::vector<MazeSegment> bestPath;
     long long n = 0;
 
+    auto t1 = std::chrono::high_resolution_clock::now();
+
     while(true) {
             size_t w = 100;
             if(segments.size() > maxSegments) {
@@ -226,9 +229,10 @@ long MazeRunner::Run3(std::function<void(std::vector<MazeSegment>,long)> exitCal
              << "\033[27;34m" << " " << std::setw(6) << current.score
              << "\033[7;1;32m"  << " " << std::setw(6) << bestScore
              << "\033[27;35m"  << " " << std::setw(6) << maxSegments
-             << "\033[22;27;0m" << " " << segments.size()
-             << "\033[22;27;0m" << " " << (n++)
-             << "\033[22;27;0m." << std::endl;
+             << "\033[0m" << " " << segments.size()
+             << "\033[34;1m" << std::setw(4) << std::chrono::duration_cast<std::chrono::minutes>(std::chrono::high_resolution_clock::now() - t1).count() << " min"
+             << "\033[0m" << " " << (n++)
+             << std::endl;
 
         // Is the current segment closed?
         bool closed = (currentSegment.origin.position != currentSegment.end.position);
@@ -286,6 +290,11 @@ long MazeRunner::Run3(std::function<void(std::vector<MazeSegment>,long)> exitCal
                     #endif
                     // Segment ends on a dead end.
                     shouldPop = true;
+
+                    // Fill the dead end with a wall
+                    for(auto d = segments.back().moves.begin() + 1; d < segments.back().moves.end(); d++) {
+                        maze.SetTile(d->position,maze.WALL_CHAR);
+                    }
                 } else {
                     auto sff = std::find_if(segments.begin(), segments.end(), [segments](const MazeSegment & s) {
                         // Look for identical segment
