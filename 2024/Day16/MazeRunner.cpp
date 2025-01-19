@@ -8,7 +8,7 @@ MazeRunner::MazeRunner(const Maze & map) {
 
 
 // long MazeRunner::Run(std::function<bool(long long,const std::vector<MazeSegment> &)> cb) {
-long MazeRunner::Run(std::function<std::vector<Compass>(const std::vector<Compass>&)> choiceOrder) {
+long MazeRunner::Run(std::string banner, std::function<std::vector<Compass>(const std::vector<Compass>&)> choiceOrder) {
     long long n = 0;
     std::vector<MazeSegment> segments;
     long maxSegments = 0;
@@ -21,13 +21,6 @@ long MazeRunner::Run(std::function<std::vector<Compass>(const std::vector<Compas
         // while(cb(n,segments)) {
         while(true) {
             n++;
-            
-            #if defined(DEBUG) && DEBUG != 0
-                if(segments.size() > maxSegments) {
-                    maxSegments = (long)segments.size();
-                }
-                ProgressBar(n, start, (long)segments.size(), (long)maxSegments, runner.score, bestScore, 100);
-            #endif
             
             // Are we just starting?
             bool isFirstMove = segments.size() == 0 && currentSegment.moves.empty();
@@ -64,7 +57,7 @@ long MazeRunner::Run(std::function<std::vector<Compass>(const std::vector<Compas
                     if(segments.size() > maxSegments) {
                         maxSegments = (long)segments.size();
                     }
-                    ProgressBar(n, start, (long)segments.size(), (long)maxSegments, segments.back().end.score, bestScore, 100, isBest);
+                    ProgressBar(banner, n, start, (long)segments.size(), (long)maxSegments, segments.back().end.score, bestScore, 100, isBest);
                 } else {
                     // Avoid loops; dead ends; return to start
                     if( maze.IsStart(segments.back().end.position)) {
@@ -84,8 +77,11 @@ long MazeRunner::Run(std::function<std::vector<Compass>(const std::vector<Compas
                     }
 
                     // Avoid score overflow
-                    if( segments.back().end.score > bestScore) {
-                        shouldJumpBack = true;
+                    {
+                        std::lock_guard<std::mutex> lock(mtx);
+                        if(segments.back().end.score > bestScore) {
+                            shouldJumpBack = true;
+                        }
                     }
                 }
 
@@ -121,20 +117,22 @@ MazeRunnerPosition MazeRunner::Step(const MazeRunnerPosition & r, Compass d) con
     return current;
 }
 void MazeRunner::CondemnLastSegment(std::vector<MazeSegment> & segments) {
-    std::unique_lock<std::shared_mutex> lock(condemnMutex); // Lock the mutex in exclusive mode, to avoid another thread to walk the path we are condemning
-
     for(auto d = segments.back().moves.begin() + 1; d < segments.back().moves.end(); d++) {
         maze.SetTile(d->position,maze.WALL_CHAR);
     }
 }
 MazeRunnerPosition MazeRunner::Walk(const MazeRunnerPosition & r, std::function<std::vector<Compass>(const std::vector<Compass>&)> choiceOrder) {
-    std::shared_lock<std::shared_mutex> lock(condemnMutex); // Lock the mutex in shared mode, to allow other threads to walk other path in parallel, still preventing them to run while a condemned path is being filled-in
-
     MazeRunnerPosition current(r);
     // Update the orientation
     auto options = maze.Options(current.position, current.direction);
     if(options.empty()) {
-        throw std::runtime_error("BANG! Walked into a dead end - this is unexpected");
+        // Impossible to Walk, presumably, this path is being closed as a "dead-end" by another thread.
+        // Do nothing; it "Run" method shall pick-up the situation and jump back to a previous segment
+
+        std::cerr << "Walk(): Walked into a dead end (another thread is probably closing the path)" << std::endl;
+        return current;
+
+        // throw std::runtime_error("BANG! Walked into a dead end - this is unexpected");
     }
     // Apply the callback to modify the order of the options if needed
     options = choiceOrder(options);
@@ -203,7 +201,7 @@ bool MazeRunner::DetectLoop(std::vector<MazeSegment> & segments, const MazeSegme
     return false;
 }
 
-void MazeRunner::ProgressBar(long long n, std::chrono::steady_clock::time_point start, long numSegments, long maxSegments, long score, long bestScore, int w, bool isBest) {
+void MazeRunner::ProgressBar(std::string & banner, long long n, std::chrono::steady_clock::time_point start, long numSegments, long maxSegments, long score, long bestScore, int w, bool isBest) {
 
     int pc = (int)(w * ((float)numSegments / (float)maxSegments));
     int wpc  = std::min((w-1),pc);
@@ -213,6 +211,9 @@ void MazeRunner::ProgressBar(long long n, std::chrono::steady_clock::time_point 
     // ss << "\033[1F"
     ss << std::setfill(' ')
         << std::setw(12) << std::this_thread::get_id() 
+        << " - "
+        << std::setw(12) << banner
+        << " - "
         << " "
         << std::setw(9) << (n++)
         << " "

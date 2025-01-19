@@ -54,7 +54,6 @@ protected:
     long bestScore = UPPERLIMIT;
     std::vector<MazeSegment> bestPath;
     std::mutex mtx; // Mutex for synchronizing access to bestScore
-    std::shared_mutex condemnMutex; // Mutex for synchronizing access to condemned segments
 
 public:
     MazeRunner() = default;
@@ -63,7 +62,7 @@ public:
     MazeRunner(const Maze & map);
 
     // long Run(std::function<bool(long long,const std::vector<MazeSegment> &)> cb);
-    long Run(std::function<std::vector<Compass>(const std::vector<Compass>&)>);
+    long Run(std::string banner, std::function<std::vector<Compass>(const std::vector<Compass>&)>);
     MazeRunnerPosition Walk(const MazeRunnerPosition & r, std::function<std::vector<Compass>(const std::vector<Compass>&)>);
     MazeRunnerPosition Step(const MazeRunnerPosition & r, Compass d) const;
     MazeSegment JumpBack(std::vector<MazeSegment> & ss, std::function<std::vector<Compass>(const std::vector<Compass>&)>);
@@ -74,7 +73,7 @@ public:
     // long __Run_Backup(std::function<bool(long long,const std::vector<MazeSegment> &)> cb);        // (std::function<void(std::vector<MazeSegment>,long)> exitCallback)
     long __Run_Backup();
 
-    void ProgressBar(long long n, std::chrono::steady_clock::time_point start, long numSegments, long maxSegments, long score, long bestScore, int w = 100, bool isBest = false);
+    void ProgressBar(std::string & banner, long long n, std::chrono::steady_clock::time_point start, long numSegments, long maxSegments, long score, long bestScore, int w = 100, bool isBest = false);
 };
 
 #endif // __DAY16_MAZERUNNER_H__

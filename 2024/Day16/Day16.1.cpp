@@ -205,25 +205,31 @@ int main(int argc, char ** argv, char ** envp) {
             // Run the logic twice in parallel; each processing the crosspoint in a different order of preference (regular (FWD,CW,CCW) and reverse (CCW,CW,FWD))
             long resultRegular = 0;
             std::thread thread1([&runner, &regular, &resultRegular]() {
-                resultRegular = runner.Run(regular);
+                resultRegular = runner.Run("NORMAL", regular);
             });
 
             long resultReverse = 0;
             std::thread thread2([&runner, &reverse, &resultReverse]() {
-                resultReverse = runner.Run(reverse);
+                resultReverse = runner.Run("REVERSE", reverse);
             });
             
             long resultCustomOrder = 0;
-            std::this_thread::sleep_for(std::chrono::seconds(3));   // Wait a bit before launching the third thread
+            // std::this_thread::sleep_for(std::chrono::seconds(3));   // Wait a bit before launching the third thread
             std::thread thread3([&runner, &customOrder, &resultCustomOrder]() {
-                resultCustomOrder = runner.Run(customOrder);
+                resultCustomOrder = runner.Run("CUSTOM", customOrder);
             });
 
             long resultCustomOrderReverse = 0;
-            std::this_thread::sleep_for(std::chrono::seconds(3));   // Wait a bit before launching the fourth thread
+            // std::this_thread::sleep_for(std::chrono::seconds(3));   // Wait a bit before launching the fourth thread
             std::thread thread4([&runner, &customOrderReverse, &resultCustomOrderReverse]() {
-                resultCustomOrderReverse = runner.Run(customOrderReverse);
+                resultCustomOrderReverse = runner.Run("CUSTOM-R", customOrderReverse);
             });
+
+            std::cout <<
+                "Regular: " << thread1.get_id() << std::endl <<
+                "Reverse: " << thread2.get_id() << std::endl <<
+                "Custom Order: " << thread3.get_id() << std::endl <<
+                "Custom Order Reverse: " << thread4.get_id() << std::endl;
 
             thread1.join();
             thread2.join();
