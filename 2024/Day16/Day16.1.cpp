@@ -35,7 +35,7 @@ std::ostream& operator<<(std::ostream& os, const std::vector<std::vector<char>> 
 
 // ---------------------------------------------------------
 const char * banner = "AdventOfCode 2024 Day 16!";
-const char * inputFilePath = "../../2024/Input/Day16.txt";
+const char * inputFilePath = INPUT_PATH;
 
 int main(int argc, char ** argv, char ** envp) {
     std::cout << "\033[41;30;1m";
@@ -161,18 +161,90 @@ int main(int argc, char ** argv, char ** envp) {
         });
 
         std::thread thread2([&runner, &customFunction2]() {
-            std::cout << runner.Run3(customFunction2) << std::endl;
+            std::cout << runner.__Run_Backup(customFunction2) << std::endl;
         });
 
         thread1.join();
         thread2.join();
 */
 
-        #if defined(NEW_METHOD) && NEW_METHOD != 0
-            std::cout << runner.Run() << std::endl;
+        std::function<std::vector<Compass>(const std::vector<Compass>&)> regular = [](const std::vector<Compass> & options) {
+            return options;
+        };
+        std::function<std::vector<Compass>(const std::vector<Compass>&)> reverse = [](const std::vector<Compass> & options) {
+            std::vector<Compass> result;
+            for(auto p = options.rbegin(); p != options.rend(); p++) {
+                result.push_back(*p);
+            }
+            return result;
+        };
+        std::function<std::vector<Compass>(const std::vector<Compass>&)> customOrder = [](const std::vector<Compass> & options) {
+            std::vector<Compass> result = options;
+            if (options.size() == 3) {
+                std::swap(result[0], result[1]);
+            }
+            return result;
+        };
+        std::function<std::vector<Compass>(const std::vector<Compass>&)> customOrderReverse = [](const std::vector<Compass> & options) {
+            std::vector<Compass> result;
+            for(auto p = options.rbegin(); p != options.rend(); p++) {
+                result.push_back(*p);
+            }
+            if (options.size() == 3) {
+                std::swap(result[0], result[1]);
+            }
+            return result;
+        };
+        
+
+        
+
+        #if defined(MULTITHREAD) && MULTITHREAD == 1
+            std::cout << "Multi-threaded execution" << std::endl;
+
+            // Run the logic twice in parallel; each processing the crosspoint in a different order of preference (regular (FWD,CW,CCW) and reverse (CCW,CW,FWD))
+            long resultRegular = 0;
+            std::thread thread1([&runner, &regular, &resultRegular]() {
+                resultRegular = runner.Run(regular);
+            });
+
+            long resultReverse = 0;
+            std::thread thread2([&runner, &reverse, &resultReverse]() {
+                resultReverse = runner.Run(reverse);
+            });
+            
+            long resultCustomOrder = 0;
+            std::this_thread::sleep_for(std::chrono::seconds(3));   // Wait a bit before launching the third thread
+            std::thread thread3([&runner, &customOrder, &resultCustomOrder]() {
+                resultCustomOrder = runner.Run(customOrder);
+            });
+
+            long resultCustomOrderReverse = 0;
+            std::this_thread::sleep_for(std::chrono::seconds(3));   // Wait a bit before launching the fourth thread
+            std::thread thread4([&runner, &customOrderReverse, &resultCustomOrderReverse]() {
+                resultCustomOrderReverse = runner.Run(customOrderReverse);
+            });
+
+            thread1.join();
+            thread2.join();
+            thread3.join();
+            thread4.join();
+
+            std::cout << "Result (regular order): " << resultRegular << std::endl;
+            std::cout << "Result (reverse order): " << resultReverse << std::endl;
+            std::cout << "Result (custom order): " << resultCustomOrder << std::endl;
+            std::cout << "Result (custom order reverse): " << resultCustomOrderReverse << std::endl;
         #else
-            std::cout << runner.Run3() << std::endl;
+            std::cout << "Single-threaded execution" << std::endl;
+            long result = runner.Run(regular);
+            std::cout << "Result: " << result << std::endl;
         #endif
+
+
+        
+
+        
+        
         
     }
 }

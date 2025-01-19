@@ -13,6 +13,7 @@
 #include <sstream>
 #include <chrono>
 #include <mutex>
+#include <shared_mutex>
 
 #include "Constant.h"
 #include "Compass.h"
@@ -49,8 +50,11 @@ struct MazeSegment {
 class MazeRunner {
 protected:
     Maze maze;
-    long bestScore = LONG_MAX;
     std::chrono::steady_clock::time_point start = std::chrono::high_resolution_clock::now();
+    long bestScore = UPPERLIMIT;
+    std::vector<MazeSegment> bestPath;
+    std::mutex mtx; // Mutex for synchronizing access to bestScore
+    std::shared_mutex condemnMutex; // Mutex for synchronizing access to condemned segments
 
 public:
     MazeRunner() = default;
@@ -59,21 +63,18 @@ public:
     MazeRunner(const Maze & map);
 
     // long Run(std::function<bool(long long,const std::vector<MazeSegment> &)> cb);
-    long Run();
-    MazeRunnerPosition Walk(const MazeRunnerPosition & r) const;
+    long Run(std::function<std::vector<Compass>(const std::vector<Compass>&)>);
+    MazeRunnerPosition Walk(const MazeRunnerPosition & r, std::function<std::vector<Compass>(const std::vector<Compass>&)>);
     MazeRunnerPosition Step(const MazeRunnerPosition & r, Compass d) const;
-    MazeSegment JumpBack(std::vector<MazeSegment> & ss);
+    MazeSegment JumpBack(std::vector<MazeSegment> & ss, std::function<std::vector<Compass>(const std::vector<Compass>&)>);
     bool DetectLoop(std::vector<MazeSegment> & ss, const MazeSegment & s);
+    void CondemnLastSegment(std::vector<MazeSegment> & ss);
     
 
-    // long Run3(std::function<bool(long long,const std::vector<MazeSegment> &)> cb);        // (std::function<void(std::vector<MazeSegment>,long)> exitCallback)
-    long Run3();
+    // long __Run_Backup(std::function<bool(long long,const std::vector<MazeSegment> &)> cb);        // (std::function<void(std::vector<MazeSegment>,long)> exitCallback)
+    long __Run_Backup();
 
-    void ProgressBar(long long n, std::chrono::steady_clock::time_point start, long numSegments, long maxSegments, long score, long bestScore, int w = 100);
-
-protected:
-
-    void Reset();
+    void ProgressBar(long long n, std::chrono::steady_clock::time_point start, long numSegments, long maxSegments, long score, long bestScore, int w = 100, bool isBest = false);
 };
 
 #endif // __DAY16_MAZERUNNER_H__
