@@ -8,9 +8,19 @@
 #include <algorithm>
 #include <functional>
 #include <iomanip>
+#include <algorithm>
+#include <map>
+#include <sstream>
+#include <chrono>
+#include <mutex>
 
+#include "Constant.h"
 #include "Compass.h"
 #include "Maze.h"
+
+#ifndef UPPERLIMIT
+    #define UPPERLIMIT LONG_MAX
+#endif
 
 struct MazeRunnerPosition {
     std::pair<int,int> position = std::make_pair(0,0);
@@ -39,10 +49,8 @@ struct MazeSegment {
 class MazeRunner {
 protected:
     Maze maze;
-
-    std::vector<MazeSegment> segments;
-    MazeRunnerPosition start;
     long bestScore = LONG_MAX;
+    std::chrono::steady_clock::time_point start = std::chrono::high_resolution_clock::now();
 
 public:
     MazeRunner() = default;
@@ -50,14 +58,18 @@ public:
     MazeRunner & operator=(const MazeRunner & other) = default;
     MazeRunner(const Maze & map);
 
+    // long Run(std::function<bool(long long,const std::vector<MazeSegment> &)> cb);
     long Run();
     MazeRunnerPosition Walk(const MazeRunnerPosition & r) const;
     MazeRunnerPosition Step(const MazeRunnerPosition & r, Compass d) const;
-    MazeRunnerPosition JumpBack();
-    bool DetectLoop(const MazeSegment & s);
+    MazeSegment JumpBack(std::vector<MazeSegment> & ss);
+    bool DetectLoop(std::vector<MazeSegment> & ss, const MazeSegment & s);
     
 
-    long Run3(std::function<void(std::vector<MazeSegment>,long)> exitCallback);
+    // long Run3(std::function<bool(long long,const std::vector<MazeSegment> &)> cb);        // (std::function<void(std::vector<MazeSegment>,long)> exitCallback)
+    long Run3();
+
+    void ProgressBar(long long n, std::chrono::steady_clock::time_point start, long numSegments, long maxSegments, long score, long bestScore, int w = 100);
 
 protected:
 
