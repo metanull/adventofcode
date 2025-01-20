@@ -46,7 +46,7 @@ int main(int argc, char ** argv, char ** envp) {
 
     std::cout << "\033[7;34;1m";
     std::cout << "################################################################################" << std::endl;
-    std::cout << banner << std::endl;
+    std::cout << std::setw(80) << banner << std::endl;
     std::cout << "################################################################################" << "\033[0m" << std::endl << std::endl;
 
     // Read the input file, and initialize the maze
@@ -206,7 +206,7 @@ int main(int argc, char ** argv, char ** envp) {
         
 
         #if defined(MULTITHREAD) && MULTITHREAD == 1
-            std::cout << "Multi-threaded execution" << std::endl;
+            std::cout << "\033[7;31;1m*** Multi-threaded execution ***" << std::endl;
 
             // Run the logic twice in parallel; each processing the crosspoint in a different order of preference (regular (FWD,CW,CCW) and reverse (CCW,CW,FWD))
             long resultRegular = 0;
@@ -231,21 +231,24 @@ int main(int argc, char ** argv, char ** envp) {
                 resultCustomOrderReverse = runner.Run("CUSTOM-R", customOrderReverse);
             });
 
-            std::cout <<
-                "Regular: " << thread1.get_id() << std::endl <<
-                "Reverse: " << thread2.get_id() << std::endl <<
-                "Custom Order: " << thread3.get_id() << std::endl <<
-                "Custom Order Reverse: " << thread4.get_id() << std::endl;
+            std::cout
+                << "\033[32mRegular:               " << std::setfill(' ') << std::setw(9) << thread1.get_id() << std::endl
+                << "\033[33mReverse:               " << std::setfill(' ') << std::setw(9) << thread2.get_id() << std::endl
+                << "\033[34mCustom Order:          " << std::setfill(' ') << std::setw(9) << thread3.get_id() << std::endl
+                << "\033[35mCustom Order Reverse:  " << std::setfill(' ') << std::setw(9) << thread4.get_id() << std::endl
+                << "\033[0m";
 
             thread1.join();
             thread2.join();
             thread3.join();
             thread4.join();
 
-            std::cout << "Result (regular order): " << resultRegular << std::endl;
-            std::cout << "Result (reverse order): " << resultReverse << std::endl;
-            std::cout << "Result (custom order): " << resultCustomOrder << std::endl;
-            std::cout << "Result (custom order reverse): " << resultCustomOrderReverse << std::endl;
+            std::cout 
+                << "\033[32mResult (regular order):        " << std::setw(9) << resultRegular << std::endl
+                << "\033[32mResult (reverse order):        " << std::setw(9) << resultReverse << std::endl
+                << "\033[32mResult (custom order):         " << std::setw(9) << resultCustomOrder << std::endl
+                << "\033[32mResult (custom order reverse): " << std::setw(9) << resultCustomOrderReverse << std::endl
+                << "\033[0m";
         #else
             std::cout << "Single-threaded execution" << std::endl;
             long result = runner.Run(regular);

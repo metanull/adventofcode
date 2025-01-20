@@ -10,4 +10,8 @@
 
 #define INPUT_PATH  "./input.txt"
 
+#define SCORE_TURN  1000
+#define SCORE_STEP  1
+
+
 #endif

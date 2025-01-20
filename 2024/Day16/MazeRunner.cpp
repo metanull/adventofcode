@@ -108,12 +108,12 @@ long MazeRunner::Run(std::string banner, std::function<std::vector<Compass>(cons
 MazeRunnerPosition MazeRunner::Step(const MazeRunnerPosition & r, Compass d) const {
     MazeRunnerPosition current(r);
     if(d != current.direction) {
-        current.score += 1000;
+        current.score += SCORE_TURN;
         current.direction = d;
     }
     // Move the runner one step ahead in the chosen direction
     current.position = maze.Move(current.position, current.direction);
-    current.score += 1;
+    current.score += SCORE_STEP;
     return current;
 }
 void MazeRunner::CondemnLastSegment(std::vector<MazeSegment> & segments) {
