@@ -37,6 +37,10 @@ public:
     Maze & NewMazeFromBlocks(const std::vector<std::pair<int,int>> & wall, int w, int h);
     std::vector<std::vector<char>> Reduce();
 
+    std::pair<int,int> Search(std::vector<std::vector<char>>);
+    void Replace(std::pair<int,int>, std::vector<std::vector<char>>);
+    bool Replace(std::vector<std::vector<char>>, std::vector<std::vector<char>>);
+
     long Width() const;
     long Height() const;
 

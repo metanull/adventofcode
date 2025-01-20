@@ -1,8 +1,8 @@
 #ifndef CONSTANT_H
 #define CONSTANT_H
 
-// #define UPPERLIMIT  658 
-#define UPPERLIMIT  480 
+#define UPPERLIMIT  658 
+// #define UPPERLIMIT  480 
 #define DEBUG       0
 #define NEW_METHOD  1
 

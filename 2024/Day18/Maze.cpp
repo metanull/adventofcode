@@ -26,6 +26,123 @@ Maze & Maze::LoadMazeFromMap(const std::vector<std::vector<char>> & map) {
 }
 
 std::vector<std::vector<char>> Maze::Reduce() {
+
+    bool replace = true;
+    /*replace = true;
+    while(replace) {
+        replace = false;
+        replace = (Replace({{'.','.','.'},{'.','#','.'},{'.','.','.'}},{{'.','.','.'},{'.','.','.'},{'.','.','.'}})) || replace;
+        replace = (Replace({{'.','.','.','.'},{'.','#','#','.'},{'.','.','.','.'}},{{'.','.','.','.'},{'.','.','.','.'},{'.','.','.','.'}})) || replace;
+        replace = (Replace({{'.','.','.'},{'.','#','.'},{'.','#','.'},{'.','.','.'}},{{'.','.','.'},{'.','.','.'},{'.','.','.'},{'.','.','.'}})) || replace;
+    }*/
+
+    while(replace) {
+        replace = false;
+        replace = (Replace({{'#','#','#'},{'#','.','#'}},{{'#','#','#'},{'#','#','#'}})) || replace;
+        replace = (Replace({{'#','.','#'},{'#','#','#'}},{{'#','#','#'},{'#','#','#'}})) || replace;
+        replace = (Replace({{'#','#'},{'#','.'},{'#','#'}},{{'#','#'},{'#','#'},{'#','#'}})) || replace;
+        replace = (Replace({{'#','#'},{'.','#'},{'#','#'}},{{'#','#'},{'#','#'},{'#','#'}})) || replace;
+    }
+    replace = true;
+    while(replace) {
+        replace = false;
+        //replace = (Replace({{'#','#','#'},{'#','.','.'},{'#','.','.'}},{{'#','#','#'},{'#','#','.'},{'#','.','.'}})) || replace;
+        replace = (Replace({{'#','#','#'},
+                            {'.','.','#'},
+                            {'.','.','#'}}
+                        ,  {{'#','#','#'}
+                           ,{'.','#','#'},
+                           {'.','.','#'}})) || replace;
+        replace = (Replace({{'#','#','#'},
+                            {'.','.','#'},
+                            {'.','.','.'}}
+                        ,  {{'#','#','#'},
+                            {'.','#','#'},
+                            {'.','.','.'}})) || replace;
+        replace = (Replace({{'.','#','#'},
+                            {'.','.','#'},
+                            {'.','.','.'}}
+                        ,  {{'.','#','#'},
+                            {'.','#','#'},
+                            {'.','.','.'}})) || replace;
+        
+        replace = (Replace(
+             {{'#','#','#','#'}
+             ,{'.','.','.','#'},
+             {'.','#','.','#'},
+             {'.','.','.','#'}}
+            ,{{'#','#','#','#'},
+            {'.','#','#','#'},
+            {'.','#','#','#'},
+            {'.','.','.','#'}}
+        )) || replace;
+
+        replace = (Replace(
+             {{'#','#','#','#'},
+             {'.','.','.','#'},
+             {'.','#','.','#'},
+             {'.','.','.','#'}}
+            ,{{'#','#','#','#'},
+            {'.','#','#','#'},
+            {'.','#','#','#'},
+            {'.','.','.','#'}}
+        )) || replace;
+    }
+    replace = true;
+    while(replace) {
+        replace = false;
+        //replace = (Replace({{'#','#','#'},{'#','.','.'},{'#','.','.'}},{{'#','#','#'},{'#','#','.'},{'#','.','.'}})) || replace;
+        replace = (Replace({{'#','.','.'},
+                            {'#','.','.'},
+                            {'#','#','#'}}
+                        ,  {{'#','.','.'},
+                            {'#','#','.'},
+                            {'#','#','#'}})) || replace;
+        replace = (Replace({{'.','.','.'},
+                            {'#','.','.'},
+                            {'#','#','#'}}
+                        ,  {{'.','.','.'},
+                            {'#','#','.'},
+                            {'#','#','#'}})) || replace;
+        replace = (Replace({{'.','.','.'},
+                            {'#','.','.'},
+                            {'#','#','.'}}
+                        ,  {{'.','.','.'},
+                            {'#','#','.'},
+                            {'#','#','.'}})) || replace;
+        
+        replace = (Replace(
+             {{'#','.','.','.'},
+              {'#','.','#','.'},
+              {'#','.','.','.'},
+              {'#','#','#','.'}}
+            ,{{'#','.','.','.'},
+              {'#','#','#','.'},
+              {'#','#','#','.'},
+              {'#','#','#','#'}}
+        )) || replace;
+
+        replace = (Replace(
+             {{'#','.','.','.'},
+              {'#','.','#','.'},
+              {'#','.','.','.'},
+              {'#','#','#','#'}}
+            ,{{'#','.','.','.'},
+              {'#','#','#','.'},
+              {'#','#','#','.'},
+              {'#','#','#','#'}}
+        )) || replace;
+    }
+
+    replace = true;
+    while(replace) {
+        replace = false;
+        replace = (Replace({{'#','#','#'},{'#','.','#'}},{{'#','#','#'},{'#','#','#'}})) || replace;
+        replace = (Replace({{'#','.','#'},{'#','#','#'}},{{'#','#','#'},{'#','#','#'}})) || replace;
+        replace = (Replace({{'#','#'},{'#','.'},{'#','#'}},{{'#','#'},{'#','#'},{'#','#'}})) || replace;
+        replace = (Replace({{'#','#'},{'.','#'},{'#','#'}},{{'#','#'},{'#','#'},{'#','#'}})) || replace;
+    }
+/*
     std::vector<std::pair<int,int>> newblocks;
     std::stringstream ssemptyflat;
     ssemptyflat << std::setfill(Maze::EMPTY_CHAR) << std::setw(9) << Maze::EMPTY_CHAR;
@@ -44,8 +161,46 @@ std::vector<std::vector<char>> Maze::Reduce() {
     for(auto b : newblocks) {
         M[b.second][b.first] = Maze::WALL_CHAR;
     }
+*/
+
     return M;
 }
+std::pair<int,int> Maze::Search(std::vector<std::vector<char>> needle) {
+    auto ty = M.size();
+    auto tx = M[0].size();
+    auto uy = needle.size();
+    auto ux = needle[0].size();
+    for(int y = 0; y <= M.size() - needle.size(); y++) {
+        for(int x = 0; x <= M[0].size() - needle[0].size(); x++) {
+            bool match = true;
+            for(int ny = 0; match && ny < needle.size(); ny ++) {
+                for(int nx = 0; match && nx < needle[0].size(); nx ++) {
+                    match = M[y + ny][x + nx] == needle[ny][nx];
+                }
+            }
+            if(match) {
+                return std::make_pair(x,y);
+            }
+        }    
+    }
+    return std::make_pair(-1,-1);
+}
+void Maze::Replace(std::pair<int,int> at, std::vector<std::vector<char>> replace) {
+    for(int ny = 0; ny < replace.size(); ny ++) {
+        for(int nx = 0; nx < replace[0].size(); nx ++) {
+            M[at.second + ny][at.first + nx] = replace[ny][nx];
+        }
+    }
+}
+bool Maze::Replace(std::vector<std::vector<char>> needle, std::vector<std::vector<char>> replace) {
+    std::pair<int,int> p = Search(needle);
+    if(p.first == -1 || p.second == -1) {
+        return false;
+    }
+    Replace(p,replace);
+    return true;
+}
+
 Maze & Maze::NewMazeFromBlocks(const std::vector<std::pair<int,int>> & wall, int w, int h) {
     M = std::vector<std::vector<char>>();
     O = std::make_pair(0,0);
