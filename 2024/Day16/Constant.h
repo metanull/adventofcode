@@ -2,7 +2,7 @@
 #define CONSTANT_H
 
 // #define UPPERLIMIT  LONG_MAX
-#define UPPERLIMIT 317096
+#define UPPERLIMIT 262832
 #define DEBUG       0
 #define NEW_METHOD  1
 

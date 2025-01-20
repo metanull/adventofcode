@@ -38,7 +38,13 @@ const char * banner = "AdventOfCode 2024 Day 16!";
 const char * inputFilePath = INPUT_PATH;
 
 int main(int argc, char ** argv, char ** envp) {
-    std::cout << "\033[41;30;1m";
+    
+    std::vector<std::string> args(argv, argv+argc);
+    if(args.size() == 1) {
+        args.push_back(inputFilePath);
+    }
+
+    std::cout << "\033[7;34;1m";
     std::cout << "################################################################################" << std::endl;
     std::cout << banner << std::endl;
     std::cout << "################################################################################" << "\033[0m" << std::endl << std::endl;
@@ -47,7 +53,7 @@ int main(int argc, char ** argv, char ** envp) {
     {
         std::vector<std::vector<char>> inputMap;
         // Read input file
-        std::ifstream inputFile(inputFilePath);
+        std::ifstream inputFile(args[1]);
         if(!inputFile || !inputFile.is_open()) {
             std::cerr << "Unable to open " << inputFilePath << "." << std::endl;
             std::cerr << "Current working directory: " << std::filesystem::current_path() << std::endl;
