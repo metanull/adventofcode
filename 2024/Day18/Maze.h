@@ -35,11 +35,13 @@ public:
     Maze & LoadMazeFromMap(const std::vector<std::vector<char>> & map);
 
     Maze & NewMazeFromBlocks(const std::vector<std::pair<int,int>> & wall, int w, int h);
-    std::vector<std::vector<char>> Reduce();
+    std::vector<std::vector<char>> RemoveDeadEnds();
 
-    std::pair<int,int> Search(std::vector<std::vector<char>>);
-    void Replace(std::pair<int,int>, std::vector<std::vector<char>>);
-    bool Replace(std::vector<std::vector<char>>, std::vector<std::vector<char>>);
+    std::vector<std::pair<int,int>> Search(const std::vector<std::vector<char>> &) const;
+    bool Matches(std::pair<int,int>, const std::vector<std::vector<char>> &) const;
+    size_t Replace(const std::vector<std::vector<char>> &, std::vector<std::vector<char>>);
+    size_t Replace(const std::vector<std::pair<int,int>> &, std::vector<std::vector<char>>);
+        
 
     long Width() const;
     long Height() const;

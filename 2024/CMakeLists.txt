@@ -61,11 +61,12 @@ add_library(Math STATIC ./Math.cpp)
 #add_test(NAME test_maze_remarkable COMMAND $<TARGET_FILE:test_maze> remarkable)
 
 # Day 18.1
+add_library(Map STATIC ./Day18/Map.cpp)
 add_library(Compass STATIC ./Day18/Compass.cpp)
 add_library(Maze STATIC ./Day18/Maze.cpp)
 add_library(MazeRunner STATIC ./Day18/MazeRunner.cpp ./Day18/MazeSegment.cpp ./Day18/MazeRunnerPosition.cpp)
 add_executable(${TARGET_NAME} Day18/Day18.1.cpp )
-target_link_libraries(${TARGET_NAME} Compass Maze MazeRunner)
+target_link_libraries(${TARGET_NAME} Compass Maze MazeRunner Map)
 
 
 

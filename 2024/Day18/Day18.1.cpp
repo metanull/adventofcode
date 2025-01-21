@@ -15,6 +15,8 @@
 #include "Compass.h"
 #include "MazeRunner.h"
 
+#include "Map.h"
+
 #if !defined(NEW_METHOD)
     #define NEW_METHOD 0
 #endif
@@ -79,7 +81,7 @@ int main(int argc, char ** argv, char ** envp) {
         MazeRunner runner(maze.NewMazeFromBlocks(selection,71,71));
 
         auto m1 = maze.GetMap();
-        auto m2 = maze.Reduce();
+        auto m2 = maze.RemoveDeadEnds();
 
         for(int y = 0; y < m1.size(); y ++) {
             std::stringstream ss;
