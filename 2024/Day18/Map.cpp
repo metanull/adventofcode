@@ -8,7 +8,7 @@ namespace metanull {
                     end.second = std::min(m.size(),end.second);
                     end.first = std::min(m[0].size(),end.first);
                 } else {
-                    // throw std::runtime_error("Out of bouds");
+                    // throw std::out_of_range("Index out of range");
                     return map();
                 }
             }
@@ -33,7 +33,7 @@ namespace metanull {
                     end.second = std::min(m.size(),end.second);
                     end.first = std::min(m[0].size(),end.first);
                 } else {
-                    // throw std::runtime_error("Out of bouds");
+                    // throw std::out_of_range("Index out of range");
                     return false;
                 }
             }
@@ -73,7 +73,7 @@ namespace metanull {
                     end.second = std::min(m.size(),end.second);
                     end.first = std::min(m[0].size(),end.first);
                 } else {
-                    // throw std::runtime_error("Out of bouds");
+                    // throw std::out_of_range("Index out of range");
                     return SIZE_MAX;
                 }
             }
@@ -105,6 +105,62 @@ namespace metanull {
             }
             return occurrences;
         }
+
+        index translate(const index & o, direction d) {
+            return index(o.first + d.first, o.second + d.second);
+        }
+        void test_in_bounds(const map & m, const index & p) {
+            if(p.second >= m.size() || p.first >= m[0].size()) {
+                throw std::out_of_range("Index out of range");
+            }
+        }
+
+        char & access(map & m, const index & p) {
+            test_in_bounds(m,p);
+            return m[p.second][p.first];
+        }
+        const char & access(const map & m, const index & p) {
+            test_in_bounds(m,p);
+            return m[p.second][p.first];
+        }
+
+        std::vector<std::pair<direction,char>> neighbours_if(const map & m, const index & p, std::function<bool(char,direction)> t) {
+            std::vector<std::pair<direction,char>> results;
+            std::vector<direction> directions = {
+                NORTHWEST, NORTH, NORTHEAST,
+                WEST,                  EAST,
+                SOUTHWEST, SOUTH, SOUTHEAST
+            };
+            for(const auto & d : directions) {
+                try {
+                    char c = access(m,translate(p,d));
+                    if(t(c,d)) {
+                        results.emplace_back(d,c);
+                    }
+                } catch(std::out_of_range e) {
+                    // out of range, skip
+                }
+            }
+            return results;
+        }
+
+        /*
+        std::optional<std::pair<index,char>> select_neighbour(const std::vector<std::pair<direction,char>> & neighbours, const direction & d) {
+            auto it = std::find_if(neighbours.begin(), neighbours.end(), [direction](neighbour n) { return n.d == direction; })
+            if(it != neighbours.end()) {
+                return *it;
+            } else {
+                return std::nullopt;
+            }
+        }
+        auto neighbor = metanull::map::findNeighborByDirection(results, direction);
+
+        if (neighbor) {
+            std::cout << "Neighbor at direction (" << direction.first << ", " << direction.second << "): " << neighbor->second << '\n';
+        } else {
+            std::cout << "No neighbor found at direction (" << direction.first << ", " << direction.second << ")\n";
+        }
+        */
 
     } // namespace map
 } // namespace metanull
@@ -217,5 +273,33 @@ namespace metanull {
     r = metanull::charmap::subset_replace(m,{4,4},{{'\0','*','j'},{0,'j',0}},metanull::charmap::SUBSET_MATCH_NULL_AS_WILDCHARACTER);
     r = metanull::charmap::subset_replace(m,{3,3},{{'\0','*','I'},{0,'I',0}},metanull::charmap::SUBSET_MATCH_NULL_AS_WILDCHARACTER | metanull::charmap::SUBSET_TRUNCATE_ON_OUT_OF_BOUNDS);
     r = metanull::charmap::subset_replace(m,{4,4},{{'J','*','J'},{0,'I',0}},metanull::charmap::SUBSET_MATCH_NULL_AS_WILDCHARACTER | metanull::charmap::SUBSET_TRUNCATE_ON_OUT_OF_BOUNDS);
+
+    metanull::charmap::index p = {2,2};
+    auto n = metanull::charmap::access(m,p);
+    metanull::charmap::access(m,p) = 'Z';
+    n = metanull::charmap::access(m,p);
+    p = {0,0};
+    n = metanull::charmap::access(m,p);
+    p = {4,4};
+    n = metanull::charmap::access(m,p);
+    try {
+        p = {5,5};
+        n = metanull::charmap::access(m,p);
+    } catch(std::out_of_range e) {
+        // Success
+    }
+    p = {0,0};
+    auto r = metanull::charmap::neighbours_if(m,p, [](char c,metanull::charmap::direction d){return true;} );
+    p = {2,2};
+    r = metanull::charmap::neighbours_if(m,p, [](char c,metanull::charmap::direction d){return true;} );
+    p = {4,4};
+    r = metanull::charmap::neighbours_if(m,p, [](char c,metanull::charmap::direction d){return true;} );
+    
+    p = {0,0};
+    r = metanull::charmap::neighbours_if(m,p, [](char c,metanull::charmap::direction d){return '.' == c;} );
+    p = {2,2};
+    r = metanull::charmap::neighbours_if(m,p, [](char c,metanull::charmap::direction d){return '.' == c;} );
+    p = {4,4};
+    r = metanull::charmap::neighbours_if(m,p, [](char c,metanull::charmap::direction d){return '.' == c;} );
 
 */

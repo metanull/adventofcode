@@ -3,5 +3,7 @@ set(TARGET_NAME AdventOfCode)
 project(${TARGET_NAME} VERSION 0.1.0 LANGUAGES CXX)
 
 add_subdirectory(2024)
-target_compile_features(${TARGET_NAME} PRIVATE cxx_std_17)
+target_compile_features(${TARGET_NAME} PRIVATE cxx_std_20)
+set_property(TARGET ${TARGET_NAME} PROPERTY CXX_STANDARD 20)
+set_property(TARGET ${TARGET_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET ${TARGET_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/.")
