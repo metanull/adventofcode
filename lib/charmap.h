@@ -136,6 +136,27 @@ namespace metanull {
          * @return A array of all pairs of character/direction satisfying the test
          */
         std::vector<std::pair<direction,char>> neighbours_if(const map & m, const index & p, std::function<bool(char,direction)> t);
+
+        /**
+         * Get the column of a charmap at a specific index
+         * @param m The map
+         * @param p The index of the column
+         * @return The column as a string
+         */
+        std::string column_as_string(const map & m, const index & p);
+        /**
+         * Get the row of a charmap at a specific index
+         * @param m The map
+         * @param p The index of the row
+         * @return The row as a string
+         */
+        std::string row_as_string(const map & m, const index & p);
+        /**
+         * Swap rows and columns of a charmap
+         * @param m The map
+         * @return The transposed map
+         */
+        map transpose(const map & m);
     }
 }
 

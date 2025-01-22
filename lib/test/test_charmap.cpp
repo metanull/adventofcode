@@ -67,55 +67,341 @@ int main(int argc, char ** argv, char ** envp) {
             auto n = metanull::charmap::subset(m,{6,6},3,metanull::charmap::SUBSET_TRUNCATE_ON_OUT_OF_BOUNDS);
             return n.size() == o.size() == 0;
         }},
-        {"subset_matches-top_left", [m]() -> bool {
+        {"subset_matches-one", [m]() -> bool {
+            auto n = metanull::charmap::subset_matches(m,{2,2},{
+                {'o'}}
+            );
+            return !n;
+        }},
+        {"subset_matches-one-wild_character", [m]() -> bool {
+            auto n = metanull::charmap::subset_matches(m,{2,2},{
+                {'\0'}}
+            );
+            return !n;
+        }},
+        {"subset_matches-top_left-3-2", [m]() -> bool {
             auto n = metanull::charmap::subset_matches(m,{0,0},{
-                {'+','^'},
-                {'<','.'}}
+                {'+','^','^'},
+                {'<','.','.'}}
             );
             return n;
         }},
-        {"subset_matches-top_right", [m]() -> bool {
+        {"subset_matches-top_left-3-2-wild_character", [m]() -> bool {
+            auto n = metanull::charmap::subset_matches(m,{0,0},{
+                {'+','^','^'},
+                {'<','\0',0}}
+            );
+            return n;
+        }},
+        {"subset_matches-top_right-2-3", [m]() -> bool {
             auto n = metanull::charmap::subset_matches(m,{2,0},{
                 {'^','+'},
+                {'.','>'},
                 {'.','>'}}
             );
             return n;
         }},
-        {"subset_matches-bottom_left", [m]() -> bool {
+        {"subset_matches-top_right-2-3-wild_character", [m]() -> bool {
+            auto n = metanull::charmap::subset_matches(m,{2,0},{
+                {'^','+'},
+                {'\0','>'},
+                {0,'>'}}
+            );
+            return n;
+        }},
+        {"subset_matches-bottom_left-2-3", [m]() -> bool {
             auto n = metanull::charmap::subset_matches(m,{0,2},{
+                {'<','.'},
                 {'<','.'},
                 {'+','v'}}
             );
             return n;
         }},
-        {"subset_matches-bottom_right", [m]() -> bool {
-            auto n = metanull::charmap::subset_matches(m,{2,2},{
-                {'.','>'},
-                {'v','+'}}
+        {"subset_matches-bottom_left-2-3-wild_character", [m]() -> bool {
+            auto n = metanull::charmap::subset_matches(m,{0,2},{
+                {'<',0},
+                {'<','\0'},
+                {'+','v'}}
+            );
+            return n;
+        }},
+        {"subset_matches-bottom_right-3-2", [m]() -> bool {
+            auto n = metanull::charmap::subset_matches(m,{2,3},{
+                {'.','.','>'},
+                {'v','v','+'}}
+            );
+            return n;
+        }},
+        {"subset_matches-bottom_middle-3-3", [m]() -> bool {
+            auto n = metanull::charmap::subset_matches(m,{2,3},{
+                {'.','.','.'},
+                {'.','o','.'},
+                {'.','.','.'}}
+            );
+            return n;
+        }},
+        {"subset_matches-bottom_middle-3-3-wild_character", [m]() -> bool {
+            auto n = metanull::charmap::subset_matches(m,{2,3},{
+                {0,0,0},
+                {'\0','o','\0'},
+                {'\0','\0','\0'}}
             );
             return n;
         }},
         {"subset_matches-out_of_bounds", [m]() -> bool {
-            auto n = metanull::charmap::subset_matches(m,{3,3},{
-                {'.','>'},
-                {'v','+'}}
+            auto n = metanull::charmap::subset_matches(m,{4,4},{
+                {'.'}}
+            );
+            return !n;
+        }},
+        {"subset_matches-out_of_bounds-wild_character", [m]() -> bool {
+            auto n = metanull::charmap::subset_matches(m,{4,4},{
+                {'\0'}}
             );
             return !n;
         }},
         {"subset_matches-out_of_bounds-truncate", [m]() -> bool {
-            auto n = metanull::charmap::subset_matches(m,{3,3},{
-                {'.','>'},
-                {'v','+'}}
+            auto n = metanull::charmap::subset_matches(m,{4,4},{
+                {'.'}}
             ,metanull::charmap::SUBSET_TRUNCATE_ON_OUT_OF_BOUNDS);
-            return !n;
+            return n;
         }},
-        {"subset_matches-out_of_bounds-truncate-empty", [m]() -> bool {
-            auto o = metanull::charmap::subset(m,{6,6},3);
-            auto n = metanull::charmap::subset_matches(m,{6,6},{
-                {'.','>'},
-                {'v','+'}}
+        {"subset_matches-out_of_bounds-truncate-wild_character", [m]() -> bool {
+            auto n = metanull::charmap::subset_matches(m,{4,4},{
+                {'\0'}}
             ,metanull::charmap::SUBSET_TRUNCATE_ON_OUT_OF_BOUNDS);
-            return !n;
+            return n;
+        }},
+        
+        {"subset_find-one", [m]() -> bool {
+            auto n = metanull::charmap::subset_find(m,{
+                {'o'}}
+            );
+            return n.size() == 1 && std::find_if(n.begin(), n.end(), [](metanull::charmap::index i) { return i == metanull::charmap::index{2,2}; }) != n.end();
+        }},
+        {"subset_find-one-wild_character", [m]() -> bool {
+            auto n = metanull::charmap::subset_find(m,{
+                {'\0'}}
+            );
+            return n.size() == 25 && std::find_if(n.begin(), n.end(), [](metanull::charmap::index i) { return i == metanull::charmap::index{2,2}; }) != n.end();
+        }},
+        {"subset_find-horizontal", [m]() -> bool {
+            auto n = metanull::charmap::subset_find(m,{
+                {'<','.','.'}}
+            );
+            auto o = metanull::charmap::subset_find(m,{
+                {'v','v'}}
+            );
+            return n.size() == 2 && o.size() == 2;
+        }},
+        {"subset_find-horizontal-wild_character", [m]() -> bool {
+            auto n = metanull::charmap::subset_find(m,{
+                {'<','.','\0'}}
+            );
+            auto o = metanull::charmap::subset_find(m,{
+                {'v','\0'}}
+            );
+            return n.size() == 3 && o.size() == 3;
+        }},
+        {"subset_find-vertical", [m]() -> bool {
+            auto n = metanull::charmap::subset_find(m,{
+                {'^'},
+                {'.'},
+                {'.'}}
+            );
+            auto o = metanull::charmap::subset_find(m,{
+                {'<'},
+                {'<'}}
+            );
+            return n.size() == 2 && o.size() == 2;
+        }},
+        {"subset_find-vertical-wild_character", [m]() -> bool {
+            auto n = metanull::charmap::subset_find(m,{
+                {'^'},
+                {'.'},
+                {'\0'}}
+            );
+            auto o = metanull::charmap::subset_find(m,{
+                {'<'},
+                {'\0'}}
+            );
+            return n.size() == 3 && o.size() == 3;
+        }},
+        {"subset_find-rect", [m]() -> bool {
+            auto n = metanull::charmap::subset_find(m,{
+                {'^','^'},
+                {'.','.'}}
+            );
+            auto o = metanull::charmap::subset_find(m,{
+                {'<','.'},
+                {'<','.'}}
+            );
+            auto p = metanull::charmap::subset_find(m,{
+                {'.','.'},
+                {'v','v'}}
+            );
+            auto q = metanull::charmap::subset_find(m,{
+                {'.','>'},
+                {'.','>'}}
+            );
+            return n.size() == 2 && o.size() == 2 && p.size() == 2 && q.size() == 2;
+        }},
+        {"subset_find-rect-wild_character", [m]() -> bool {
+            auto n = metanull::charmap::subset_find(m,{
+                {'^','^'},
+                {'.','.'},
+                {0,'\0'}}
+            );
+            auto o = metanull::charmap::subset_find(m,{
+                {'<','.',0},
+                {'<','.','\0'}}
+            );
+            auto p = metanull::charmap::subset_find(m,{
+                {0,'\0'},
+                {'.','.'},
+                {'v','v'}}
+            );
+            auto q = metanull::charmap::subset_find(m,{
+                {0,'.','>'},
+                {'\0','.','>'}}
+            );
+            return n.size() == 2 && o.size() == 2 && p.size() == 2 && q.size() == 2;
+        }},
+        {"subset_find-whole", [m]() -> bool {
+            auto n = metanull::charmap::subset_find(m,{
+                {'+','^','^','^','+'},
+                {'<','.','.','.','>'},
+                {'<','.','o','.','>'},
+                {'<','.','.','.','>'},
+                {'+','v','v','v','+'}}
+            );
+            auto o = metanull::charmap::subset_find(m,{
+                {'+','^','^','^','+'},
+                {'<','.','.','.','>'},
+                {'<','.','x','.','>'},
+                {'<','.','.','.','>'},
+                {'+','v','v','v','+'}}
+            );
+            return n.size() == 1 && o.size() == 0;
+        }},
+        {"subset_find-whole-wild_character", [m]() -> bool {
+            auto n = metanull::charmap::subset_find(m,{
+                {'\0','^','^','^','\0'},
+                {'<','\0','.','\0','>'},
+                {'<','.','o','.','>'},
+                {'<','\0','.','\0','>'},
+                {'\0','v','v','v','\0'}}
+            );
+            auto o = metanull::charmap::subset_find(m,{
+                {'\0','^','^','^','\0'},
+                {'<','\0','.','\0','>'},
+                {'<','.','x','.','>'},
+                {'<','\0','.','\0','>'},
+                {'\0','v','v','v','\0'}}
+            );
+            return n.size() == 1 && o.size() == 0;
+        }},
+
+        {"subset_replace", [m]() -> bool {
+            auto mc = m;
+            auto n = metanull::charmap::subset_replace(mc,{0,0},{
+                {'H','E','L','L','O'},
+                {'W','O','R','L','D'}}
+            );
+            return std::string(mc[0].begin(),mc[0].end()) == "HELLO" && std::string(mc[1].begin(),mc[1].end()) == "WORLD" && n == 10;
+        }},
+        {"subset_replace-wild_character", [m]() -> bool {
+            auto mc = m;
+            auto n = metanull::charmap::subset_replace(mc,{0,0},{
+                {'H','E','L','L','\0'},
+                {'W','\0','R','L','D'}}
+            );
+            return std::string(mc[0].begin(),mc[0].end()) == "HELL+" && std::string(mc[1].begin(),mc[1].end()) == "W.RLD" && n == 8;
+        }},
+        {"subset_replace-out_of_bounds", [m]() -> bool {
+            auto mc = m;
+            auto n = metanull::charmap::subset_replace(mc,{1,0},{
+                {'H','E','L','L','O'},
+                {'W','O','R','L','D'}}
+            );
+            return std::string(mc[0].begin(),mc[0].end()) == "+^^^+" && std::string(mc[1].begin(),mc[1].end()) == "<...>" && n == 0;
+        }},
+        {"subset_replace-out_of_bounds-truncate", [m]() -> bool {
+            auto mc = m;
+            auto n = metanull::charmap::subset_replace(mc,{1,0},{
+                {'H','E','L','L','O'},
+                {'W','O','R','L','D'}}
+            );
+            return std::string(mc[0].begin(),mc[0].end()) == "+HELL" && std::string(mc[1].begin(),mc[1].end()) == "<WORL" && n == 8;
+        }},
+        {"subset_replace-out_of_bounds-truncate-wild_character", [m]() -> bool {
+            auto mc = m;
+            auto n = metanull::charmap::subset_replace(mc,{1,0},{
+                {'H','E','L','L','\0'},
+                {'W','\0','R','L','D'}}
+            );
+            return std::string(mc[0].begin(),mc[0].end()) == "+HELL" && std::string(mc[1].begin(),mc[1].end()) == "<W.RL" && n == 7;
+        }},
+
+        {"access-const", [m]() -> bool {
+            return metanull::charmap::access(m,{0,0}) == '+' && metanull::charmap::access(m,{2,2}) == 'o' && metanull::charmap::access(m,{4,4}) == '+';
+        }},
+        {"access-const-exception", [m]() -> bool {
+            try{
+                metanull::charmap::access(m,{9,9});
+            } catch (const std::out_of_range & e) {
+                return true;
+            }
+            return false;
+        }},
+        {"access-reference", [m]() -> bool {
+            auto mc = m;
+            metanull::charmap::access(mc,{0,2}) = 'H';
+            metanull::charmap::access(mc,{1,2}) = 'E';
+            metanull::charmap::access(mc,{2,2}) = 'L';
+            metanull::charmap::access(mc,{3,2}) = 'L';
+            metanull::charmap::access(mc,{4,2}) = 'O';
+            return std::string(mc[0].begin(),mc[2].end()) == "HELLO";
+        }},
+
+        {"row_as_string", [m]() -> bool {
+            return metanull::charmap::row_as_string(m,{2,2}) == "o.>";
+        }},
+        {"column_as_string", [m]() -> bool {
+            return metanull::charmap::column_as_string(m,{2,2}) == "o.v";
+        }},
+        {"transpose", [m]() -> bool {
+            /*
+             * Original:        Transposed:
+                + ^ ^ ^ +       + < < < +
+                < . . . >       ^ . . . v
+                < . o . >       ^ . o . v
+                < . . . >       ^ . . . v
+                + v v v +       + > > > +
+             */
+            auto n = metanull::charmap::transpose(m);
+            return n.size() == 5 && n[0].size() == 5 
+                && n[0][0] == '+' && n[0][4] == '+' && n[4][0] == '+' && n[4][4] == '+'
+                && n[2][2] == 'o' 
+                && n[1][1] == '.' && n[3][1] == '.' && n[1][3] == '.' && n[3][3] == '.'
+                && n[2][0] == '<' && n[2][4] == '>' && n[0][2] == '^' && n[4][2] == 'v'
+                ;
+        }},
+        {"neighbours_if", [m]() -> bool {
+            auto n = metanull::charmap::neighbours_if(m,{2,2}, [](char c, metanull::charmap::direction d) { return true; });
+            return n.size() == 8;
+        }},
+        {"neighbours_if-only-NSEW", [m]() -> bool {
+            auto n = metanull::charmap::neighbours_if(m,{2,2}, [](char c, metanull::charmap::direction d) { return d.first == 0 || d.second == 0; });
+            return n.size() == 4;
+        }},
+        {"neighbours_if-char_val_is", [m]() -> bool {
+            auto n = metanull::charmap::neighbours_if(m,{3,3}, [](char c, metanull::charmap::direction d) { return c == '.'; });
+            return n.size() == 2;
+        }},
+        {"neighbours_if-char_val_is-no_match", [m]() -> bool {
+            auto n = metanull::charmap::neighbours_if(m,{3,3}, [](char c, metanull::charmap::direction d) { return c == '$'; });
+            return n.size() == 0;
         }}
     };
 
@@ -136,6 +422,7 @@ int main(int argc, char ** argv, char ** envp) {
 }
 
 /*
+
      // TESTS
 
     metanull::charmap::map m = {
@@ -144,6 +431,13 @@ int main(int argc, char ** argv, char ** envp) {
         {'<','.','o','.','>'},
         {'<','.','.','.','>'},
         {'+','v','v','v','+'}
+
+        + < < < +
+        ^ . . . v
+        ^ . o . v
+        ^ . . . v
+        + > > > +
+
     };
 
     auto n = metanull::charmap::char_find(m,'+');  

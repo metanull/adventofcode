@@ -144,6 +144,30 @@ namespace metanull {
             return results;
         }
 
+        std::string column_as_string(const map & m, const index & p) {
+            test_in_bounds(m,p);
+            std::string c;
+            for(auto r = p.second; r < m.size(); r ++) {
+                c.push_back(m[r][p.first]);
+            }
+            return c;
+        }
+        std::string row_as_string(const map & m, const index & p) {
+            test_in_bounds(m,p);
+            return std::string(m[p.second].begin() + p.first,m[p.second].end());
+        }
+        map transpose(const map & m) {
+            map n;
+            for(auto c = 0; c < m[0].size(); c ++) {
+                row r;
+                for(auto rw = 0; rw < m.size(); rw ++) {
+                    r.push_back(m[rw][c]);
+                }
+                n.push_back(r);
+            }
+            return n;
+        }
+
         /*
         std::optional<std::pair<index,char>> select_neighbour(const std::vector<std::pair<std::pair<int,int>,char>> & neighbours, const std::pair<int,int> & d) {
             auto it = std::find_if(neighbours.begin(), neighbours.end(), [std::pair<int,int>](neighbour n) { return n.d == std::pair<int,int>; })
