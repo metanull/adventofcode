@@ -68,13 +68,15 @@ namespace metanull {
 
         size_t subset_replace(map & m, index origin, const map & replace, int flags) {
             index end = {origin.first + replace[0].size(), origin.second + replace.size()};
-            if(end.second > m.size() || end.first > m[0].size()) {
+            try {
+                test_in_bounds(m,translate(end,{-1,-1}));
+            } catch(std::out_of_range e) {
                 if( flags & metanull::charmap::SUBSET_TRUNCATE_ON_OUT_OF_BOUNDS ) {
                     end.second = std::min(m.size(),end.second);
                     end.first = std::min(m[0].size(),end.first);
                 } else {
                     // throw std::out_of_range("Index out of range");
-                    return SIZE_MAX;
+                    return 0;
                 }
             }
             size_t replaced = 0;
@@ -82,11 +84,11 @@ namespace metanull {
                 for(auto c = origin.first; c < m[r].size() && c < end.first; c ++) {
                     if(flags & SUBSET_MATCH_NULL_AS_WILDCHARACTER) {
                         if(replace[r-origin.second][c-origin.first] != 0) {
-                            replaced += (m[r][c] == replace[r-origin.second][c-origin.first]);
+                            replaced += (m[r][c] != replace[r-origin.second][c-origin.first]);
                             m[r][c] = replace[r-origin.second][c-origin.first];
                         }
                     } else {
-                        replaced += (m[r][c] == replace[r-origin.second][c-origin.first]);
+                        replaced += (m[r][c] != replace[r-origin.second][c-origin.first]);
                         m[r][c] = replace[r-origin.second][c-origin.first];
                     }
                 }
