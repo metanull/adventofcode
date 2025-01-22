@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5.0)
 
-set(SUBDIR_PFX 2024.12.)
+set(SUBDIR_PFX Year.2024.12.)
 
 set(EXE_PFX AdventOfCode-${SUBDIR_PFX})
 set(LIB_PFX LIB.${SUBDIR_PFX})
