@@ -44,8 +44,9 @@ struct Point {
     friend std::ostream& operator<< (std::ostream& stream, const Point & point);
     friend bool cmpX(const Point & a, const Point & b);
     friend bool cmpY(const Point & a, const Point & b);
-
-
 };
+
+bool cmpX(const Point & a, const Point & b);
+bool cmpY(const Point & a, const Point & b);
 
 #endif // POINT_H
