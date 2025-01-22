@@ -15,7 +15,7 @@
 #include "Compass.h"
 #include "MazeRunner.h"
 
-#include "Map.h"
+#include "charmap.h"
 
 #if !defined(NEW_METHOD)
     #define NEW_METHOD 0

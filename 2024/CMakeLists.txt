@@ -1,11 +1,9 @@
 cmake_minimum_required(VERSION 3.5.0)
-#set(TARGET_NAME AdventOfCode-2024)
-#project(${TARGET_NAME} VERSION 0.1.0 LANGUAGES CXX)
 
-add_library(2024.AdventOfCode STATIC ./AdventOfCode.cpp)
-add_library(2024.Point STATIC ./Point.cpp)
-add_library(2024.Vector2D STATIC ./Vector2D.cpp)
-add_library(2024.Math STATIC ./Math.cpp)
+add_library(${YEAR_LIB_PFX}AdventOfCode STATIC ./AdventOfCode.cpp)
+add_library(${YEAR_LIB_PFX}Point STATIC ./Point.cpp)
+add_library(${YEAR_LIB_PFX}Vector2D STATIC ./Vector2D.cpp)
+add_library(${YEAR_LIB_PFX}Math STATIC ./Math.cpp)
 
 # Day 9.2
 add_subdirectory(Day9)

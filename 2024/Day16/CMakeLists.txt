@@ -37,7 +37,7 @@ add_test(NAME ${TEST_PFX}maze_remarkable COMMAND $<TARGET_FILE:${TARGET_NAME}> r
 
 set(TARGET_NAME ${EXE_PFX}1)
 add_executable(${TARGET_NAME} Day16.1.cpp )
-target_link_libraries(${TARGET_NAME} 2024.AdventOfCode ${LIB_PFX}Reindeer ${LIB_PFX}Compass ${LIB_PFX}Maze ${LIB_PFX}MazeRunner)
+target_link_libraries(${TARGET_NAME} ${YEAR_LIB_PFX}AdventOfCode ${LIB_PFX}Reindeer ${LIB_PFX}Compass ${LIB_PFX}Maze ${LIB_PFX}MazeRunner)
 set_cxx_20(${TARGET_NAME})
 set_property(TARGET ${TARGET_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/.")
 

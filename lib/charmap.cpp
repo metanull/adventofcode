@@ -106,7 +106,7 @@ namespace metanull {
             return occurrences;
         }
 
-        index translate(const index & o, direction d) {
+        index translate(const index & o, std::pair<int,int> d) {
             return index(o.first + d.first, o.second + d.second);
         }
         void test_in_bounds(const map & m, const index & p) {
@@ -124,9 +124,9 @@ namespace metanull {
             return m[p.second][p.first];
         }
 
-        std::vector<std::pair<direction,char>> neighbours_if(const map & m, const index & p, std::function<bool(char,direction)> t) {
-            std::vector<std::pair<direction,char>> results;
-            std::vector<direction> directions = {
+        std::vector<std::pair<std::pair<int,int>,char>> neighbours_if(const map & m, const index & p, std::function<bool(char,std::pair<int,int>)> t) {
+            std::vector<std::pair<std::pair<int,int>,char>> results;
+            std::vector<std::pair<int,int>> directions = {
                 NORTHWEST, NORTH, NORTHEAST,
                 WEST,                  EAST,
                 SOUTHWEST, SOUTH, SOUTHEAST
@@ -145,20 +145,20 @@ namespace metanull {
         }
 
         /*
-        std::optional<std::pair<index,char>> select_neighbour(const std::vector<std::pair<direction,char>> & neighbours, const direction & d) {
-            auto it = std::find_if(neighbours.begin(), neighbours.end(), [direction](neighbour n) { return n.d == direction; })
+        std::optional<std::pair<index,char>> select_neighbour(const std::vector<std::pair<std::pair<int,int>,char>> & neighbours, const std::pair<int,int> & d) {
+            auto it = std::find_if(neighbours.begin(), neighbours.end(), [std::pair<int,int>](neighbour n) { return n.d == std::pair<int,int>; })
             if(it != neighbours.end()) {
                 return *it;
             } else {
                 return std::nullopt;
             }
         }
-        auto neighbor = metanull::map::findNeighborByDirection(results, direction);
+        auto neighbor = metanull::map::findNeighborByDirection(results, std::pair<int,int>);
 
         if (neighbor) {
-            std::cout << "Neighbor at direction (" << direction.first << ", " << direction.second << "): " << neighbor->second << '\n';
+            std::cout << "Neighbor at std::pair<int,int> (" << std::pair<int,int>.first << ", " << std::pair<int,int>.second << "): " << neighbor->second << '\n';
         } else {
-            std::cout << "No neighbor found at direction (" << direction.first << ", " << direction.second << ")\n";
+            std::cout << "No neighbor found at std::pair<int,int> (" << std::pair<int,int>.first << ", " << std::pair<int,int>.second << ")\n";
         }
         */
 
@@ -289,17 +289,17 @@ namespace metanull {
         // Success
     }
     p = {0,0};
-    auto r = metanull::charmap::neighbours_if(m,p, [](char c,metanull::charmap::direction d){return true;} );
+    auto r = metanull::charmap::neighbours_if(m,p, [](char c,metanull::charmap::std::pair<int,int> d){return true;} );
     p = {2,2};
-    r = metanull::charmap::neighbours_if(m,p, [](char c,metanull::charmap::direction d){return true;} );
+    r = metanull::charmap::neighbours_if(m,p, [](char c,metanull::charmap::std::pair<int,int> d){return true;} );
     p = {4,4};
-    r = metanull::charmap::neighbours_if(m,p, [](char c,metanull::charmap::direction d){return true;} );
+    r = metanull::charmap::neighbours_if(m,p, [](char c,metanull::charmap::std::pair<int,int> d){return true;} );
     
     p = {0,0};
-    r = metanull::charmap::neighbours_if(m,p, [](char c,metanull::charmap::direction d){return '.' == c;} );
+    r = metanull::charmap::neighbours_if(m,p, [](char c,metanull::charmap::std::pair<int,int> d){return '.' == c;} );
     p = {2,2};
-    r = metanull::charmap::neighbours_if(m,p, [](char c,metanull::charmap::direction d){return '.' == c;} );
+    r = metanull::charmap::neighbours_if(m,p, [](char c,metanull::charmap::std::pair<int,int> d){return '.' == c;} );
     p = {4,4};
-    r = metanull::charmap::neighbours_if(m,p, [](char c,metanull::charmap::direction d){return '.' == c;} );
+    r = metanull::charmap::neighbours_if(m,p, [](char c,metanull::charmap::std::pair<int,int> d){return '.' == c;} );
 
 */
