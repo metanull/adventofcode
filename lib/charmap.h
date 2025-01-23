@@ -85,12 +85,24 @@ namespace metanull {
          * @param m The map
          * @param origin The origin point for the match
          * @param needle The pattern to compare the subset to
+         * @throws std::out_of_range
+         * @return True if the subset matches with needle
+         */
+        bool subset_quick_matches(const map & m, index origin, const map & needle);
+
+        /**
+         * Test if a subset of a charmap matches a specific shape
+         * It returns a map starting at the point origin, and spanning over exactly n rows and columns
+         * @param m The map
+         * @param origin The origin point for the match
+         * @param needle The pattern to compare the subset to
          * @param flags The function returns false if the needle spans past the boundaries of m.
          *              If flag SUBSET_TRUNCATE_ON_OUT_OF_BOUNDS is set, it returns instead, a truncated subset
          *              If flag SUBSET_MATCH_NULL_AS_WILDCHARACTER, the function ignore null character ('\0', (char)0, '0x00') from the needle, effectively using the null character as a match-any wildcard
          * @return True if the subset matches with needle
          */
         bool subset_matches(const map & m, index origin, const map & needle, int flags = 0);
+
         /**
          * Finds all occurrences of a specific shape in a charmap, returning their origin coordinates
          * @param m The map
@@ -99,6 +111,17 @@ namespace metanull {
          * @return An array of positions of all matches
          */
         std::vector<index> subset_find(const map & m, const map & needle, int flags = 0);
+
+        /**
+         * Overwrite a portion of a charmap with another
+         * @param m The target map
+         * @param origin The origin point for the replacement
+         * @param replace The pattern to put in the charmap
+         * @throws std::out_of_range
+         * @return The number of characters effectively modified in the charmap
+         */
+        void subset_quick_replace(map & m, index origin, const map & replace);
+
         /**
          * Overwrite a portion of a charmap with another
          * @param m The target map
@@ -108,6 +131,15 @@ namespace metanull {
          * @return The number of characters effectively modified in the charmap
          */
         size_t subset_replace(map & m, index origin, const map & replace, int flags = 0);
+
+        /**
+         * Find all differences between two charmaps
+         * @param a The first map
+         * @param b The second map
+         * @param flags If flag SUBSET_MATCH_NULL_AS_WILDCHARACTER, the function ignore null character ('\0', (char)0, '0x00') from the b map, effectively using the null character as a match-any wildcard
+         * @return The number of differences between the two maps
+         */
+        size_t diff_count(const map & a, const map & b, int flags = 0);
 
         /**
          * Finds all occurrences of a specific characterin a charmap, returning their origin coordinates
@@ -180,5 +212,21 @@ namespace metanull {
         map transpose(const map & m);
     }
 }
+
+/**
+ * Read a character map from an input stream
+ * @param is The input stream
+ * @param m The map to read into
+ * @return The input stream
+ */
+std::istream & operator>>(std::istream & is, metanull::charmap::map & m);
+
+/**
+ * Write a character map to an output stream
+ * @param os The output stream
+ * @param m The map to write
+ * @return The output stream
+ */
+std::ostream & operator<<(std::ostream & os, const metanull::charmap::map & m);
 
 #endif // __METANULL_CHARMAP_H__

@@ -37,18 +37,28 @@ namespace metanull
             map s;
             for (auto r = origin.second; r < m.size() && r < end.second; r++)
             {
-                row t;
-                for (auto c = origin.first; c < m[r].size() && c < end.first; c++)
-                {
-                    t.emplace_back(m[r][c]);
-                }
-                s.push_back(t);
+                s.emplace_back(m[r].begin() + origin.first, m[r].begin() + end.first);
             }
             return s;
         }
         map subset(const map &m, index origin, size_t w, int flags)
         {
             return subset(m, origin, std::make_pair(origin.first + w, origin.second + w), flags);
+        }
+
+        bool subset_quick_matches(const map &m, index origin, const map &needle)
+        {
+            index end = {origin.first + needle[0].size(), origin.second + needle.size()};
+            test_in_bounds(m, translate(end, {-1, -1}));
+            
+            for (auto r = m.begin() + origin.second; r < m.begin() + origin.second + needle.size(); r ++)
+            {
+                if (std::mismatch(r->begin() + origin.first, r->begin() + origin.first + needle[std::distance(m.begin() + origin.second, r)].size(), needle[std::distance(m.begin() + origin.second, r)].begin()).first != r->begin() + origin.first + needle[std::distance(m.begin() + origin.second, r)].size())
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         bool subset_matches(const map &m, index origin, const map &needle, int flags)
@@ -107,6 +117,17 @@ namespace metanull
             return matches;
         }
 
+        void subset_quick_replace(map &m, index origin, const map &replace)
+        {
+            index end = {origin.first + replace[0].size(), origin.second + replace.size()};
+            test_in_bounds(m, translate(end, {-1, -1}));
+            
+            for (auto r = replace.begin(); r < replace.end(); r ++)
+            {
+                std::copy(r->begin(), r->end(), (m.begin() + origin.second + std::distance(replace.begin(), r))->begin() + origin.first);
+            }
+        }
+
         size_t subset_replace(map &m, index origin, const map &replace, int flags)
         {
             index end = {origin.first + replace[0].size(), origin.second + replace.size()};
@@ -123,10 +144,10 @@ namespace metanull
                 }
                 else
                 {
-                    // throw std::out_of_range("Index out of range");
                     return 0;
                 }
             }
+
             size_t replaced = 0;
             for (auto r = origin.second; r < m.size() && r < end.second; r++)
             {
@@ -150,6 +171,27 @@ namespace metanull
             return replaced;
         }
 
+        size_t diff_count(const map & a, const map & b, int flags) {
+            if(a.size() != b.size() || a[0].size() != b[0].size()) {
+                throw std::out_of_range("Both maps must have the same dimensions");
+            }
+            size_t diff = 0;
+            for(auto r = 0; r < a.size(); r++) {
+                for(auto c = 0; c < a[r].size(); c++) {
+                    if(flags & SUBSET_MATCH_NULL_AS_WILDCHARACTER) {
+                        if(a[r][c] != 0 && b[r][c] != 0 && a[r][c] != b[r][c]) {
+                            diff++;
+                        }
+                    } else {
+                        if(a[r][c] != b[r][c]) {
+                            diff++;
+                        }
+                    }
+                }
+            }
+            return diff;
+        }
+
         std::vector<index> char_find(const map &m, char c)
         {
             std::vector<index> occurrences;
@@ -158,7 +200,7 @@ namespace metanull
                 auto it = m[r].begin();
                 while ((it = std::find(it, m[r].end(), c)) != m[r].end())
                 {
-                    occurrences.emplace_back(r, std::distance(m[r].begin(), it));
+                    occurrences.emplace_back(std::distance(m[r].begin(), it), r);
                     it++;
                 }
             }
@@ -263,3 +305,27 @@ namespace metanull
 
     } // namespace map
 } // namespace metanull
+
+std::istream &operator>>(std::istream &is, metanull::charmap::map &m)
+{
+    m.clear();
+    std::string line;
+    while (std::getline(is, line))
+    {
+        m.push_back(metanull::charmap::row(line.begin(), line.end()));
+    }
+    return is;
+}
+
+std::ostream &operator<<(std::ostream &os, const metanull::charmap::map &m)
+{
+    for (const auto &r : m)
+    {
+        for (const auto &c : r)
+        {
+            os << c;
+        }
+        os << std::endl;
+    }
+    return os;
+}

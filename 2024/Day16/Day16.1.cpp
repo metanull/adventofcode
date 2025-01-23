@@ -73,107 +73,6 @@ int main(int argc, char ** argv, char ** envp) {
         Maze maze(inputMap);
         MazeRunner runner(maze);
 
-/*
-        std::mutex mtx;
-        std::condition_variable cv;
-        bool turn = true; // true for thread1, false for thread2
-        std::vector<MazeSegment> __store;
-        auto customFunction1 = [&mtx, &cv, &turn, &__store](long long param1, const std::vector<MazeSegment> & param2) -> bool {
-            std::unique_lock<std::mutex> lock(mtx);
-            cv.wait(lock, [&turn] { return turn; });
-            turn = false;
-            cv.notify_all();
-
-            __store = param2;
-
-            // Implement your custom logic here
-            return true; // or false based on your logic
-        };
-        auto customFunction2 = [&mtx, &cv, &turn, &__store](long long param1, const std::vector<MazeSegment> & param2) -> bool {
-            std::unique_lock<std::mutex> lock(mtx);
-            cv.wait(lock, [&turn] { return !turn; });
-            turn = true;
-            cv.notify_all();
-
-            if(
-                __store.size() != param2.size()
-                || __store.empty() != param2.empty()
-                || (!__store.empty() && __store.back().origin.position != param2.back().origin.position)
-                || (!__store.empty() && __store.back().end.position != param2.back().end.position)
-                || (!__store.empty() && __store.back().origin.direction != param2.back().origin.direction)
-                || (!__store.empty() && __store.back().end.direction != param2.back().end.direction)
-                || (!__store.empty() && __store.back().origin.score != param2.back().origin.score)
-                || (!__store.empty() && __store.back().end.score != param2.back().end.score)
-                || (!__store.empty() && __store.back().moves.size() != param2.back().moves.size())
-                || (!__store.empty() && !__store.front().moves.empty() && __store.front().moves.front().position != param2.front().moves.front().position)
-                || (!__store.empty() && !__store.front().moves.empty() && __store.front().moves.front().direction != param2.front().moves.front().direction)
-                || (!__store.empty() && !__store.front().moves.empty() && __store.front().moves.front().score != param2.front().moves.front().score)
-                || (!__store.empty() && !__store.back().moves.empty() && __store.back().moves.back().position != param2.back().moves.back().position)
-                || (!__store.empty() && !__store.back().moves.empty() && __store.back().moves.back().direction != param2.back().moves.back().direction)
-                || (!__store.empty() && !__store.back().moves.empty() && __store.back().moves.back().score != param2.back().moves.back().score)
-            ) {
-                std::cout << "\033[22;31;7;1m" << "Mismatch" << "\033[0m" << std::endl;
-                auto x = param2;
-
-                if(!x.empty()) {
-                    std::cout 
-                        << "\033[22;32;27;1m"
-                        << std::setw(12) << std::setfill(' ') << param1 << " - Thread 2 (old) - "
-                        << "(" << std::setw(3) << x.back().origin.position.first << ","
-                        << std::setw(3) << x.back().origin.position.second << " - "
-                        << x.back().origin.direction << " - "
-                        << std::setw(9) << x.back().origin.score << ")"
-                        << " ->"
-                        << "(" << std::setw(3) << x.back().end.position.first << ","
-                        << std::setw(3) << x.back().end.position.second << " - "
-                        << x.back().end.direction << " - "
-                        << std::setw(9) << x.back().end.score << ") - ";
-                    if(!x.back().moves.empty()) {
-                        for(auto m : x.back().moves) {
-                            std::cout << m.position.first << "," << m.position.second << ";" << m.direction << ";" << m.score << " / ";
-                        }
-                    }
-                    std::cout << "\033[0m" << std::endl;
-                }
-                x = __store;
-                if(!x.empty()) {
-                    std::cout 
-                        << "\033[22;32;7;1m"
-                        << std::setw(12) << std::setfill(' ') << param1 << " - Thread 1 (new) - "
-                        << "(" << std::setw(3) << x.back().origin.position.first << ","
-                        << std::setw(3) << x.back().origin.position.second << " - "
-                        << x.back().origin.direction << " - "
-                        << std::setw(9) << x.back().origin.score << ")"
-                        << " ->"
-                        << "(" << std::setw(3) << x.back().end.position.first << ","
-                        << std::setw(3) << x.back().end.position.second << " - "
-                        << x.back().end.direction << " - "
-                        << std::setw(9) << x.back().end.score << ") - ";
-                    if(!x.back().moves.empty()) {
-                        for(auto m : x.back().moves) {
-                            std::cout << m.position.first << "," << m.position.second << ";" << m.direction << ";" << m.score << " / ";
-                        }
-                    }
-                    std::cout << "\033[0m" << std::endl;
-                }
-            }
-
-            // Implement your custom logic here
-            return true; // or false based on your logic
-        };
-
-        std::thread thread1([&runner, &customFunction1]() {
-            std::cout << runner.Run(customFunction1) << std::endl;
-        });
-
-        std::thread thread2([&runner, &customFunction2]() {
-            std::cout << runner.__Run_Backup(customFunction2) << std::endl;
-        });
-
-        thread1.join();
-        thread2.join();
-*/
-
         std::function<std::vector<Compass>(const std::vector<Compass>&)> regular = [](const std::vector<Compass> & options) {
             return options;
         };
@@ -201,8 +100,6 @@ int main(int argc, char ** argv, char ** envp) {
             }
             return result;
         };
-        
-
         
 
         #if defined(MULTITHREAD) && MULTITHREAD == 1
