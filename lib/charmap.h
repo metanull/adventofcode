@@ -39,6 +39,27 @@ namespace metanull {
         static const direction NORTHWEST    = {-1, 1};
 
         /**
+         * Rotate a direction clockwise
+         * @param d The direction to rotate
+         * @return The rotated direction
+         */
+        direction rotate_clockwise(const direction & d);
+
+        /**
+         * Rotate a direction counter-clockwise
+         * @param d The direction to rotate
+         * @return The rotated direction
+         */
+        direction rotate_counter_clockwise(const direction & d);
+
+        /**
+         * Inverse a direction
+         * @param d The direction to inverse
+         * @return The inversed direction
+         */
+        direction inverse(const direction & d);
+
+        /**
          * Get a subset of a character map.
          * It returns a map starting at the point origin, and spanning to the point end
          * @param m The map

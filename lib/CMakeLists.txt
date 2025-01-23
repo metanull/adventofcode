@@ -65,6 +65,10 @@ add_test(NAME ${GLOBAL_TEST_PFX}charmap_subset_replace-out_of_bounds-truncate CO
 add_test(NAME ${GLOBAL_TEST_PFX}charmap_subset_replace-out_of_bounds-truncate-wild_character COMMAND $<TARGET_FILE:${TARGET_NAME}> subset_replace-out_of_bounds-truncate-wild_character)
 add_test(NAME ${GLOBAL_TEST_PFX}charmap_subset_replace-wild_character COMMAND $<TARGET_FILE:${TARGET_NAME}> subset_replace-wild_character)
 add_test(NAME ${GLOBAL_TEST_PFX}charmap_transpose COMMAND $<TARGET_FILE:${TARGET_NAME}> transpose)
+add_test(NAME ${GLOBAL_TEST_PFX}rotate_clockwise COMMAND $<TARGET_FILE:${TARGET_NAME}> rotate_clockwise)
+add_test(NAME ${GLOBAL_TEST_PFX}rotate_counter_clockwise COMMAND $<TARGET_FILE:${TARGET_NAME}> rotate_counter_clockwise)
+add_test(NAME ${GLOBAL_TEST_PFX}inverse COMMAND $<TARGET_FILE:${TARGET_NAME}> inverse)
+
 
 set(TARGET_NAME ${GLOBAL_TEST_PFX}math)
 add_executable(${TARGET_NAME} test/test_math.cpp)

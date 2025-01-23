@@ -596,7 +596,52 @@ int main(int argc, char ** argv, char ** envp) {
             
             auto n = metanull::charmap::neighbours_if(m,{3,3}, [](char c, metanull::charmap::direction d) { return c == '$'; });
             return n.size() == 0;
-        }}
+        }},
+        {"rotate_clockwise", []() -> bool {
+            std::cerr << "Expected result: (1, 0) -> (0, 1)" << std::endl;
+            std::cerr << "Expected result: (0, 1) -> (-1, 0)" << std::endl;
+            std::cerr << "Expected result: (-1, 0) -> (0, -1)" << std::endl;
+            std::cerr << "Expected result: (0, -1) -> (1, 0)" << std::endl;
+            
+            auto d = metanull::charmap::rotate_clockwise({1, 0});
+            if (d != metanull::charmap::direction{0, 1}) return false;
+            d = metanull::charmap::rotate_clockwise({0, 1});
+            if (d != metanull::charmap::direction{-1, 0}) return false;
+            d = metanull::charmap::rotate_clockwise({-1, 0});
+            if (d != metanull::charmap::direction{0, -1}) return false;
+            d = metanull::charmap::rotate_clockwise({0, -1});
+            return d == metanull::charmap::direction{1, 0};
+        }},
+        {"rotate_counter_clockwise", []() -> bool {
+            std::cerr << "Expected result: (1, 0) -> (0, -1)" << std::endl;
+            std::cerr << "Expected result: (0, -1) -> (-1, 0)" << std::endl;
+            std::cerr << "Expected result: (-1, 0) -> (0, 1)" << std::endl;
+            std::cerr << "Expected result: (0, 1) -> (1, 0)" << std::endl;
+            
+            auto d = metanull::charmap::rotate_counter_clockwise({1, 0});
+            if (d != metanull::charmap::direction{0, -1}) return false;
+            d = metanull::charmap::rotate_counter_clockwise({0, -1});
+            if (d != metanull::charmap::direction{-1, 0}) return false;
+            d = metanull::charmap::rotate_counter_clockwise({-1, 0});
+            if (d != metanull::charmap::direction{0, 1}) return false;
+            d = metanull::charmap::rotate_counter_clockwise({0, 1});
+            return d == metanull::charmap::direction{1, 0};
+        }},
+        {"inverse", []() -> bool {
+            std::cerr << "Expected result: (1, 0) -> (-1, 0)" << std::endl;
+            std::cerr << "Expected result: (0, 1) -> (0, -1)" << std::endl;
+            std::cerr << "Expected result: (-1, 0) -> (1, 0)" << std::endl;
+            std::cerr << "Expected result: (0, -1) -> (0, 1)" << std::endl;
+            
+            auto d = metanull::charmap::inverse({1, 0});
+            if (d != metanull::charmap::direction{-1, 0}) return false;
+            d = metanull::charmap::inverse({0, 1});
+            if (d != metanull::charmap::direction{0, -1}) return false;
+            d = metanull::charmap::inverse({-1, 0});
+            if (d != metanull::charmap::direction{1, 0}) return false;
+            d = metanull::charmap::inverse({0, -1});
+            return d == metanull::charmap::direction{0, 1};
+        }},
     };
 
     auto it = tests.find(test_name);
