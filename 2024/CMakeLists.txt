@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.5.0)
 add_library(${YEAR_LIB_PFX}AdventOfCode STATIC ./AdventOfCode.cpp)
 add_library(${YEAR_LIB_PFX}Point STATIC ./Point.cpp)
 add_library(${YEAR_LIB_PFX}Vector2D STATIC ./Vector2D.cpp)
-add_library(${YEAR_LIB_PFX}Math STATIC ./Math.cpp)
 
 # Day 9.2
 add_subdirectory(Day9)

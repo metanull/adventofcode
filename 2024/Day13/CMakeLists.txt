@@ -8,13 +8,13 @@ set(TEST_PFX TEST.${SUBDIR_PFX})
 
 set(TARGET_NAME ${EXE_PFX}2)
 add_executable(${TARGET_NAME} Day13.2.cpp )
-target_link_libraries(${TARGET_NAME} ${YEAR_LIB_PFX}AdventOfCode ${YEAR_LIB_PFX}Point ${YEAR_LIB_PFX}Vector2D ${YEAR_LIB_PFX}Math)
+target_link_libraries(${TARGET_NAME} ${YEAR_LIB_PFX}AdventOfCode ${YEAR_LIB_PFX}Point ${YEAR_LIB_PFX}Vector2D ${GLOBAL_LIB_PFX}charmap)
 set_cxx_20(${TARGET_NAME})
 set_property(TARGET ${TARGET_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/.")
 
 set(TARGET_NAME ${EXE_PFX}2.threaded)
 add_executable(${TARGET_NAME} Day13.2.thread.cpp )
-target_link_libraries(${TARGET_NAME} ${YEAR_LIB_PFX}AdventOfCode ${YEAR_LIB_PFX}Point ${YEAR_LIB_PFX}Vector2D ${YEAR_LIB_PFX}Math)
+target_link_libraries(${TARGET_NAME} ${YEAR_LIB_PFX}AdventOfCode ${YEAR_LIB_PFX}Point ${YEAR_LIB_PFX}Vector2D ${GLOBAL_LIB_PFX}charmap)
 set_cxx_20(${TARGET_NAME})
 set_property(TARGET ${TARGET_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/.")
 
