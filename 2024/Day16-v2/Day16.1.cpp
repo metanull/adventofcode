@@ -128,11 +128,12 @@ int main(int argc, char ** argv, char ** envp) {
         std::vector<node> closed_nodes;
         for(auto o : options) {
             node c = start_node;
-            if(o.first != start_node.start.second) {
+            if(o.first != c.start.second) {
                 c.score += SCORE_TURN;
-                c.start.second = o.first;
+                c.end.second = o.first;
             }
-            c.start.first = metanull::charmap::translate(c.start.first, c.start.second);
+            c.score += SCORE_STEP;
+            c.end.first = metanull::charmap::translate(c.end.first, c.end.second);
             open_nodes.push_back(c);
         }
 
@@ -141,6 +142,29 @@ int main(int argc, char ** argv, char ** envp) {
             std::cout << "Next nodes: " << next.size() << std::endl;
             for(auto p : next) {
                 std::cout << "Node (" << p.start.first.first << ',' <<  p.start.first.second << " -> " << p.end.first.first << ',' <<  p.end.first.second << ") = " << p.score << " " << (p.closed ? "CLOSED" : "OPEN") << std::endl;
+                auto kp = p.path.front();
+                for(auto k : p.path) {
+                    if(k.second != kp.second ) {
+                        if(k.second > 0) {
+                            std::cout << " vvv ";
+                        } else {
+                            std::cout << " ^^^ ";
+                        }
+                    } else {
+                        if(k.first != kp.first ) {
+                            if(k.first > 0) {
+                                std::cout << " >>> ";
+                            } else {
+                                std::cout << " <<< ";
+                            }
+                        } else {
+                            std::cout << " ??? ";
+                        }
+                    }
+                    std::cout << k.first << ',' << k.second << std::endl;
+                    kp = k;
+                }
+                std::cout << std::endl;
             }
         }
     }
