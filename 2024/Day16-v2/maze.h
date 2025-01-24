@@ -6,6 +6,10 @@
 
 #include "Constant.h"
 
+/**
+ * @brief A node in the maze (e.g. a start position (the maze's start point), a score, and an end position, where the end position is: a crosspoint, a dead end, a loop or the end of the maze). A node is "closed" when it reaches the end of the maze.
+ * 
+ */
 struct maze_node {
     size_t score = 0;
     bool closed = false;
@@ -25,6 +29,9 @@ struct maze_node {
 
 std::ostream & operator<<(std::ostream & os, const maze_node & n);
 
+/**
+ * @brief A maze is a map with a start and an end position
+ */
 struct maze {
     metanull::charmap::map m;
     metanull::charmap::position start = {0,0};
@@ -41,7 +48,14 @@ struct maze {
     maze(const metanull::charmap::map & map, const metanull::charmap::position & start, const metanull::charmap::position & end, const metanull::charmap::direction & start_dir = metanull::charmap::EAST);
     maze(const metanull::charmap::map & map, char char_start = 'S', char char_end = 'E', const metanull::charmap::direction & start_dir = metanull::charmap::EAST);
 
+    /**
+     * @brief Get the very first node(s)
+     */
     std::vector<maze_node> init() const;
+
+    /**
+     * @brief Get the next nodes from a given node (by browsing the maze until a dead end, a crosspoint, a loop or the end of the maze)
+     */
     std::vector<maze_node> next_nodes_from(maze_node & origin) const;
 };
 
