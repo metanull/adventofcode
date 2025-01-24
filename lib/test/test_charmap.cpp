@@ -23,6 +23,71 @@ int main(int argc, char ** argv, char ** envp) {
 
     std::string test_name = argv[1];
     std::map<std::string, std::function<bool()>> tests = {
+        {"direction_as_string", []() -> bool {
+            std::cerr << "Expected result: true - for expression direction_as_string(metanull::charmap::SOUTH) ==  \"SOUTH\"" << std::endl;
+            return metanull::charmap::direction_as_string(metanull::charmap::SOUTH) == "SOUTH" 
+                && metanull::charmap::direction_as_string(metanull::charmap::NORTH) == "NORTH" 
+                && metanull::charmap::direction_as_string(metanull::charmap::EAST) == "EAST" 
+                && metanull::charmap::direction_as_string(metanull::charmap::WEST) == "WEST"
+                && metanull::charmap::direction_as_string(metanull::charmap::NORTHEAST) == "NORTHEAST" 
+                && metanull::charmap::direction_as_string(metanull::charmap::NORTHWEST) == "NORTHWEST" 
+                && metanull::charmap::direction_as_string(metanull::charmap::SOUTHEAST) == "SOUTHEAST" 
+                && metanull::charmap::direction_as_string(metanull::charmap::SOUTHWEST) == "SOUTHWEST";
+
+        }},
+        {"abscissa_const", []() -> bool {
+            std::cerr << "Expected result: 1 - for expression abscissa({1,0}) == 1" << std::endl;
+            return metanull::charmap::abscissa(metanull::charmap::position{1,0}) == 1;
+        }},
+        {"abscissa", []() -> bool {
+            std::cerr << "Expected result: 3 - for expression p = {1,0}; abscissa(p) = 3; abscissa(p) == 3" << std::endl;
+            metanull::charmap::position p = {1,0};
+            metanull::charmap::abscissa(p) = 3;
+            return metanull::charmap::abscissa(p) == 3;
+        }},
+        {"ordinate_const", []() -> bool {
+            std::cerr << "Expected result: 1 - for expression ordinate({0,1}) == 1" << std::endl;
+            return metanull::charmap::ordinate(metanull::charmap::position{0,1}) == 1;
+        }},
+        {"ordinate", []() -> bool {
+            std::cerr << "Expected result: 3 - for expression p = {0,1}; ordinate(p) = 4; ordinate(p) == 3" << std::endl;
+            metanull::charmap::position p = {0,1};
+            metanull::charmap::ordinate(p) = 3;
+            return metanull::charmap::ordinate(p) == 3;
+        }},
+        {"horizontal_distance_gt", []() -> bool {
+            std::cerr << "Expected result: 1 - for expression horizontal_distance({1,0},{2,10}) == 1" << std::endl;
+            return metanull::charmap::horizontal_distance({1,0},{2,10}) == 1;
+        }},
+        {"horizontal_distance_lt", []() -> bool {
+            std::cerr << "Expected result: 1 - for expression horizontal_distance({1,0},{0,10}) == 1" << std::endl;
+            return metanull::charmap::horizontal_distance({1,0},{0,10}) == 1;
+        }},
+        {"horizontal_distance_eq", []() -> bool {
+            std::cerr << "Expected result: 1 - for expression horizontal_distance({1,0},{1,0}) == 0" << std::endl;
+            return metanull::charmap::horizontal_distance({1,0},{1,0}) == 0;
+        }},
+        {"vertical_distance_gt", []() -> bool {
+            std::cerr << "Expected result: 1 - for expression vertical_distance({0,1},{10,2}) == 1" << std::endl;
+            return metanull::charmap::vertical_distance({0,1},{10,2}) == 1;
+        }},
+        {"vertical_distance_lt", []() -> bool {
+            std::cerr << "Expected result: [1] - for expression vertical_distance({0,1},{10,0}) == 1" << std::endl;
+            return metanull::charmap::vertical_distance({0,1},{10,0}) == 1;
+        }},
+        {"vertical_distance_eq", []() -> bool {
+            std::cerr << "Expected result: [1] - for expression vertical_distance({0,1},{0,1}) == 0" << std::endl;
+            return metanull::charmap::vertical_distance({0,1},{0,1}) == 0;
+        }},
+        {"horizontal_distance_five", []() -> bool {
+            std::cerr << "Expected result: 5 - for expression horizontal_distance({1,0},{6,0}) == 0" << std::endl;
+            return metanull::charmap::horizontal_distance({1,0},{6,0}) == 5;
+        }},
+        {"vertical_distance_five", []() -> bool {
+            std::cerr << "Expected result: 5 - for expression vertical_distance({0,1},{10,6}) == 1" << std::endl;
+            return metanull::charmap::vertical_distance({0,1},{10,6}) == 5;
+        }},
+        
         {"char_find", [m]() -> bool {
             std::cerr << "Expected result: [4] - for expression char_find(m,'+')" << std::endl;
             std::cerr << "Expected result: [1] - for expression char_find(m,'o')" << std::endl;
@@ -42,21 +107,21 @@ int main(int argc, char ** argv, char ** envp) {
             }
             return true;
         }},
-        {"char_find-direction-NORTH", [m]() -> bool {
+        {"char_find-direction-SOUTH", [m]() -> bool {
             std::cerr << "Expected result: [3] all in top most row - for expression char_find(m,'^')" << std::endl;
             auto n = metanull::charmap::char_find(m,'^');
             for(auto o : n) {
                 std::cerr << o.first << ',' << o.second << std::endl;
             }
-            return n.size() == 3 && std::find_if(n.begin(), n.end(), [](metanull::charmap::index i) { return i.second != 0; }) == n.end();
+            return n.size() == 3 && std::find_if(n.begin(), n.end(), [](metanull::charmap::position i) { return i.second != 0; }) == n.end();
         }},
-        {"char_find-direction-SOUTH", [m]() -> bool {
+        {"char_find-direction-NORTH", [m]() -> bool {
             std::cerr << "Expected result: [3] all in top most row - for expression char_find(m,'v')" << std::endl;
             auto n = metanull::charmap::char_find(m,'v');
             for(auto o : n) {
                 std::cerr << o.first << ',' << o.second << std::endl;
             }
-            return n.size() == 3 && std::find_if(n.begin(), n.end(), [](metanull::charmap::index i) { return i.second != 4; }) == n.end();
+            return n.size() == 3 && std::find_if(n.begin(), n.end(), [](metanull::charmap::position i) { return i.second != 4; }) == n.end();
         }},
         {"char_find-direction-WEST", [m]() -> bool {
             std::cerr << "Expected result: [3] all in left most column - for expression char_find(m,'<')" << std::endl;
@@ -64,7 +129,7 @@ int main(int argc, char ** argv, char ** envp) {
             for(auto o : n) {
                 std::cerr << o.first << ',' << o.second << std::endl;
             }
-            return n.size() == 3 && std::find_if(n.begin(), n.end(), [](metanull::charmap::index i) { return i.first != 0; }) == n.end();
+            return n.size() == 3 && std::find_if(n.begin(), n.end(), [](metanull::charmap::position i) { return i.first != 0; }) == n.end();
         }},
         {"char_find-direction-EAST", [m]() -> bool {
             std::cerr << "Expected result: [3] all in right most column - for expression char_find(m,'>')" << std::endl;
@@ -72,7 +137,7 @@ int main(int argc, char ** argv, char ** envp) {
             for(auto o : n) {
                 std::cerr << o.first << ',' << o.second << std::endl;
             }
-            return n.size() == 3 && std::find_if(n.begin(), n.end(), [](metanull::charmap::index i) { return i.first != 4; }) == n.end();
+            return n.size() == 3 && std::find_if(n.begin(), n.end(), [](metanull::charmap::position i) { return i.first != 4; }) == n.end();
         }},
         {"subset-top_left", [m]() -> bool {
             std::cerr << "Expected result: 3x3 - for expression subset(m,{0,0},3)" << std::endl;
@@ -372,7 +437,7 @@ int main(int argc, char ** argv, char ** envp) {
             auto n = metanull::charmap::subset_find(m,{
                 {'o'}}
             );
-            return n.size() == 1 && std::find_if(n.begin(), n.end(), [](metanull::charmap::index i) { return i == metanull::charmap::index{2,2}; }) != n.end();
+            return n.size() == 1 && std::find_if(n.begin(), n.end(), [](metanull::charmap::position i) { return i == metanull::charmap::position{2,2}; }) != n.end();
         }},
         {"subset_find-one-wild_character", [m]() -> bool {
             std::cerr << "Expected result: [{0,0},{1,0},{2,0},...{4,4}] - for expression subset_find(m,{{'\0'}},metanull::charmap::SUBSET_MATCH_NULL_AS_WILDCHARACTER)" << std::endl;
@@ -380,7 +445,7 @@ int main(int argc, char ** argv, char ** envp) {
             auto n = metanull::charmap::subset_find(m,{
                 {'\0'}}
             ,metanull::charmap::SUBSET_MATCH_NULL_AS_WILDCHARACTER);
-            return n.size() == 25 && std::find_if(n.begin(), n.end(), [](metanull::charmap::index i) { return i == metanull::charmap::index{2,2}; }) != n.end();
+            return n.size() == 25 && std::find_if(n.begin(), n.end(), [](metanull::charmap::position i) { return i == metanull::charmap::position{2,2}; }) != n.end();
         }},
         {"subset_find-horizontal", [m]() -> bool {
             std::cerr << "Expected result: [{0,1},{1,1}] - for expression subset_find(m,{{'<','.','.'}})" << std::endl;
@@ -720,59 +785,77 @@ int main(int argc, char ** argv, char ** envp) {
                 ;
         }},
         {"neighbours_if", [m]() -> bool {
-            std::cerr << "Expected result: 8 indexes - for expression neighbours_if(m,{2,2}, [](char c, metanull::charmap::direction d) { return true; })" << std::endl;
+            std::cerr << "Expected result: 8 indexes - for expression neighbours_if(m,{2,2}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return true; })" << std::endl;
             
-            auto n = metanull::charmap::neighbours_if(m,{2,2}, [](char c, metanull::charmap::direction d) { return true; });
+            auto n = metanull::charmap::neighbours_if(m,{2,2}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return true; });
             return n.size() == 8;
         }},
         {"neighbours_if-only-NSEW", [m]() -> bool {
-            std::cerr << "Expected result: 4 indexes - for expression neighbours_if(m,{2,2}, [](char c, metanull::charmap::direction d) { return d.first == 0 || d.second == 0; })" << std::endl;
+            std::cerr << "Expected result: 4 indexes - for expression neighbours_if(m,{2,2}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return d.first == 0 || d.second == 0; })" << std::endl;
             
-            auto n = metanull::charmap::neighbours_if(m,{2,2}, [](char c, metanull::charmap::direction d) { return d.first == 0 || d.second == 0; });
+            auto n = metanull::charmap::neighbours_if(m,{2,2}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return d.first == 0 || d.second == 0; });
             return n.size() == 4;
         }},
-        {"neighbours_if-NORTH", [m]() -> bool {
-            std::cerr << "Expected result: 1 indexes to the NORTH of current - for expression neighbours_if(m,{1,1}, [](char c, metanull::charmap::direction d) { return d == metanull::charmap::NORTH })" << std::endl;
+        {"neighbours_if-only-NSEW-Order-EAST-NORTH-WEST-SOUTH", [m]() -> bool {
+            std::cerr << "Expected result: 4 indexes - for expression neighbours_if(m,{2,2}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return d.first == 0 || d.second == 0; })" << std::endl;
             
-            auto n = metanull::charmap::neighbours_if(m,{1,1}, [](char c, metanull::charmap::direction d) { return d == metanull::charmap::NORTH; });
-            auto d = metanull::charmap::translate({1,1},metanull::charmap::NORTH);
-            auto dm = metanull::charmap::index(1,2);
-            return n.size() == 1 && metanull::charmap::translate({1,1},n[0].first) == d && metanull::charmap::translate({1,1},n[0].first) == dm;
+            auto n = metanull::charmap::neighbours_if(m,{2,2}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return d.first == 0 || d.second == 0; });
+            return n.size() == 4 && n[0].first == metanull::charmap::EAST && n[1].first == metanull::charmap::NORTH && n[2].first == metanull::charmap::WEST && n[3].first == metanull::charmap::SOUTH;
         }},
         {"neighbours_if-SOUTH", [m]() -> bool {
-            std::cerr << "Expected result: 1 indexes to the SOUTH of current - for expression neighbours_if(m,{1,1}, [](char c, metanull::charmap::direction d) { return d == metanull::charmap::SOUTH })" << std::endl;
+            std::cerr << "Expected result: 1 indexes to the SOUTH of current - for expression neighbours_if(m,{1,1}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return d == metanull::charmap::SOUTH })" << std::endl;
             
-            auto n = metanull::charmap::neighbours_if(m,{1,1}, [](char c, metanull::charmap::direction d) { return d == metanull::charmap::SOUTH; });
+            auto n = metanull::charmap::neighbours_if(m,{1,1}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return d == metanull::charmap::SOUTH; });
             auto d = metanull::charmap::translate({1,1},metanull::charmap::SOUTH);
-            auto dm = metanull::charmap::index(1,0);
+            auto dm = metanull::charmap::position(1,2);
+            return n.size() == 1 && metanull::charmap::translate({1,1},n[0].first) == d && metanull::charmap::translate({1,1},n[0].first) == dm;
+        }},
+        {"neighbours_if-NORTH", [m]() -> bool {
+            std::cerr << "Expected result: 1 indexes to the NORTH of current - for expression neighbours_if(m,{1,1}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return d == metanull::charmap::NORTH })" << std::endl;
+            
+            auto n = metanull::charmap::neighbours_if(m,{1,1}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return d == metanull::charmap::NORTH; });
+            auto d = metanull::charmap::translate({1,1},metanull::charmap::NORTH);
+            auto dm = metanull::charmap::position(1,0);
             return n.size() == 1 && metanull::charmap::translate({1,1},n[0].first) == d && metanull::charmap::translate({1,1},n[0].first) == dm;
         }},
         {"neighbours_if-EAST", [m]() -> bool {
-            std::cerr << "Expected result: 1 indexes to the EAST of current - for expression neighbours_if(m,{1,1}, [](char c, metanull::charmap::direction d) { return d == metanull::charmap::EAST })" << std::endl;
+            std::cerr << "Expected result: 1 indexes to the EAST of current - for expression neighbours_if(m,{1,1}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return d == metanull::charmap::EAST })" << std::endl;
             
-            auto n = metanull::charmap::neighbours_if(m,{1,1}, [](char c, metanull::charmap::direction d) { return d == metanull::charmap::EAST; });
+            auto n = metanull::charmap::neighbours_if(m,{1,1}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return d == metanull::charmap::EAST; });
             auto d = metanull::charmap::translate({1,1},metanull::charmap::EAST);
-            auto dm = metanull::charmap::index(2,1);
+            auto dm = metanull::charmap::position(2,1);
             return n.size() == 1 && metanull::charmap::translate({1,1},n[0].first) == d && metanull::charmap::translate({1,1},n[0].first) == dm;
         }},
         {"neighbours_if-WEST", [m]() -> bool {
-            std::cerr << "Expected result: 1 indexes to the WEST of current - for expression neighbours_if(m,{1,1}, [](char c, metanull::charmap::direction d) { return d == metanull::charmap::WEST })" << std::endl;
+            std::cerr << "Expected result: 1 indexes to the WEST of current - for expression neighbours_if(m,{1,1}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return d == metanull::charmap::WEST })" << std::endl;
             
-            auto n = metanull::charmap::neighbours_if(m,{1,1}, [](char c, metanull::charmap::direction d) { return d == metanull::charmap::WEST; });
+            auto n = metanull::charmap::neighbours_if(m,{1,1}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return d == metanull::charmap::WEST; });
             auto d = metanull::charmap::translate({1,1},metanull::charmap::WEST);
-            auto dm = metanull::charmap::index(0,1);
+            auto dm = metanull::charmap::position(0,1);
             return n.size() == 1 && metanull::charmap::translate({1,1},n[0].first) == d && metanull::charmap::translate({1,1},n[0].first) == dm;
         }},
         {"neighbours_if-char_val_is", [m]() -> bool {
-            std::cerr << "Expected result: 2 indexes - for expression neighbours_if(m,{3,3}, [](char c, metanull::charmap::direction d) { return c == '.'; })" << std::endl;
+            std::cerr << "Expected result: 2 indexes - for expression neighbours_if(m,{3,3}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return c == '.'; })" << std::endl;
             
-            auto n = metanull::charmap::neighbours_if(m,{3,3}, [](char c, metanull::charmap::direction d) { return c == '.'; });
+            auto n = metanull::charmap::neighbours_if(m,{3,3}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return c == '.'; });
             return n.size() == 2;
         }},
         {"neighbours_if-char_val_is-no_match", [m]() -> bool {
-            std::cerr << "Expected result: [] - for expression neighbours_if(m,{3,3}, [](char c, metanull::charmap::direction d) { return c == '$'; })" << std::endl;
+            std::cerr << "Expected result: [] - for expression neighbours_if(m,{3,3}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return c == '$'; })" << std::endl;
             
-            auto n = metanull::charmap::neighbours_if(m,{3,3}, [](char c, metanull::charmap::direction d) { return c == '$'; });
+            auto n = metanull::charmap::neighbours_if(m,{3,3}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return c == '$'; });
+            return n.size() == 0;
+        }},
+        {"neighbours_if-char_pos_is", [m]() -> bool {
+            std::cerr << "Expected result: 1 indexes - for expression neighbours_if(m,{3,3}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return p == {4,3}; })" << std::endl;
+            
+            auto n = metanull::charmap::neighbours_if(m,{3,3}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return p == metanull::charmap::position{4,3}; });
+            return n.size() == 2;
+        }},
+        {"neighbours_if-char_pos_is-no_match", [m]() -> bool {
+            std::cerr << "Expected result: [] - for expression neighbours_if(m,{3,3}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return p = {0,0}; })" << std::endl;
+            
+            auto n = metanull::charmap::neighbours_if(m,{3,3}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return p == metanull::charmap::position{0,0}; });
             return n.size() == 0;
         }},
         {"rotate_clockwise", []() -> bool {

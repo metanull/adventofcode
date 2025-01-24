@@ -16,10 +16,17 @@ namespace metanull {
         using row = std::vector<char>;
         /** A two-dimentionnal character map */
         using map = std::vector<row>;
-        /** A pair of unsigned integers, defining a position in a charmap */
-        using index = std::pair<size_t,size_t>;
+        /** A pair of unsigned integers, defining a position in a charmap, where first is the abscissa and second is the ordinate */
+        using position = std::pair<size_t,size_t>;
         /** A pair of integers, defining a direction, where first is the horizontal direction (-1,0,1) and second the vertical direction (-1,0,1) */
         using direction = std::pair<int,int>;
+
+        size_t horizontal_distance(const position & a, const position & b);
+        size_t vertical_distance(const position & a, const position & b);
+        const size_t & ordinate(const position & p);
+        size_t & ordinate(position & p);
+        const size_t & abscissa(const position & p);
+        size_t & abscissa(position & p);
 
         /** No flag is set */
         static const int SUBSET_MATCH_NONE = 0;
@@ -29,14 +36,19 @@ namespace metanull {
         static const int SUBSET_TRUNCATE_ON_OUT_OF_BOUNDS = 2;
 
         static const direction UNKNOWN      = { 0, 0};
-        static const direction NORTH        = { 0, 1};
+        static const direction SOUTH        = { 0, 1};
         static const direction NORTHEAST    = { 1, 1};
         static const direction EAST         = { 1, 0};
         static const direction SOUTHEAST    = { 1,-1};
-        static const direction SOUTH        = { 0,-1};
+        static const direction NORTH        = { 0,-1};
         static const direction SOUTHWEST    = {-1,-1};
         static const direction WEST         = {-1, 0};
         static const direction NORTHWEST    = {-1, 1};
+
+        /**
+         * Get a string representation of a direction
+         */
+        std::string direction_as_string(const direction & d);
 
         /**
          * Rotate a direction clockwise
@@ -68,7 +80,7 @@ namespace metanull {
          * @param flags The function returns an empty map if end is past the boundaries of m. If flag SUBSET_TRUNCATE_ON_OUT_OF_BOUNDS is set, it returns instead, a truncated subset
          * @return The resulting charmap
          */
-        map subset(const map & m, index origin, index end, int flags = 0);
+        map subset(const map & m, position origin, position end, int flags = 0);
         /**
          * Get a subset of a character map.
          * It returns a map starting at the point origin, and spanning over exactly n rows and columns
@@ -78,7 +90,7 @@ namespace metanull {
          * @param flags The function returns an empty map if end is past the boundaries of m. If flag SUBSET_TRUNCATE_ON_OUT_OF_BOUNDS is set, it returns instead, a truncated subset
          * @return The resulting charmap
          */
-        map subset(const map & m, index origin, size_t n, int flags = 0);
+        map subset(const map & m, position origin, size_t n, int flags = 0);
         /**
          * Test if a subset of a charmap matches a specific shape
          * It returns a map starting at the point origin, and spanning over exactly n rows and columns
@@ -88,7 +100,7 @@ namespace metanull {
          * @throws std::out_of_range
          * @return True if the subset matches with needle
          */
-        bool subset_quick_matches(const map & m, index origin, const map & needle);
+        bool subset_quick_matches(const map & m, position origin, const map & needle);
 
         /**
          * Test if a subset of a charmap matches a specific shape
@@ -101,7 +113,7 @@ namespace metanull {
          *              If flag SUBSET_MATCH_NULL_AS_WILDCHARACTER, the function ignore null character ('\0', (char)0, '0x00') from the needle, effectively using the null character as a match-any wildcard
          * @return True if the subset matches with needle
          */
-        bool subset_matches(const map & m, index origin, const map & needle, int flags = 0);
+        bool subset_matches(const map & m, position origin, const map & needle, int flags = 0);
 
         /**
          * Finds all occurrences of a specific shape in a charmap, returning their origin coordinates
@@ -110,7 +122,7 @@ namespace metanull {
          * @param flags If flag SUBSET_MATCH_NULL_AS_WILDCHARACTER, the function ignore null character ('\0', (char)0, '0x00') from the needle, effectively using the null character as a match-any wildcard
          * @return An array of positions of all matches
          */
-        std::vector<index> subset_find(const map & m, const map & needle, int flags = 0);
+        std::vector<position> subset_find(const map & m, const map & needle, int flags = 0);
 
         /**
          * Overwrite a portion of a charmap with another
@@ -120,7 +132,7 @@ namespace metanull {
          * @throws std::out_of_range
          * @return The number of characters effectively modified in the charmap
          */
-        void subset_quick_replace(map & m, index origin, const map & replace);
+        void subset_quick_replace(map & m, position origin, const map & replace);
 
         /**
          * Overwrite a portion of a charmap with another
@@ -130,7 +142,7 @@ namespace metanull {
          * @param flags If flag SUBSET_MATCH_NULL_AS_WILDCHARACTER, the function ignore null character ('\0', (char)0, '0x00') from the replace, effectively allowing to leave some characters untouched by the replacement
          * @return The number of characters effectively modified in the charmap
          */
-        size_t subset_replace(map & m, index origin, const map & replace, int flags = 0);
+        size_t subset_replace(map & m, position origin, const map & replace, int flags = 0);
 
         /**
          * Find all differences between two charmaps
@@ -147,69 +159,79 @@ namespace metanull {
          * @param needle the character to look for in the charmap
          * @return An array of positions of all matches
          */
-        std::vector<index> char_find(const map & m, char needle);
+        std::vector<position> char_find(const map & m, char needle);
 
         /**
-         * Translates the index of a point in map by a given vector or direction
-         * @param o The index
+         * Translates the position of a point in map by a given vector or direction
+         * @param o The position
          * @param d The direction vector
-         * @return The translated index
+         * @return The translated position
          */
-        index translate(const index & o, direction d);
+        position translate(const position & o, direction d);
         /**
-         * Test that an index  is within the boundaries of a map
+         * Test that an position  is within the boundaries of a map
          * @param m The map
-         * @param p The index to test
+         * @param p The position to test
          * @throws std::out_of_range
          */
-        void test_in_bounds(const map & m, const index & p);
+        void test_in_bounds(const map & m, const position & p);
 
         /**
-         * Access an item in the charmap by its index
+         * Access an item in the charmap by its position
          * @param m The map
-         * @param p The index of the items
+         * @param p The position of the items
          * @return A reference to the character
          * @throws std::out_of_range
          */
-        char & access(map & m, const index & p);
+        char & access(map & m, const position & p);
         /**
-         * Access an item in the charmap by its index
+         * Access an item in the charmap by its position
          * @param m The map
-         * @param p The index of the items
+         * @param p The position of the items
          * @return A reference to the character
          * @throws std::out_of_range
          */
-        const char & access(const map & m, const index & p);
+        const char & access(const map & m, const position & p);
 
         /**
          * Lists all neighbours of a cell that passes a userdefined test
          * @param m The map
-         * @param p The index of the point around which to check
-         * @param t The test function in the form bool(char,direction), it receives the character to test, and well as the relative direction to reach it from the reference)
+         * @param p The position of the point around which to check
+         * @param t The test function in the form bool(position,char,direction), it receives: the position of the neighbour, the character at that position, as well as the relative direction to that neighbour starting from p)
          * @return A array of all pairs of character/direction satisfying the test
          */
-        std::vector<std::pair<direction,char>> neighbours_if(const map & m, const index & p, std::function<bool(char,direction)> t);
+        std::vector<std::pair<direction,char>> neighbours_if(const map & m, const position & p, std::function<bool(position,char,direction)> t);
 
         /**
-         * Get the column of a charmap at a specific index
+         * Get the column of a charmap at a specific position
          * @param m The map
-         * @param p The index of the column
+         * @param p The position of the column
          * @return The column as a string
          */
-        std::string column_as_string(const map & m, const index & p);
+        std::string column_as_string(const map & m, const position & p);
         /**
-         * Get the row of a charmap at a specific index
+         * Get the row of a charmap at a specific position
          * @param m The map
-         * @param p The index of the row
+         * @param p The position of the row
          * @return The row as a string
          */
-        std::string row_as_string(const map & m, const index & p);
+        std::string row_as_string(const map & m, const position & p);
         /**
          * Swap rows and columns of a charmap
          * @param m The map
          * @return The transposed map
          */
         map transpose(const map & m);
+
+        /**
+         * Flag to permit reverting order of the rows when printing
+         */
+        const std::ios_base::iostate invert_rows = std::ios_base::iostate(1 << 16);
+
+        /**
+         * A manipulator to invert the order of the rows when printing
+         */
+        std::ostream & invert(std::ostream & os);
     }
 }
 

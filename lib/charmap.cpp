@@ -4,6 +4,55 @@ namespace metanull
 {
     namespace charmap
     {
+        std::string direction_as_string(const direction &d)
+        {
+            if (d == UNKNOWN)
+                return "UNKNOWN";
+            if (d == SOUTH)
+                return "SOUTH";
+            if (d == NORTHEAST)
+                return "NORTHEAST";
+            if (d == EAST)
+                return "EAST";
+            if (d == SOUTHEAST)
+                return "SOUTHEAST";
+            if (d == NORTH)
+                return "NORTH";
+            if (d == SOUTHWEST)
+                return "SOUTHWEST";
+            if (d == WEST)
+                return "WEST";
+            if (d == NORTHWEST)
+                return "NORTHWEST";
+            return "INVALID";
+        }
+
+        const size_t & ordinate(const position &p)
+        {
+            return p.second;
+        }
+        size_t & ordinate(position &p)
+        {
+            return p.second;
+        }
+        const size_t & abscissa(const position &p)
+        {
+            return p.first;
+        }
+        size_t & abscissa(position &p)
+        {
+            return p.first;
+        }
+        size_t horizontal_distance(const position &a, const position &b)
+        {
+            return std::abs((long long)abscissa(a) - (long long)abscissa(b));
+        }
+        size_t vertical_distance(const position &a, const position &b)
+        {
+            return std::abs((long long)ordinate(a) - (long long)ordinate(b));
+        }
+        
+
         direction rotate_clockwise(const direction &d)
         {
             return {-d.second, d.first};
@@ -19,7 +68,7 @@ namespace metanull
             return {-d.first, -d.second};
         }
 
-        map subset(const map &m, index origin, index end, int flags)
+        map subset(const map &m, position origin, position end, int flags)
         {
             if (end.second > m.size() || end.first > m[0].size())
             {
@@ -41,14 +90,14 @@ namespace metanull
             }
             return s;
         }
-        map subset(const map &m, index origin, size_t w, int flags)
+        map subset(const map &m, position origin, size_t w, int flags)
         {
             return subset(m, origin, std::make_pair(origin.first + w, origin.second + w), flags);
         }
 
-        bool subset_quick_matches(const map &m, index origin, const map &needle)
+        bool subset_quick_matches(const map &m, position origin, const map &needle)
         {
-            index end = {origin.first + needle[0].size(), origin.second + needle.size()};
+            position end = {origin.first + needle[0].size(), origin.second + needle.size()};
             test_in_bounds(m, translate(end, {-1, -1}));
             
             for (auto r = m.begin() + origin.second; r < m.begin() + origin.second + needle.size(); r ++)
@@ -61,9 +110,9 @@ namespace metanull
             return true;
         }
 
-        bool subset_matches(const map &m, index origin, const map &needle, int flags)
+        bool subset_matches(const map &m, position origin, const map &needle, int flags)
         {
-            index end = {origin.first + needle[0].size(), origin.second + needle.size()};
+            position end = {origin.first + needle[0].size(), origin.second + needle.size()};
             if (end.second > m.size() || end.first > m[0].size())
             {
                 if (flags & metanull::charmap::SUBSET_TRUNCATE_ON_OUT_OF_BOUNDS)
@@ -99,11 +148,11 @@ namespace metanull
             }
             return true;
         }
-        std::vector<index> subset_find(const map &m, const map &needle, int flags)
+        std::vector<position> subset_find(const map &m, const map &needle, int flags)
         {
-            std::vector<index> matches;
-            index origin = {0, 0};
-            index end = {m[0].size() - needle[0].size() + 1, m.size() - needle.size() + 1};
+            std::vector<position> matches;
+            position origin = {0, 0};
+            position end = {m[0].size() - needle[0].size() + 1, m.size() - needle.size() + 1};
             for (auto r = origin.second; r < m.size() && r < end.second; r++)
             {
                 for (auto c = origin.first; c < m[r].size() && c < end.first; c++)
@@ -117,9 +166,9 @@ namespace metanull
             return matches;
         }
 
-        void subset_quick_replace(map &m, index origin, const map &replace)
+        void subset_quick_replace(map &m, position origin, const map &replace)
         {
-            index end = {origin.first + replace[0].size(), origin.second + replace.size()};
+            position end = {origin.first + replace[0].size(), origin.second + replace.size()};
             test_in_bounds(m, translate(end, {-1, -1}));
             
             for (auto r = replace.begin(); r < replace.end(); r ++)
@@ -128,9 +177,9 @@ namespace metanull
             }
         }
 
-        size_t subset_replace(map &m, index origin, const map &replace, int flags)
+        size_t subset_replace(map &m, position origin, const map &replace, int flags)
         {
-            index end = {origin.first + replace[0].size(), origin.second + replace.size()};
+            position end = {origin.first + replace[0].size(), origin.second + replace.size()};
             try
             {
                 test_in_bounds(m, translate(end, {-1, -1}));
@@ -192,9 +241,9 @@ namespace metanull
             return diff;
         }
 
-        std::vector<index> char_find(const map &m, char c)
+        std::vector<position> char_find(const map &m, char c)
         {
-            std::vector<index> occurrences;
+            std::vector<position> occurrences;
             for (auto r = 0; r < m.size(); r++)
             {
                 auto it = m[r].begin();
@@ -207,11 +256,11 @@ namespace metanull
             return occurrences;
         }
 
-        index translate(const index &o, std::pair<int, int> d)
+        position translate(const position &o, std::pair<int, int> d)
         {
-            return index(o.first + d.first, o.second + d.second);
+            return position(o.first + d.first, o.second + d.second);
         }
-        void test_in_bounds(const map &m, const index &p)
+        void test_in_bounds(const map &m, const position &p)
         {
             if (p.second >= m.size() || p.first >= m[0].size())
             {
@@ -219,32 +268,30 @@ namespace metanull
             }
         }
 
-        char &access(map &m, const index &p)
+        char &access(map &m, const position &p)
         {
             test_in_bounds(m, p);
             return m[p.second][p.first];
         }
-        const char &access(const map &m, const index &p)
+        const char &access(const map &m, const position &p)
         {
             test_in_bounds(m, p);
             return m[p.second][p.first];
         }
 
-        std::vector<std::pair<std::pair<int, int>, char>> neighbours_if(const map &m, const index &p, std::function<bool(char, std::pair<int, int>)> t)
+        std::vector<std::pair<direction, char>> neighbours_if(const map &m, const position &p, std::function<bool(position, char, direction)> t)
         {
-            std::vector<std::pair<std::pair<int, int>, char>> results;
-            std::vector<std::pair<int, int>> directions = {
-                NORTHWEST, NORTH, NORTHEAST,
-                WEST, EAST,
-                SOUTHWEST, SOUTH, SOUTHEAST};
-            for (const auto &d : directions)
+            std::vector<std::pair<direction, char>> results;
+            std::vector<direction> directions = {EAST, SOUTHEAST, NORTH, SOUTHWEST, WEST, NORTHWEST, SOUTH, NORTHEAST};
+            for (const auto &dir : directions)
             {
                 try
                 {
-                    char c = access(m, translate(p, d));
-                    if (t(c, d))
+                    auto pos = translate(p, dir);
+                    auto val = access(m, pos);
+                    if (t(pos, val, dir))
                     {
-                        results.emplace_back(d, c);
+                        results.emplace_back(dir, val);
                     }
                 }
                 catch (std::out_of_range e)
@@ -255,7 +302,7 @@ namespace metanull
             return results;
         }
 
-        std::string column_as_string(const map &m, const index &p)
+        std::string column_as_string(const map &m, const position &p)
         {
             test_in_bounds(m, p);
             std::string c;
@@ -265,7 +312,7 @@ namespace metanull
             }
             return c;
         }
-        std::string row_as_string(const map &m, const index &p)
+        std::string row_as_string(const map &m, const position &p)
         {
             test_in_bounds(m, p);
             return std::string(m[p.second].begin() + p.first, m[p.second].end());
@@ -285,8 +332,8 @@ namespace metanull
             return n;
         }
 
-        /*
-        std::optional<std::pair<index,char>> select_neighbour(const std::vector<std::pair<std::pair<int,int>,char>> & neighbours, const std::pair<int,int> & d) {
+         /*
+        std::optional<std::pair<position,char>> select_neighbour(const std::vector<std::pair<std::pair<int,int>,char>> & neighbours, const std::pair<int,int> & d) {
             auto it = std::find_if(neighbours.begin(), neighbours.end(), [std::pair<int,int>](neighbour n) { return n.d == std::pair<int,int>; })
             if(it != neighbours.end()) {
                 return *it;

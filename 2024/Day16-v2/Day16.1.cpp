@@ -14,72 +14,61 @@
 #include "charmap.h"
 #include "math.h"
 
+#include "maze.h"
+
 // ---------------------------------------------------------
 const char * banner = "AdventOfCode 2024 Day 16!";
 const char * inputFilePath = INPUT_PATH;
 
-struct node {
-    size_t score;
-    std::pair<metanull::charmap::index,metanull::charmap::direction> start;
-    std::pair<metanull::charmap::index,metanull::charmap::direction> end;
-    std::vector<metanull::charmap::index> path;
-    bool closed = false;
-};
+int main(int argc, char ** argv, char ** envp) {
 
-std::vector<node> next_nodes(const metanull::charmap::map & map, const node & prev_node) {
-    std::vector<node> nodes;
-    node cur_node = prev_node;
+maze m = maze(metanull::charmap::map{
+    {'S','.','.','.','E'},
+    {'#','#','.','#','#'},
+    {'#','#','.','#','#'},
+}, 'S', 'E', metanull::charmap::EAST);
+maze_node current_node;
+current_node.start = metanull::charmap::position{0,0};
+current_node.start_direction = metanull::charmap::EAST;
+current_node.end = metanull::charmap::position{1,0};
+current_node.end_direction = metanull::charmap::EAST;
+current_node.score = 1;
+current_node.visited.push_back(metanull::charmap::position{0,0});
+current_node.closed = false;
 
-    while(true) {
-        auto n = metanull::charmap::neighbours_if(map,cur_node.end.first,[cur_node](char c, metanull::charmap::direction d) { 
-            return (c == '.' || c == 'E') && (d != metanull::charmap::inverse(cur_node.end.second)) && (d == metanull::charmap::NORTH || d == metanull::charmap::SOUTH || d == metanull::charmap::EAST || d == metanull::charmap::WEST );
-        });
-        if(n.empty()) {
-            // Dead end, forget this node
-            return {};
-        }
-        if(n.size() == 1) {
-            if(metanull::charmap::access(map, cur_node.end.first) == 'E') {
-                // That's the exit, return the current node
-                cur_node.path.emplace_back(cur_node.end.first);
-                cur_node.closed = true;
-                return {cur_node};
-            } else {
-                // Continue with the only option
-                cur_node.path.push_back(cur_node.end.first);
-                // Update the score
-                if(cur_node.end.second != n[0].first) {
-                    cur_node.score += SCORE_TURN;
-                }
-                cur_node.score += SCORE_STEP;
-
-                cur_node.end.first = metanull::charmap::translate(cur_node.end.first, n[0].first);
-                cur_node.end.second = n[0].first;
-
-                continue;
-            }
-        } else {
-            // Multiple options close the node and return
-            for(auto opt : n) {
-                node new_node = cur_node;
-
-                new_node.path.push_back(new_node.end.first);
-                // Update the score
-                if(new_node.end.second != opt.first) {
-                    new_node.score += SCORE_TURN;
-                }
-                new_node.score += SCORE_STEP;
-
-                new_node.end.first = metanull::charmap::translate(new_node.end.first, opt.first);
-                new_node.end.second = opt.first;
-                new_node.closed = false;
-                nodes.push_back(new_node);
-            }
-            return nodes;
-        }
+auto next_nodes = m.next_nodes_from(current_node);
+std::cerr << "Expected result: 2 open node {0,0}->{3,0},score=3; {0,0}->{2,1},score=1003" << std::endl;
+std::cerr << "next_nodes.size(): " << next_nodes.size() << std::endl;
+if (!next_nodes.empty()) {
+    for(auto nn : next_nodes) {
+        static int counter = 0;
+        std::cerr << "Node " << counter++ << ":" << std::endl;
+        std::cerr << nn << std::endl;
     }
 }
-int main(int argc, char ** argv, char ** envp) {
+bool b = false;
+b =  next_nodes.size() == 2 ;
+b =  next_nodes[0].start == metanull::charmap::position{0,0} ;
+b =  next_nodes[0].start_direction == metanull::charmap::EAST ;
+b =  next_nodes[0].end == metanull::charmap::position{3,0} ;
+b =  next_nodes[0].end_direction == metanull::charmap::EAST ;
+b =  next_nodes[0].score == 3;
+b =  next_nodes[0].visited.size() == 4 ;
+b =  next_nodes[0].visited.front() == metanull::charmap::position{0,0} ;
+b =  next_nodes[0].visited.back() == metanull::charmap::position{3,0} ;
+b =  next_nodes[0].turns.size() == 0 ;
+b =  !next_nodes[0].closed;
+b =  next_nodes[1].start == metanull::charmap::position{0,0} ;
+b =  next_nodes[1].start_direction == metanull::charmap::EAST ;
+b =  next_nodes[1].end == metanull::charmap::position{2,1} ;
+b =  next_nodes[1].end_direction == metanull::charmap::SOUTH;
+b =  next_nodes[1].score == 1003;
+b =  next_nodes[1].visited.size() == 4 ;
+b =  next_nodes[1].visited.front() == metanull::charmap::position{0,0} ;
+b =  next_nodes[1].visited.back() == metanull::charmap::position{2,1} ;
+b =  next_nodes[1].turns.size() == 1 ;
+b =  next_nodes[1].visited.front() == metanull::charmap::position{2,0} ;
+b =  !next_nodes[1].closed;
 
     std::vector<std::string> args(argv, argv+argc);
     if(args.size() == 1) {
@@ -114,58 +103,10 @@ int main(int argc, char ** argv, char ** envp) {
         std::cout << "Start: " << start.first << "," << start.second << std::endl;
         std::cout << "End: " << end.first << "," << end.second << std::endl;
 
-        node start_node = {0, {start, metanull::charmap::EAST}, {start, metanull::charmap::EAST}, {}};
-        auto options = metanull::charmap::neighbours_if(inputMap, start, [](char c, metanull::charmap::direction d) { return c != '#'; });
-        std::cout << "Options: " << options.size() << std::endl;
-        for(auto p = 0; p < options.size(); p++) {
-            std::cout << options[p].first.first << "," << options[p].first.second << " = " << options[p].second << std::endl;
-        }
-        if(options.empty()) {
-            std::cerr << "No valid path found in the map" << std::endl;
-            return 1;
-        }
-        std::vector<node> open_nodes;
-        std::vector<node> closed_nodes;
-        for(auto o : options) {
-            node c = start_node;
-            if(o.first != c.start.second) {
-                c.score += SCORE_TURN;
-                c.end.second = o.first;
-            }
-            c.score += SCORE_STEP;
-            c.end.first = metanull::charmap::translate(c.end.first, c.end.second);
-            open_nodes.push_back(c);
-        }
-
-        for(auto o : open_nodes) {
-            auto next = next_nodes(inputMap, o);
-            std::cout << "Next nodes: " << next.size() << std::endl;
-            for(auto p : next) {
-                std::cout << "Node (" << p.start.first.first << ',' <<  p.start.first.second << " -> " << p.end.first.first << ',' <<  p.end.first.second << ") = " << p.score << " " << (p.closed ? "CLOSED" : "OPEN") << std::endl;
-                auto kp = p.path.front();
-                for(auto k : p.path) {
-                    if(k.second != kp.second ) {
-                        if(k.second > 0) {
-                            std::cout << " vvv ";
-                        } else {
-                            std::cout << " ^^^ ";
-                        }
-                    } else {
-                        if(k.first != kp.first ) {
-                            if(k.first > 0) {
-                                std::cout << " >>> ";
-                            } else {
-                                std::cout << " <<< ";
-                            }
-                        } else {
-                            std::cout << " ??? ";
-                        }
-                    }
-                    std::cout << k.first << ',' << k.second << std::endl;
-                    kp = k;
-                }
-                std::cout << std::endl;
-            }
+        maze m(inputMap, start, end);
+        m.open_nodes = m.init();
+        for(auto n : m.open_nodes) {
+            auto nn = m.next_nodes_from(n);
         }
     }
 }
