@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <thread>
+#include <chrono>
 
 #include "Constant.h"
 
@@ -21,54 +22,6 @@ const char * banner = "AdventOfCode 2024 Day 16!";
 const char * inputFilePath = INPUT_PATH;
 
 int main(int argc, char ** argv, char ** envp) {
-
-maze m = maze(metanull::charmap::map{
-    {'S','.','.','.','E'},
-    {'#','#','.','#','#'},
-    {'#','#','.','#','#'},
-}, 'S', 'E', metanull::charmap::EAST);
-maze_node current_node;
-current_node.start = metanull::charmap::position{0,0};
-current_node.start_direction = metanull::charmap::EAST;
-current_node.end = metanull::charmap::position{1,0};
-current_node.end_direction = metanull::charmap::EAST;
-current_node.score = 1;
-current_node.visited.push_back(metanull::charmap::position{0,0});
-current_node.closed = false;
-
-auto next_nodes = m.next_nodes_from(current_node);
-std::cerr << "Expected result: 2 open node {0,0}->{3,0},score=3; {0,0}->{2,1},score=1003" << std::endl;
-std::cerr << "next_nodes.size(): " << next_nodes.size() << std::endl;
-if (!next_nodes.empty()) {
-    for(auto nn : next_nodes) {
-        static int counter = 0;
-        std::cerr << "Node " << counter++ << ":" << std::endl;
-        std::cerr << nn << std::endl;
-    }
-}
-bool b = false;
-b =  next_nodes.size() == 2 ;
-b =  next_nodes[0].start == metanull::charmap::position{0,0} ;
-b =  next_nodes[0].start_direction == metanull::charmap::EAST ;
-b =  next_nodes[0].end == metanull::charmap::position{3,0} ;
-b =  next_nodes[0].end_direction == metanull::charmap::EAST ;
-b =  next_nodes[0].score == 3;
-b =  next_nodes[0].visited.size() == 4 ;
-b =  next_nodes[0].visited.front() == metanull::charmap::position{0,0} ;
-b =  next_nodes[0].visited.back() == metanull::charmap::position{3,0} ;
-b =  next_nodes[0].turns.size() == 0 ;
-b =  !next_nodes[0].closed;
-b =  next_nodes[1].start == metanull::charmap::position{0,0} ;
-b =  next_nodes[1].start_direction == metanull::charmap::EAST ;
-b =  next_nodes[1].end == metanull::charmap::position{2,1} ;
-b =  next_nodes[1].end_direction == metanull::charmap::SOUTH;
-b =  next_nodes[1].score == 1003;
-b =  next_nodes[1].visited.size() == 4 ;
-b =  next_nodes[1].visited.front() == metanull::charmap::position{0,0} ;
-b =  next_nodes[1].visited.back() == metanull::charmap::position{2,1} ;
-b =  next_nodes[1].turns.size() == 1 ;
-b =  next_nodes[1].visited.front() == metanull::charmap::position{2,0} ;
-b =  !next_nodes[1].closed;
 
     std::vector<std::string> args(argv, argv+argc);
     if(args.size() == 1) {
@@ -104,9 +57,61 @@ b =  !next_nodes[1].closed;
         std::cout << "End: " << end.first << "," << end.second << std::endl;
 
         maze m(inputMap, start, end);
-        m.open_nodes = m.init();
-        for(auto n : m.open_nodes) {
-            auto nn = m.next_nodes_from(n);
+
+        std::vector<maze_node> log;
+
+        static size_t cur_best_score = 0;
+        auto clock_start = std::chrono::high_resolution_clock::now();
+        auto open_nodes = m.init();
+        while(!open_nodes.empty()) {
+            std::vector<maze_node> closed_nodes;
+            std::copy_if(open_nodes.begin(), open_nodes.end(), std::back_inserter(closed_nodes), [](const maze_node& n) {
+                return n.closed;
+            });
+            if(!closed_nodes.empty()) {
+                std::sort(closed_nodes.begin(), closed_nodes.end(), [](const maze_node& lhs, const maze_node& rhs) {
+                    return lhs.score < rhs.score;
+                });
+                auto best_node = closed_nodes.front();
+                std::cout << "Best node: " << best_node << std::endl;
+                break;
+            }
+            std::sort(open_nodes.begin(), open_nodes.end(), [](const auto& lhs, const auto& rhs) {
+                return lhs.score < rhs.score;
+            });
+            if(open_nodes.front().score > cur_best_score + 100) {
+                std::cout // << "\033[1F\033[2K" 
+                    << std::setfill(' ')
+                    << std::setw(5) << std::chrono::duration_cast<std::chrono::minutes>(std::chrono::high_resolution_clock::now() - clock_start).count() << " min."
+                    << " - Open nodes: " << std::setw(7) << open_nodes.size() 
+                    << " - Best score: " << std::setw(7) << open_nodes.front().score 
+                    << " - Current position: " << std::setw(3) << open_nodes.front().end.first << "," << std::setw(3) << open_nodes.front().end.second << "." 
+                    << std::endl;
+                cur_best_score = open_nodes.front().score;
+            }
+            
+            auto next_nodes = m.next_nodes_from(open_nodes.front());
+            open_nodes.erase(open_nodes.begin());
+            // Remove nodes that are already in the log with the same end, end_drection, and a score that is lower or equal
+            next_nodes.erase(std::remove_if(next_nodes.begin(), next_nodes.end(), [&log](const maze_node& n) {
+                return std::find_if(log.begin(), log.end(), [&n](const maze_node& ln) {
+                    return ln.end == n.end && ln.end_direction == n.end_direction && ln.score <= n.score;
+                }) != log.end();
+            }), next_nodes.end());
+            // In the contrary remove from open_nodes the nodes that are already in the log with the same end, end_drection, and a score that is strictly lower
+            open_nodes.erase(std::remove_if(open_nodes.begin(), open_nodes.end(), [&log](const maze_node& n) {
+                return std::find_if(log.begin(), log.end(), [&n](const maze_node& ln) {
+                    return ln.end == n.end && ln.end_direction == n.end_direction && ln.score < n.score;
+                }) != log.end();
+            }), open_nodes.end());
+            // Add each next_Node to the log
+            std::copy(next_nodes.begin(), next_nodes.end(), std::back_inserter(log));
+            
+            // Add the remaining next nodes to the list
+            if(!next_nodes.empty()) {
+                std::copy(next_nodes.begin(), next_nodes.end(), std::back_inserter(open_nodes));
+                continue;
+            }
         }
     }
 }

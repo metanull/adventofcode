@@ -25,6 +25,11 @@ struct maze_node {
     maze_node(metanull::charmap::position pos, metanull::charmap::direction dir, size_t score = 0);
 
     friend std::ostream & operator<<(std::ostream & os, const maze_node & n);
+
+    /*
+    static std::vector<maze_node> init(const metanull::charmap::map & m, const metanull::charmap::position & start, const metanull::charmap::direction & start_direction);
+    static std::vector<maze_node> next_nodes_from(const metanull::charmap::map & m, maze_node & origin, const metanull::charmap::position & end);
+    */
 };
 
 std::ostream & operator<<(std::ostream & os, const maze_node & n);
