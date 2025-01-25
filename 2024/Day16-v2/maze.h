@@ -26,10 +26,15 @@ struct maze_node {
 
     friend std::ostream & operator<<(std::ostream & os, const maze_node & n);
 
-    /*
-    static std::vector<maze_node> init(const metanull::charmap::map & m, const metanull::charmap::position & start, const metanull::charmap::direction & start_direction);
-    static std::vector<maze_node> next_nodes_from(const metanull::charmap::map & m, maze_node & origin, const metanull::charmap::position & end);
-    */
+    
+    typedef std::function<bool(const metanull::charmap::map & m, const metanull::charmap::position & pos, const metanull::charmap::position & end)> tile_test_function;
+    const static tile_test_function is_tile_free;
+    static const size_t score_turn = 1000;
+    static const size_t score_step = 1;
+
+    static std::vector<maze_node> init(const metanull::charmap::map & m, const metanull::charmap::position & start, const metanull::charmap::position & end, const metanull::charmap::direction & start_direction, const tile_test_function & is_tile_free);
+    static std::vector<maze_node> next_nodes_from(const metanull::charmap::map & m, maze_node & cur, const metanull::charmap::position & end, const tile_test_function & is_tile_free);
+    static std::vector<maze_node> find_best_path(const metanull::charmap::map & m, const metanull::charmap::position & start, const metanull::charmap::position & end, const metanull::charmap::direction & start_direction, const tile_test_function & is_tile_free);
 };
 
 std::ostream & operator<<(std::ostream & os, const maze_node & n);

@@ -60,74 +60,8 @@ int main(int argc, char **argv, char **envp)
     std::cout << "Start: " << start.first << "," << start.second << std::endl;
     std::cout << "End: " << end.first << "," << end.second << std::endl;
 
-    maze m(inputMap, start, end);
-
-    std::vector<maze_node> log;
-
-    static size_t cur_best_score = 0;
-    auto clock_start = std::chrono::high_resolution_clock::now();
-    auto open_nodes = m.init();
-    std::vector<maze_node> closed_nodes;
-    while (!open_nodes.empty())
-    {
-
-        // Store closed nodes, and remove them from open_nodes
-        std::copy_if(open_nodes.begin(), open_nodes.end(), std::back_inserter(closed_nodes), [](const maze_node &n)
-                     { return n.closed; });
-        open_nodes.erase(std::remove_if(open_nodes.begin(), open_nodes.end(), [](const maze_node &n)
-                                        { return n.closed; }),
-                         open_nodes.end());
-        // Break on the first closed node
-        if (!closed_nodes.empty())
-        {
-            std::sort(closed_nodes.begin(), closed_nodes.end(), [](const maze_node &lhs, const maze_node &rhs)
-                      { return lhs.score < rhs.score; });
-            auto best_node = closed_nodes.front();
-            std::cout << "Best node: " << best_node << std::endl;
-            break;
-        }
-
-        // Sort open_nodes by score, to process the best nodes first
-        std::sort(open_nodes.begin(), open_nodes.end(), [](const auto &lhs, const auto &rhs)
-                  { return lhs.score < rhs.score; });
-
-        // Discover the next nodes starting from the current best one
-        auto next_nodes = m.next_nodes_from(open_nodes.front());
-        open_nodes.erase(open_nodes.begin());
-
-        // Process the discovered new nodes:
-        // Remove nodes that are already found in the log with the same end, end_drection, and a score that is lower or equal
-        next_nodes.erase(std::remove_if(next_nodes.begin(), next_nodes.end(), [&log](const maze_node &n)
-                                        { return std::find_if(log.begin(), log.end(), [&n](const maze_node &ln)
-                                                              { return ln.end == n.end && ln.end_direction == n.end_direction && ln.score <= n.score; }) != log.end(); }),
-                         next_nodes.end());
-        // In the contrary remove from open_nodes the nodes that are already in the log with the same end, end_drection, and a score that is strictly lower
-        open_nodes.erase(std::remove_if(open_nodes.begin(), open_nodes.end(), [&log](const maze_node &n)
-                                        { return std::find_if(log.begin(), log.end(), [&n](const maze_node &ln)
-                                                              { return ln.end == n.end && ln.end_direction == n.end_direction && ln.score < n.score; }) != log.end(); }),
-                         open_nodes.end());
-
-        // Add remaining discovered nodes to the list of open_nodes pending processing
-        if (!next_nodes.empty())
-        {
-            // Add remaining discovered nodes to the log
-            std::copy(next_nodes.begin(), next_nodes.end(), std::back_inserter(log));
-
-            // Add the remaining next nodes to the list
-            std::copy(next_nodes.begin(), next_nodes.end(), std::back_inserter(open_nodes));
-            continue;
-        }
+    for(auto b : maze_node::find_best_path(inputMap, start, end, metanull::charmap::EAST, maze_node::is_tile_free)) {
+        std::cout << "Best path: " << b << std::endl;
     }
-
-    // Process solutions
-    if (closed_nodes.empty())
-    {
-        std::cerr << "No solution found." << std::endl;
-        return 1;
-    }
-    // List all (one) items in closed_nodes
-    for (const auto &node : closed_nodes)
-    {
-        std::cout << node << std::endl;
-    }
+    return 0;
 }
