@@ -6,7 +6,8 @@
 #define MULTITHREAD 1
 
 // #define INPUT_PATH  "./input.txt"
-#define INPUT_PATH  "E:/adventofcode/2024/Input/Day16.txt"
+// #define INPUT_PATH  "E:/adventofcode/2024/Input/Day16.txt"
+#define INPUT_PATH "C:/Users/phave/Documents/Development/adventofcode/2024/Input/Day16.txt"
 
 #define UPPERLIMIT 248816
 #define SCORE_TURN   1000
