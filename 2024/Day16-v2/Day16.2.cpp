@@ -74,6 +74,13 @@ int main(int argc, char **argv, char **envp)
     size_t lowest_score = SIZE_MAX;
     size_t not_lowest_score = 0;
 
+    size_t bestScoreSoFar = SIZE_MAX;
+
+    std::time_t start_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    char start_time_buffer[26];
+    ctime_s(start_time_buffer, sizeof(start_time_buffer), &start_time);
+    std::cout << "Start time: " << start_time_buffer << std::endl;
+    
     while (!open_nodes.empty())
     {
         // Print all nodes in open_nodes that are having closed = true
@@ -82,7 +89,17 @@ int main(int argc, char **argv, char **envp)
         {
             if (node.closed)
             {
-                std::cout << "CLOSED: " << node << std::endl;
+                std::time_t now_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+                auto elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - std::chrono::system_clock::from_time_t(start_time)).count();
+                auto hours = elapsed_seconds / 3600;
+                elapsed_seconds %= 3600;
+                auto minutes = elapsed_seconds / 60;
+                auto seconds = elapsed_seconds % 60;
+                char time_buffer[26];
+                ctime_s(time_buffer, sizeof(time_buffer), &now_time);
+                std::cout << "Current time: " << time_buffer;
+                std::cout << "Elapsed time: " << hours << " hours, " << minutes << " minutes, " << seconds << " seconds." << std::endl;
+                std::cout << "Closed: " << node << std::endl;
             }
         }
 
@@ -92,6 +109,10 @@ int main(int argc, char **argv, char **envp)
         open_nodes.erase(std::remove_if(open_nodes.begin(), open_nodes.end(), [](const maze_node &n)
                                         { return n.closed; }),
                          open_nodes.end());
+
+        if(bestScoreSoFar == SIZE_MAX && !closed_nodes.empty()) {
+            bestScoreSoFar = closed_nodes.front().score;
+        }
 
         #if (!defined(BREAK_ON_FIRST_BEST_SCORE) || BREAK_ON_FIRST_BEST_SCORE != 1)
             // Break on the first closed node with a score that is not the lowest
@@ -144,7 +165,7 @@ int main(int argc, char **argv, char **envp)
         open_nodes.erase(open_nodes.begin());
 
         // Process the discovered new nodes:
-        // Remove nodes that are already found in the log with the same end, end_drection, and a score that is lower or equal
+        // Remove from next_nodes nodes that are already found in the log with the same end, end_drection, and a score that is (1, if only the first best path is needed) lower or equal or (2, if all "best path" are needed) strictly lower
         next_nodes.erase(std::remove_if(next_nodes.begin(), next_nodes.end(), [&log](const maze_node &n)
                                         { return std::find_if(log.begin(), log.end(), [&n](const maze_node &ln)
                                                             { 
@@ -157,7 +178,7 @@ int main(int argc, char **argv, char **envp)
                                                                 #endif
                                                             }) != log.end(); }),
                          next_nodes.end());
-        // In the contrary remove from open_nodes the nodes that are already in the log with the same end, end_direction, and a score that is strictly lower
+        // Remove from open_nodes nodes that are already found in the log with the same end, end_direction, and a score that is strictly lower
         open_nodes.erase(std::remove_if(open_nodes.begin(), open_nodes.end(), [&log](const maze_node &n)
                                         { return std::find_if(log.begin(), log.end(), [&n](const maze_node &ln)
                                                               { 
@@ -173,6 +194,13 @@ int main(int argc, char **argv, char **envp)
 
             // Add the remaining next nodes to the list
             std::copy(next_nodes.begin(), next_nodes.end(), std::back_inserter(open_nodes));
+
+            // Trim all nodes with a score higher than bestScoreSoFar
+            if(bestScoreSoFar != SIZE_MAX) {
+                open_nodes.erase(std::remove_if(open_nodes.begin(), open_nodes.end(), [bestScoreSoFar](const maze_node& n) {
+                    return n.score > bestScoreSoFar;
+                }), open_nodes.end());
+            }
             continue;
         }
     }
