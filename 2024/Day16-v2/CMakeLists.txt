@@ -16,6 +16,12 @@ target_link_libraries(${TARGET_NAME} ${GLOBAL_LIB_PFX}charmap ${GLOBAL_LIB_PFX}m
 set_cxx_20(${TARGET_NAME})
 set_property(TARGET ${TARGET_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/.")
 
+set(TARGET_NAME ${EXE_PFX}2)
+add_executable(${TARGET_NAME} Day16.2.cpp)
+target_link_libraries(${TARGET_NAME} ${GLOBAL_LIB_PFX}charmap ${GLOBAL_LIB_PFX}math ${LIB_PFX}maze)
+set_cxx_20(${TARGET_NAME})
+set_property(TARGET ${TARGET_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/.")
+
 set(TARGET_NAME ${TEST_PFX}maze_test)
 add_executable(${TARGET_NAME} maze_test.cpp)
 target_link_libraries(${TARGET_NAME} ${GLOBAL_LIB_PFX}charmap ${GLOBAL_LIB_PFX}math ${LIB_PFX}maze)

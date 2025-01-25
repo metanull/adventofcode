@@ -97,23 +97,28 @@ maze_node::maze_node(metanull::charmap::position pos, metanull::charmap::directi
 */
 
 std::ostream & operator<<(std::ostream & os, const maze_node & n) {
-    os << "Node:" << std::endl;
-    os << "- start: (" << metanull::charmap::abscissa(n.start) << ", " << metanull::charmap::ordinate(n.start) << ")" << std::endl;
-    os << "- start_direction: " << metanull::charmap::direction_as_string(n.start_direction) << std::endl;
-    os << "- end: (" << metanull::charmap::abscissa(n.end) << ", " << metanull::charmap::ordinate(n.end) << ")" << std::endl;
-    os << "- end_direction: " << metanull::charmap::direction_as_string(n.end_direction) << std::endl;
-    os << "- score: " << n.score << std::endl;
-    os << "- visited.size(): " << n.visited.size() << std::endl;
-    if (!n.visited.empty()) {
-        os << "- visited.front: (" << metanull::charmap::abscissa(n.visited.front()) << ", " << metanull::charmap::ordinate(n.visited.front()) << ")" << std::endl;
-        os << "- visited.back: (" << metanull::charmap::abscissa(n.visited.back()) << ", " << metanull::charmap::ordinate(n.visited.back()) << ")" << std::endl;
-    }
-    os << "- turns.size(): " << n.turns.size() << std::endl;
-    if (!n.turns.empty()) {
-        os << "- turns.front: (" << metanull::charmap::abscissa(n.turns.front()) << ", " << metanull::charmap::ordinate(n.turns.front()) << ")" << std::endl;
-        os << "- turns.back: (" << metanull::charmap::abscissa(n.turns.back()) << ", " << metanull::charmap::ordinate(n.turns.back()) << ")" << std::endl;
-    }
+    os << "(" << metanull::charmap::abscissa(n.start) << ", " << metanull::charmap::ordinate(n.start) << ")";
+    os << " -> ";
+    os << "(" << metanull::charmap::abscissa(n.end) << ", " << metanull::charmap::ordinate(n.end) << ")" << std::endl;
     os << "- closed: " << n.closed << std::endl;
+    os << "- score:  " << n.score << std::endl;
+    os << "- start:  (" << metanull::charmap::abscissa(n.start) << ", " << metanull::charmap::ordinate(n.start) << ")";
+    os << " - " << metanull::charmap::direction_as_string(n.start_direction) << std::endl;
+    os << "- end:    (" << metanull::charmap::abscissa(n.end) << ", " << metanull::charmap::ordinate(n.end) << ")";
+    os << " - " << metanull::charmap::direction_as_string(n.end_direction) << std::endl;
+    os << "- visited: - .size(): " << n.visited.size();
+    if (!n.visited.empty()) {
+        os << " - .front: (" << metanull::charmap::abscissa(n.visited.front()) << ", " << metanull::charmap::ordinate(n.visited.front()) << ")";
+        os << " - .back: (" << metanull::charmap::abscissa(n.visited.back()) << ", " << metanull::charmap::ordinate(n.visited.back()) << ")";
+    }
+    os << std::endl;
+    os << "- turns:   - .size(): " << n.turns.size();
+    if (!n.turns.empty()) {
+        os << " - .front: (" << metanull::charmap::abscissa(n.turns.front()) << ", " << metanull::charmap::ordinate(n.turns.front()) << ")";
+        os << " - .back: (" << metanull::charmap::abscissa(n.turns.back()) << ", " << metanull::charmap::ordinate(n.turns.back()) << ")";
+    }
+    os << std::endl;
+    
     return os;
 }
 
