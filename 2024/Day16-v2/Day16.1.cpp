@@ -60,7 +60,7 @@ int main(int argc, char **argv, char **envp)
     std::cout << "Start: " << start.first << "," << start.second << std::endl;
     std::cout << "End: " << end.first << "," << end.second << std::endl;
 
-    for(auto b : maze_node::find_best_path(inputMap, start, end, metanull::charmap::EAST, maze_node::is_tile_free)) {
+    for(auto b : maze_node::find_first_best_path(inputMap, start, end, metanull::charmap::EAST, maze_node::is_tile_free)) {
         std::cout << "Best path: " << b << std::endl;
     }
     return 0;

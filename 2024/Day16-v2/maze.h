@@ -34,7 +34,8 @@ struct maze_node {
 
     static std::vector<maze_node> init(const metanull::charmap::map & m, const metanull::charmap::position & start, const metanull::charmap::position & end, const metanull::charmap::direction & start_direction, const tile_test_function & is_tile_free);
     static std::vector<maze_node> next_nodes_from(const metanull::charmap::map & m, maze_node & cur, const metanull::charmap::position & end, const tile_test_function & is_tile_free);
-    static std::vector<maze_node> find_best_path(const metanull::charmap::map & m, const metanull::charmap::position & start, const metanull::charmap::position & end, const metanull::charmap::direction & start_direction, const tile_test_function & is_tile_free);
+    static std::vector<maze_node> find_first_best_path(const metanull::charmap::map & m, const metanull::charmap::position & start, const metanull::charmap::position & end, const metanull::charmap::direction & start_direction, const tile_test_function & is_tile_free);
+    static std::vector<maze_node> find_all_best_path(const metanull::charmap::map & m, const metanull::charmap::position & start, const metanull::charmap::position & end, const metanull::charmap::direction & start_direction, const tile_test_function & is_tile_free);
 };
 
 std::ostream & operator<<(std::ostream & os, const maze_node & n);
