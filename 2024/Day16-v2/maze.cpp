@@ -202,12 +202,24 @@ std::ostream & operator<<(std::ostream & os, const maze_node & n) {
     os << "- visited: - .size(): " << n.visited.size();
     if (!n.visited.empty()) {
         os << " - .front: (" << metanull::charmap::abscissa(n.visited.front()) << ", " << metanull::charmap::ordinate(n.visited.front()) << ")";
+        std::hash<std::string> hasher;
+        std::string visited_str;
+        for (const auto &pos : n.visited) {
+            visited_str += std::to_string(metanull::charmap::abscissa(pos)) + "," + std::to_string(metanull::charmap::ordinate(pos)) + ";";
+        }
+        os << " - hash: " << hasher(visited_str);
         os << " - .back: (" << metanull::charmap::abscissa(n.visited.back()) << ", " << metanull::charmap::ordinate(n.visited.back()) << ")";
     }
     os << std::endl;
     os << "- turns:   - .size(): " << n.turns.size();
     if (!n.turns.empty()) {
         os << " - .front: (" << metanull::charmap::abscissa(n.turns.front()) << ", " << metanull::charmap::ordinate(n.turns.front()) << ")";
+        std::hash<std::string> hasher;
+        std::string turns_str;
+        for (const auto &pos : n.turns) {
+            turns_str += std::to_string(metanull::charmap::abscissa(pos)) + "," + std::to_string(metanull::charmap::ordinate(pos)) + ";";
+        }
+        os << " - hash: " << hasher(turns_str);
         os << " - .back: (" << metanull::charmap::abscissa(n.turns.back()) << ", " << metanull::charmap::ordinate(n.turns.back()) << ")";
     }
     os << std::endl;

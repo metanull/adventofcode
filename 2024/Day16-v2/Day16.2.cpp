@@ -66,21 +66,17 @@ int main(int argc, char **argv, char **envp)
 
     std::vector<maze_node> log;
 
-    static size_t cur_best_score = 0;
     auto clock_start = std::chrono::high_resolution_clock::now();
     auto open_nodes = m.init();
     std::vector<maze_node> closed_nodes;
 
     size_t lowest_score = SIZE_MAX;
-    size_t not_lowest_score = 0;
-
-    size_t bestScoreSoFar = SIZE_MAX;
 
     std::time_t start_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     char start_time_buffer[26];
     ctime_s(start_time_buffer, sizeof(start_time_buffer), &start_time);
     std::cout << "Start time: " << start_time_buffer << std::endl;
-    
+
     while (!open_nodes.empty())
     {
         // Print all nodes in open_nodes that are having closed = true
@@ -103,45 +99,43 @@ int main(int argc, char **argv, char **envp)
             }
         }
 
-        // Store closed nodes, and remove them from open_nodes
+        // Capture the best score as soon as available
+        if(lowest_score == SIZE_MAX && !closed_nodes.empty()) {
+            std::cout << "\033[7;32mLowest score: " << lowest_score << "\033[0m" << std::endl;
+            lowest_score = closed_nodes.front().score;
+        }
+
+        // Some debug output
+        if (std::any_of(open_nodes.begin(), open_nodes.end(), [](const maze_node &n) { return n.closed; }))
+        {
+            std::cout << "\033[7;32mClosed node found.\033[0m" << std::endl;
+        }
+
+        // Store closed nodes...
         std::copy_if(open_nodes.begin(), open_nodes.end(), std::back_inserter(closed_nodes), [](const maze_node &n)
                      { return n.closed; });
+        // ... and remove them from open_nodes
         open_nodes.erase(std::remove_if(open_nodes.begin(), open_nodes.end(), [](const maze_node &n)
                                         { return n.closed; }),
                          open_nodes.end());
 
-        if(bestScoreSoFar == SIZE_MAX && !closed_nodes.empty()) {
-            bestScoreSoFar = closed_nodes.front().score;
-        }
-
         #if (!defined(BREAK_ON_FIRST_BEST_SCORE) || BREAK_ON_FIRST_BEST_SCORE != 1)
-            // Break on the first closed node with a score that is not the lowest
+            // Break only when we find a node that has a score greater than the best one
+            bool found = false;
             for (auto &node : closed_nodes)
             {
-                if (lowest_score == SIZE_MAX)
-                {
-                    lowest_score = node.score;
-                }
-                else
-                {
-                    if (node.score < lowest_score)
-                    {
-                        lowest_score = node.score;
-                    }
-                    if (node.score > not_lowest_score)
-                    {
-                        not_lowest_score = node.score;
-                    }
+                if(lowest_score != SIZE_MAX && node.score != lowest_score) {
+                    found = true;
+                    break;
                 }
             }
-            // As soon as we have all the lowest scores, we can break (first removing nodes with a score that is not the lowest)
-            if (lowest_score != SIZE_MAX && not_lowest_score != 0 && lowest_score != not_lowest_score)
-            {
+            
+            if(found) {
+                // make sure that only closed nodes with the actual best_Score are kept
                 closed_nodes.erase(std::remove_if(closed_nodes.begin(), closed_nodes.end(), [lowest_score](const maze_node &n)
                                                 { return n.score != lowest_score; }),
                                 closed_nodes.end());
-                std::cout << "Lowest score: " << lowest_score << std::endl;
-                std::cout << "Not lowest score: " << not_lowest_score << std::endl;
+                // Leave the loop
                 break;
             }
         #else
@@ -164,8 +158,14 @@ int main(int argc, char **argv, char **envp)
         auto next_nodes = m.next_nodes_from(open_nodes.front());
         open_nodes.erase(open_nodes.begin());
 
-        // Process the discovered new nodes:
-        // Remove from next_nodes nodes that are already found in the log with the same end, end_drection, and a score that is (1, if only the first best path is needed) lower or equal or (2, if all "best path" are needed) strictly lower
+        // Trim all nodes with a score higher than lowest_score
+        if(lowest_score != SIZE_MAX) {
+            next_nodes.erase(std::remove_if(next_nodes.begin(), next_nodes.end(), [lowest_score](const maze_node& n) {
+                return n.score > lowest_score;
+            }), next_nodes.end());
+        }
+
+        // Trim all nodes that are already found in the log with the same end, end_drection, and a score that is (1, if only the first best path is needed) lower or equal or (2, if all "best path" are needed) strictly lower
         next_nodes.erase(std::remove_if(next_nodes.begin(), next_nodes.end(), [&log](const maze_node &n)
                                         { return std::find_if(log.begin(), log.end(), [&n](const maze_node &ln)
                                                             { 
@@ -178,37 +178,39 @@ int main(int argc, char **argv, char **envp)
                                                                 #endif
                                                             }) != log.end(); }),
                          next_nodes.end());
-        // Remove from open_nodes nodes that are already found in the log with the same end, end_direction, and a score that is strictly lower
-        open_nodes.erase(std::remove_if(open_nodes.begin(), open_nodes.end(), [&log](const maze_node &n)
-                                        { return std::find_if(log.begin(), log.end(), [&n](const maze_node &ln)
-                                                              { 
-                                                                return ln.score < n.score && ln.end == n.end && ln.end_direction == n.end_direction; }) != log.end(); 
-                                                                }),
+
+        // Trim open_nodes when they contain a node similar to one in next_nodes but with a greater score
+        open_nodes.erase(std::remove_if(open_nodes.begin(), open_nodes.end(), [&next_nodes](const maze_node &n)
+                                        { return std::find_if(next_nodes.begin(), next_nodes.end(), [&n](const maze_node &nn)
+                                                            { return nn.score < n.score && nn.end == n.end && nn.end_direction == n.end_direction; }) != next_nodes.end(); }),
                          open_nodes.end());
 
         // Add remaining discovered nodes to the list of open_nodes pending processing
         if (!next_nodes.empty())
         {
-            // Add remaining discovered nodes to the log
+            // Update the log by adding or replacing entries from next_nodes
+            log.erase(std::remove_if(log.begin(), log.end(), [&next_nodes](const maze_node &n)
+                                     { return std::find_if(next_nodes.begin(), next_nodes.end(), [&n](const maze_node &nn)
+                                                           { return nn.end == n.end && nn.end_direction == n.end_direction; }) != next_nodes.end(); }),
+                      log.end());
             std::copy(next_nodes.begin(), next_nodes.end(), std::back_inserter(log));
 
             // Add the remaining next nodes to the list
             std::copy(next_nodes.begin(), next_nodes.end(), std::back_inserter(open_nodes));
 
-            // Trim all nodes with a score higher than bestScoreSoFar
-            if(bestScoreSoFar != SIZE_MAX) {
-                open_nodes.erase(std::remove_if(open_nodes.begin(), open_nodes.end(), [bestScoreSoFar](const maze_node& n) {
-                    return n.score > bestScoreSoFar;
-                }), open_nodes.end());
-            }
             continue;
         }
     }
 
+    std::time_t end_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    char end_time_buffer[26];
+    ctime_s(end_time_buffer, sizeof(end_time_buffer), &end_time);
+    std::cout << "\033[34mEnd time: " << end_time_buffer << "\033[0m" << std::endl;
+
     // Process solutions
     if (closed_nodes.empty())
     {
-        std::cerr << "No solution found." << std::endl;
+        std::cerr << "\033[31mNo solution found.\033[0m]" << std::endl;
         return 1;
     }
     // Sort closed_nodes by score
@@ -221,23 +223,19 @@ int main(int argc, char **argv, char **envp)
         size_t smallest_score = closed_nodes.front().score;
 
         // List all items in closed_nodes that have the smallest score
-        std::cout << "Nodes with the smallest score (" << smallest_score << "):" << std::endl;
+        std::cout << "\033[33mNodes with the smallest score (" << smallest_score << ")\033[0m]:" << std::endl;
         for (const auto &node : closed_nodes)
         {
-            if (node.score == smallest_score)
-            {
-                for (const auto &visited_node : node.visited)
-                {
-                    unique_ends.insert(visited_node);
-                }
-                std::cout << node << std::endl;
-            }
-            else
-            {
-                break; // Since the list is sorted, we can break early
+            static int solution_number = 0;
+            std::cout << "\033[34mSolution " << (++solution_number) << "\033[0m: " << node << std::endl;
+            for (const auto &visited_node : node.visited) {
+                unique_ends.insert(visited_node);
             }
         }
     }
+
+    std::cout << "\033[34mEnd time: " << end_time_buffer << "\033[0m" << std::endl;
+
     // Print the number of items in unique_ends
-    std::cout << "Number of unique ends: " << unique_ends.size() << std::endl;
+    std::cout << "\033[34mNumber of unique ends: " << unique_ends.size() << "\033[0m" << std::endl;
 }
