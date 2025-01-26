@@ -40,34 +40,4 @@ struct maze_node {
 
 std::ostream & operator<<(std::ostream & os, const maze_node & n);
 
-/**
- * @brief A maze is a map with a start and an end position
- */
-struct maze {
-    metanull::charmap::map m;
-    metanull::charmap::position start = {0,0};
-    metanull::charmap::direction start_direction = metanull::charmap::EAST;
-    metanull::charmap::position end = {0,0};
-    std::vector<maze_node> open_nodes;
-
-    bool is_free(const metanull::charmap::position & p) const;
-    bool is_free(char c) const;
-
-    maze() = default;
-    maze(const maze & other) = default;
-    maze & operator=(const maze & other) = default;
-    maze(const metanull::charmap::map & map, const metanull::charmap::position & start, const metanull::charmap::position & end, const metanull::charmap::direction & start_dir = metanull::charmap::EAST);
-    maze(const metanull::charmap::map & map, char char_start = 'S', char char_end = 'E', const metanull::charmap::direction & start_dir = metanull::charmap::EAST);
-
-    /**
-     * @brief Get the very first node(s)
-     */
-    std::vector<maze_node> init() const;
-
-    /**
-     * @brief Get the next nodes from a given node (by browsing the maze until a dead end, a crosspoint, a loop or the end of the maze)
-     */
-    std::vector<maze_node> next_nodes_from(maze_node & origin) const;
-};
-
 #endif // __DAY_16_V2_MAZE_H__

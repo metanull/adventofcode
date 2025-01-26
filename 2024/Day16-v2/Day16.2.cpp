@@ -22,8 +22,6 @@
 const char *banner = "AdventOfCode 2024 Day 16!";
 const char *inputFilePath = INPUT_PATH;
 
-#define BREAK_ON_FIRST_BEST_SCORE 0
-
 int main(int argc, char **argv, char **envp)
 {
 
