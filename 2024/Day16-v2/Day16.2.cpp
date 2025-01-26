@@ -101,8 +101,8 @@ int main(int argc, char **argv, char **envp)
 
         // Capture the best score as soon as available
         if(lowest_score == SIZE_MAX && !closed_nodes.empty()) {
-            std::cout << "\033[7;32mLowest score: " << lowest_score << "\033[0m" << std::endl;
             lowest_score = closed_nodes.front().score;
+            std::cout << "\033[7;32mLowest score: " << lowest_score << "\033[0m" << std::endl;
         }
 
         // Some debug output
