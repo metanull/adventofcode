@@ -19,59 +19,51 @@ int main(int argc, char ** argv, char ** envp) {
             std::cerr << "Expected result: true - for expression true" << std::endl;
             return true;
         }},
+        {"is_tile_free-free_char", []() -> bool {
+            std::cerr << "Expected result: true - for expression is_tile_free({{'S','#'},{'.','E'}},{0,1},{1,1})" << std::endl;
+            return maze_node::is_tile_free({{'S','#'},{'.','E'}},{0,1},{1,1});
+        }},
+        {"is_tile_free-exit", []() -> bool {
+            std::cerr << "Expected result: true - for expression is_tile_free({{'S','#'},{'.','E'}},{1,1},{1,1})" << std::endl;
+            return maze_node::is_tile_free({{'S','#'},{'.','E'}},{0,1},{1,1});
+        }},
+        {"is_tile_free-other_char", []() -> bool {
+            std::cerr << "Expected result: false - for expression is_tile_free({{'S','#'},{'.','E'}},{1,0},{1,1})" << std::endl;
+            return maze_node::is_tile_free({{'S','#'},{'.','E'}},{0,1},{1,1});
+        }},
+        {"is_tile_free-start", []() -> bool {
+            std::cerr << "Expected result: false - for expression is_tile_free({{'S','#'},{'.','E'}},{0,0},{1,1})" << std::endl;
+            return maze_node::is_tile_free({{'S','#'},{'.','E'}},{0,1},{1,1});
+        }},
+        {"is_tile_free-out-of-range", []() -> bool {
+            std::cerr << "Expected result: exception std::out-of-range - for expression is_tile_free({{'S','#'},{'.','E'}},{2,2},{1,1})" << std::endl;
+            try {
+                maze_node::is_tile_free({{'S','#'},{'.','E'}},{2,2},{1,1});
+            } catch(std::out_of_range & e) {
+                return true;
+            }
+            return false;
+        }},
+        {"init-empty", []() -> bool {
+            std::cerr << "Expected result: empty vector - for expression init({}, {0,0}, {1,1}, EAST, is_tile_free)" << std::endl;
+            return maze_node::init({}, {0,0}, {1,1}, metanull::charmap::EAST, maze_node::is_tile_free).size() == 0;
+        }},
+        {"init-no-options", []() -> bool {
+            std::cerr << "Expected result: exception std::runtime_error - for expression init({{'S','#'},{'.','E'}}, {0,0}, {1,1}, EAST, is_tile_free)" << std::endl;
+            try {
+                maze_node::init({{'S','#'},{'.','E'}}, {0,0}, {1,1}, metanull::charmap::EAST, maze_node::is_tile_free);
+            } catch(std::runtime_error & e) {
+                return true;
+            }
+            return false;
+        }},
+        {"init-one-option", []() -> bool {
+            std::cerr << "Expected result: vector with one element - for expression init({{'S','#'},{'.','E'}}, {0,0}, {1,1}, EAST, is_tile_free)" << std::endl;
+            auto nodes = maze_node::init({{'S','#'},{'.','E'}}, {0,0}, {1,1}, metanull::charmap::EAST, maze_node::is_tile_free);
+            return nodes.size() == 1 && nodes[0].start == metanull::charmap::position{0,0} && nodes[0].start_direction == metanull::charmap::EAST && nodes[0].end == metanull::charmap::position{0,1} && nodes[0].end_direction == metanull::charmap::SOUTH && nodes[0].score == 1001 && nodes[0].visited.size() == 2 && nodes[0].visited[0] == metanull::charmap::position{0,0} && nodes[0].visited[1] == metanull::charmap::position{0,1};
+        }},
         /*
-        {"is_free-free_char", []() -> bool {
-            std::cerr << "Expected result: true - for expression is_free('.') in maze with map {{.}}" << std::endl;
-            metanull::charmap::map m = {{'.'}};
-            maze n = maze(m, {0,0}, {0,0}, metanull::charmap::EAST);
-            return n.is_free('.');
-        }},
-        {"is_free-other_char", []() -> bool {
-            std::cerr << "Expected result: false - for expression is_free('#') in maze with map {{.}}" << std::endl;
-            metanull::charmap::map m = {{'.'}};
-            maze n = maze(m, {0,0}, {0,0}, metanull::charmap::EAST);
-            return !n.is_free('#');
-        }},
-        {"is_free-pos", []() -> bool {
-            metanull::charmap::map m = {
-                {'S','.','#'},
-                {'.','#','#'},
-                {'.','.','E'}
-            };
-            std::cerr << "Expected result: true - for expression is_free({0,2}) in maze with map:" << m << std::endl;
-            maze n = maze(m, {0,0}, {2,2}, metanull::charmap::EAST);
-            return n.is_free(metanull::charmap::position{0,1}) && n.is_free(metanull::charmap::position{1,0}) && n.is_free(metanull::charmap::position{0,2});
-        }},
-        {"is_free-pos-end", []() -> bool {
-            metanull::charmap::map m = {
-                {'S','.','#'},
-                {'.','#','#'},
-                {'.','.','E'}
-            };
-            std::cerr << "Expected result: true - for expression is_free(maze.end) in maze with map:" << m << std::endl;
-            maze n = maze(m, {0,0}, {2,2}, metanull::charmap::EAST);
-            return n.is_free(n.end);
-        }},
-        {"is_free-pos-not", []() -> bool {
-            metanull::charmap::map m = {
-                {'S','.','#'},
-                {'.','#','#'},
-                {'.','.','E'}
-            };
-            std::cerr << "Expected result: false - for expression is_free({2,0}) in maze with map:" << m << std::endl;
-            maze n = maze(m, {0,0}, {2,2}, metanull::charmap::EAST);
-            return !n.is_free(metanull::charmap::position{0,0}) && !n.is_free(metanull::charmap::position{1,1}) && !n.is_free(metanull::charmap::position{2,1});
-        }},
-        {"is_free-pos-start", []() -> bool {
-            metanull::charmap::map m = {
-                {'S','.','#'},
-                {'.','#','#'},
-                {'.','.','E'}
-            };
-            std::cerr << "Expected result: false - for expression is_free(maze.start) in maze with map:" << m << std::endl;
-            maze n = maze(m, {0,0}, {2,2}, metanull::charmap::EAST);
-            return !n.is_free(n.start);
-        }},
+        
         {"construct", []() -> bool {
             maze m;
             std::cerr << "Expected result: new maze object {0,0},EAST,{0,0},EAST,[],[],0 - for expression maze(m) == n" << std::endl;
