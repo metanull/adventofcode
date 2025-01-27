@@ -27,6 +27,12 @@ namespace metanull
             return "INVALID";
         }
 
+        std::string position_as_string(const position &d) {
+            std::stringstream ss;
+            ss << "(" << d.first << "," << d.second << ")";
+            return ss.str();
+        }
+
         const size_t & ordinate(const position &p)
         {
             return p.second;
@@ -331,24 +337,6 @@ namespace metanull
             }
             return n;
         }
-
-         /*
-        std::optional<std::pair<position,char>> select_neighbour(const std::vector<std::pair<std::pair<int,int>,char>> & neighbours, const std::pair<int,int> & d) {
-            auto it = std::find_if(neighbours.begin(), neighbours.end(), [std::pair<int,int>](neighbour n) { return n.d == std::pair<int,int>; })
-            if(it != neighbours.end()) {
-                return *it;
-            } else {
-                return std::nullopt;
-            }
-        }
-        auto neighbor = metanull::map::findNeighborByDirection(results, std::pair<int,int>);
-
-        if (neighbor) {
-            std::cout << "Neighbor at std::pair<int,int> (" << std::pair<int,int>.first << ", " << std::pair<int,int>.second << "): " << neighbor->second << '\n';
-        } else {
-            std::cout << "No neighbor found at std::pair<int,int> (" << std::pair<int,int>.first << ", " << std::pair<int,int>.second << ")\n";
-        }
-        */
 
     } // namespace map
 } // namespace metanull

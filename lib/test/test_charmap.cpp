@@ -35,6 +35,14 @@ int main(int argc, char ** argv, char ** envp) {
                 && metanull::charmap::direction_as_string(metanull::charmap::SOUTHWEST) == "SOUTHWEST";
 
         }},
+        {"position_as_string", []() -> bool {
+            std::cerr << "Expected result: 0,0 - for expression position_as_string({0,0})" << std::endl;
+            return metanull::charmap::position_as_string({0,0}) == "(0,0)" 
+                && metanull::charmap::position_as_string({1,0}) == "(1,0)" 
+                && metanull::charmap::position_as_string({0,1}) == "(0,1)" 
+                && metanull::charmap::position_as_string({1,1}) == "(1,1)";
+
+        }},
         {"abscissa_const", []() -> bool {
             std::cerr << "Expected result: 1 - for expression abscissa({1,0}) == 1" << std::endl;
             return metanull::charmap::abscissa(metanull::charmap::position{1,0}) == 1;
@@ -686,7 +694,7 @@ int main(int argc, char ** argv, char ** envp) {
                     {'H','E','L','L','O'},
                     {'W','O','R','L','D'}}
                 );
-            } catch (const std::out_of_range & e) {
+            } catch (const std::out_of_range &) {
                 return true;
             }
             return false;
@@ -737,7 +745,7 @@ int main(int argc, char ** argv, char ** envp) {
             std::cerr << "Expected result: throws std::out_of_range - for expression access(m,{9,9})" << std::endl;
             try{
                 metanull::charmap::access(m,{9,9});
-            } catch (const std::out_of_range & e) {
+            } catch (const std::out_of_range &) {
                 return true;
             }
             return false;
@@ -789,6 +797,11 @@ int main(int argc, char ** argv, char ** envp) {
             
             auto n = metanull::charmap::neighbours_if(m,{2,2}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return true; });
             return n.size() == 8;
+        }},
+        {"neighbours_if-out-of-range", [m]() -> bool {
+            std::cerr << "Expected result: 3 indexes - for expression neighbours_if(m,{4,4}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return true; })" << std::endl;
+            auto n = metanull::charmap::neighbours_if(m,{4,4}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return true; });
+            return n.size() == 3;
         }},
         {"neighbours_if-only-NSEW", [m]() -> bool {
             std::cerr << "Expected result: 4 indexes - for expression neighbours_if(m,{2,2}, [](metanull::charmap::position p, char c, metanull::charmap::direction d) { return d.first == 0 || d.second == 0; })" << std::endl;
@@ -926,6 +939,361 @@ int main(int argc, char ** argv, char ** envp) {
             {'+','v','v','v','+'}
             };
         }},
+        {"new-maze_node", [m]() -> bool {
+            std::cerr << "Expected result: start = {0,0}, start_direction = EAST, end = {0,0}, end_direction = EAST, score = 0, closed = false, visited = {}, turns = {} - for expression maze_node()" << std::endl;
+            metanull::charmap::maze_node n;
+            return n.start == metanull::charmap::position{0,0} && n.start_direction == metanull::charmap::EAST && n.end == metanull::charmap::position{0,0} && n.end_direction == metanull::charmap::EAST && n.score == 0 && n.closed == false && n.visited.empty() && n.turns.empty();
+        }},
+        {"new-maze_node-values", [m]() -> bool {
+            std::cerr << "Expected result: start = {1,1}, start_direction = NORTH, end = {1,1}, end_direction = NORTH, score = 1, closed = false, visited = {}, turns = {} - for expression maze_node({1,1},NORTH,1)" << std::endl;
+            metanull::charmap::maze_node n(metanull::charmap::position{1,1}, metanull::charmap::NORTH, 1);
+            return n.start == metanull::charmap::position{1,1} && n.start_direction == metanull::charmap::NORTH && n.end == metanull::charmap::position{1,1} && n.end_direction == metanull::charmap::NORTH && n.score == 1 && n.closed == false && n.visited.empty() && n.turns.empty();
+        }},
+        {"new-maze_node-copy", [m]() -> bool {
+            std::cerr << "Expected result: start = {1,1}, start_direction = NORTH, end = {1,1}, end_direction = NORTH, score = 1, closed = false, visited = {}, turns = {} - for expression k = maze_node({1,1},NORTH,1); n(k);" << std::endl;
+            metanull::charmap::maze_node m(metanull::charmap::position{1,1}, metanull::charmap::NORTH, 1);
+            metanull::charmap::maze_node n(m);
+            return n.start == metanull::charmap::position{1,1} && n.start_direction == metanull::charmap::NORTH && n.end == metanull::charmap::position{1,1} && n.end_direction == metanull::charmap::NORTH && n.score == 1 && n.closed == false && n.visited.empty() && n.turns.empty();
+        }},
+        {"new-maze_node-assign", [m]() -> bool {
+            std::cerr << "Expected result: start = {1,1}, start_direction = NORTH, end = {1,1}, end_direction = NORTH, score = 1, closed = false, visited = {}, turns = {} - for expression auto k = maze_node({1,1},NORTH,1); auto n = k;" << std::endl;
+            metanull::charmap::maze_node m(metanull::charmap::position{1,1}, metanull::charmap::NORTH, 1);
+            auto n = m;
+            return n.start == metanull::charmap::position{1,1} && n.start_direction == metanull::charmap::NORTH && n.end == metanull::charmap::position{1,1} && n.end_direction == metanull::charmap::NORTH && n.score == 1 && n.closed == false && n.visited.empty() && n.turns.empty();
+        }},
+        {"is_tile_free", [m]() -> bool {
+            std::cerr << "Expected result: false - for expression is_tile_free(m, {0,0}, {1,1})" << std::endl;
+            std::cerr << "Expected result: true - for expression is_tile_free(m, {1,0}, {1,1})" << std::endl;
+            std::cerr << "Expected result: false - for expression is_tile_free(m, {0,1}, {1,1})" << std::endl;
+            std::cerr << "Expected result: true - for expression is_tile_free(m, {1,1}, {1,1})" << std::endl;
+            metanull::charmap::map m = {
+                {'S','.'},
+                {'#','E'},
+            };
+            return !metanull::charmap::is_tile_free(m, {0,0}, {1,1}) && metanull::charmap::is_tile_free(m, {1,0}, {1,1}) && !metanull::charmap::is_tile_free(m, {0,1}, {1,1}) && metanull::charmap::is_tile_free(m, {1,1}, {1,1});
+        }},
+        {"basic_score_move", []() -> bool {
+            std::cerr << "Expected result: 1 - for expression basic_score_move({1,0}, {2,0})" << std::endl;
+            std::cerr << "Expected result: 0 - for expression basic_score_move({1,0}, {1,0})" << std::endl;
+            metanull::charmap::map m = {
+                {'S','.'},
+                {'#','E'},
+            };
+            return metanull::charmap::basic_score_move(m, {1,0}, metanull::charmap::EAST, {2,0}, metanull::charmap::EAST) == 1 && metanull::charmap::basic_score_move(m, {1,0}, metanull::charmap::EAST, {1,0}, metanull::charmap::EAST) == 0;
+        }},
+        {"weighted_turn_score_move", []() -> bool {
+            std::cerr << "Expected result: 1 - for expression weighted_turn_score_move({1,0}, EAST, {2,0}, EAST)" << std::endl;
+            std::cerr << "Expected result: 1001 - for expression weighted_turn_score_move({1,0}, EAST, {1,1}, NORTH)" << std::endl;
+            std::cerr << "Expected result: 0 - for expression weighted_turn_score_move({1,1}, EAST, {1,1}, WEST)" << std::endl;
+            metanull::charmap::map m = {
+                {'S','.'},
+                {'#','E'},
+            };
+            return metanull::charmap::weighted_turn_score_move(m, {1,0}, metanull::charmap::EAST, {2,0}, metanull::charmap::EAST) == 1
+            && metanull::charmap::weighted_turn_score_move(m, {1,0}, metanull::charmap::EAST, {1,1}, metanull::charmap::NORTH) == 1001
+            && metanull::charmap::weighted_turn_score_move(m, {1,1}, metanull::charmap::EAST, {1,1}, metanull::charmap::WEST) == 0;
+        }},
+        {"maze_get_first_nodes-single", []() -> bool {
+            std::cerr << "Expected result: {1,0},EAST,1,'open' - for expression maze_get_first_nodes(m, {0,0}, {1,1}, EAST)" << std::endl;
+            metanull::charmap::map m = {
+                {'S','.'},
+                {'#','E'},
+            };
+            auto n = metanull::charmap::maze_get_first_nodes(m, {0,0}, {1,1}, metanull::charmap::EAST, metanull::charmap::weighted_turn_score_move, metanull::charmap::is_tile_free);
+            return n.size() == 1 
+                && n.front().start == metanull::charmap::position{0,0} 
+                && n.front().start_direction == metanull::charmap::EAST 
+                && n.front().end == metanull::charmap::position{1,0} 
+                && n.front().end_direction == metanull::charmap::EAST 
+                && n.front().score == 1 
+                && n.front().closed == false
+                && n.front().turns.empty()
+                && n.front().visited == std::vector<metanull::charmap::position>({{0,0},{1,0}});
+        }},
+        {"maze_get_first_nodes-dual", []() -> bool {
+            std::cerr << "Expected result: {1,0},EAST,1,'open'; {0,1},SOUTH,1001,'open'} - for expression maze_get_first_nodes(m, {0,0}, {1,1}, EAST)" << std::endl;
+            metanull::charmap::map m = {
+                {'S','.'},
+                {'.','E'},
+            };
+            auto n = metanull::charmap::maze_get_first_nodes(m, {0,0}, {1,1}, metanull::charmap::EAST, metanull::charmap::weighted_turn_score_move, metanull::charmap::is_tile_free);
+            return n.size() == 2 
+                && n[0].start == metanull::charmap::position{0,0} 
+                && n[0].start_direction == metanull::charmap::EAST 
+                && n[0].end == metanull::charmap::position{1,0} 
+                && n[0].end_direction == metanull::charmap::EAST 
+                && n[0].score == 1 
+                && n[0].closed == false
+                && n[0].turns.empty()
+                && n[0].visited == std::vector<metanull::charmap::position>({{0,0},{1,0}})
+                && n[1].start == metanull::charmap::position{0,0} 
+                && n[1].start_direction == metanull::charmap::EAST 
+                && n[1].end == metanull::charmap::position{0,1} 
+                && n[1].end_direction == metanull::charmap::SOUTH
+                && n[1].score == 1001 
+                && n[1].closed == false
+                && n[1].turns == std::vector<metanull::charmap::position>({{0,0}})
+                && n[1].visited == std::vector<metanull::charmap::position>({{0,0},{0,1}});
+        }},
+        {"maze_get_first_nodes-tetra", []() -> bool {
+            std::cerr << "Expected result: {1,1},EAST,1,'open'; {1,2},NORTH,1001,'open'}; ... - for expression maze_get_first_nodes(m, {1,1}, {2,2}, EAST)" << std::endl;
+            metanull::charmap::map m = {
+                {'.','.','.'},
+                {'.','S','.'},
+                {'.','.','E'},
+            };
+            auto n = metanull::charmap::maze_get_first_nodes(m, {1,1}, {2,2}, metanull::charmap::EAST, metanull::charmap::weighted_turn_score_move, metanull::charmap::is_tile_free);
+            
+            std::cerr << n[0] << std::endl;
+            std::cerr << n[1] << std::endl;
+            std::cerr << n[2] << std::endl;
+            std::cerr << n[3] << std::endl;
+            
+            return n.size() == 4
+                && n[0].start == metanull::charmap::position{1,1} 
+                && n[0].start_direction == metanull::charmap::EAST 
+                && n[0].end == metanull::charmap::position{2,1} 
+                && n[0].end_direction == metanull::charmap::EAST 
+                && n[0].score == 1 
+                && n[0].closed == false
+                && n[0].turns.empty()
+                && n[0].visited == std::vector<metanull::charmap::position>({{1,1},{2,1}})
+                && n[1].start == metanull::charmap::position{1,1} 
+                && n[1].start_direction == metanull::charmap::EAST 
+                && n[1].end == metanull::charmap::position{1,0} 
+                && n[1].end_direction == metanull::charmap::NORTH
+                && n[1].score == 1001 
+                && n[1].closed == false
+                && n[1].turns == std::vector<metanull::charmap::position>({{1,1}})
+                && n[1].visited == std::vector<metanull::charmap::position>({{1,1},{1,0}})
+                && n[2].start == metanull::charmap::position{1,1} 
+                && n[2].start_direction == metanull::charmap::EAST 
+                && n[2].end == metanull::charmap::position{0,1} 
+                && n[2].end_direction == metanull::charmap::WEST 
+                && n[2].score == 1001
+                && n[2].closed == false
+                && n[2].turns == std::vector<metanull::charmap::position>({{1,1}})
+                && n[2].visited == std::vector<metanull::charmap::position>({{1,1},{0,1}})
+                && n[3].start == metanull::charmap::position{1,1} 
+                && n[3].start_direction == metanull::charmap::EAST 
+                && n[3].end == metanull::charmap::position{1,2} 
+                && n[3].end_direction == metanull::charmap::SOUTH
+                && n[3].score == 1001 
+                && n[3].closed == false
+                && n[3].turns == std::vector<metanull::charmap::position>({{1,1}})
+                && n[3].visited == std::vector<metanull::charmap::position>({{1,1},{1,2}});
+        }},
+        {"maze_get_next_nodes-dual", []() -> bool {
+            std::cerr << "Expected result: {2,0},EAST,2,'open';{1,1},SOUTH,1002,'open' - for expression maze_get_next_nodes(m, {{1,0},EAST,2}, {3,1})" << std::endl;
+            metanull::charmap::map m = {
+                {'S','.','.','.'},
+                {'#','.','#','E'},
+            };
+            auto n = metanull::charmap::maze_get_first_nodes(m, {0,0}, {3,1}, metanull::charmap::EAST, metanull::charmap::weighted_turn_score_move, metanull::charmap::is_tile_free);
+            auto n2 = metanull::charmap::maze_get_next_nodes(m, n[0], {3,1}, metanull::charmap::weighted_turn_score_move, metanull::charmap::is_tile_free);
+
+            return n2.size() == 2 
+                && n2[0].start == metanull::charmap::position{0,0} 
+                && n2[0].start_direction == metanull::charmap::EAST 
+                && n2[0].end == metanull::charmap::position{2,0} 
+                && n2[0].end_direction == metanull::charmap::EAST
+                && n2[0].score == 2 
+                && n2[0].closed == false
+                && n2[1].start == metanull::charmap::position{0,0} 
+                && n2[1].start_direction == metanull::charmap::EAST 
+                && n2[1].end == metanull::charmap::position{1,1} 
+                && n2[1].end_direction == metanull::charmap::SOUTH
+                && n2[1].score == 1002
+                && n2[1].closed == false;
+        }},
+        {"maze_get_next_nodes-end", []() -> bool {
+            std::cerr << "Expected result: {3,1},SOUTH,1004,'closed' - for expression maze_get_next_nodes(m, {{2,1},EAST,2}, {3,1})" << std::endl;
+            metanull::charmap::map m = {
+                {'S','.','.','.'},
+                {'#','.','#','E'},
+            };
+            auto n = metanull::charmap::maze_get_first_nodes(m, {0,0}, {3,1}, metanull::charmap::EAST, metanull::charmap::weighted_turn_score_move, metanull::charmap::is_tile_free);
+            auto n2 = metanull::charmap::maze_get_next_nodes(m, n[0], {3,1}, metanull::charmap::weighted_turn_score_move, metanull::charmap::is_tile_free);
+            auto n3 = metanull::charmap::maze_get_next_nodes(m, n2[0], {3,1}, metanull::charmap::weighted_turn_score_move, metanull::charmap::is_tile_free);
+            std::cerr << "Node.size: " << n3.size() << std::endl;
+            
+            return n3.size() == 1
+                && n3[0].start == metanull::charmap::position{0,0} 
+                && n3[0].start_direction == metanull::charmap::EAST 
+                && n3[0].end == metanull::charmap::position{3,1} 
+                && n3[0].end_direction == metanull::charmap::SOUTH
+                && n3[0].score == 1004 
+                && n3[0].closed == true;
+        }},
+        {"maze_get_next_nodes-deadend", []() -> bool {
+            std::cerr << "Expected result: [] - for expression maze_get_next_nodes(m, {{1,1},SOUTH,1002}, {3,1})" << std::endl;
+            metanull::charmap::map m = {
+                {'S','.','.','.'},
+                {'#','.','#','E'},
+            };
+            auto n = metanull::charmap::maze_get_first_nodes(m, {0,0}, {3,1}, metanull::charmap::EAST, metanull::charmap::weighted_turn_score_move, metanull::charmap::is_tile_free);
+            auto n2 = metanull::charmap::maze_get_next_nodes(m, n[0], {3,1}, metanull::charmap::weighted_turn_score_move, metanull::charmap::is_tile_free);
+            auto n3 = metanull::charmap::maze_get_next_nodes(m, n2[1], {3,1}, metanull::charmap::weighted_turn_score_move, metanull::charmap::is_tile_free);
+            std::cerr << "Node.size: " << n3.size() << std::endl;
+            
+            return n3.empty();
+        }},
+        {"maze_get_next_nodes-loop", []() -> bool {
+            std::cerr << "Expected result: [] - for expression maze_get_next_nodes(m, {{2,0},EAST,2}, {3,1})" << std::endl;
+            metanull::charmap::map m = {
+                {'S','.','.','.'},
+                {'#','.','#','.'},
+                {'#','.','.','.'},
+            };
+            auto n = metanull::charmap::maze_get_first_nodes(m, {0,0}, {3,1}, metanull::charmap::EAST, metanull::charmap::weighted_turn_score_move, metanull::charmap::is_tile_free);
+            auto n2 = metanull::charmap::maze_get_next_nodes(m, n[0], {3,1}, metanull::charmap::weighted_turn_score_move, metanull::charmap::is_tile_free);
+            auto n3 = metanull::charmap::maze_get_next_nodes(m, n2[1], {3,1}, metanull::charmap::weighted_turn_score_move, metanull::charmap::is_tile_free);
+            
+            return n3.size() == 1
+                && std::find(n3.front().visited.begin(), n3.front().visited.end(), n3.front().end) != n3.front().visited.end();
+        }},
+        {"maze_maze_find_first_best_path-basic", []() -> bool {
+            std::cerr << "Expected result: [] - for expression maze_find_first_best_path(m, {{2,0},EAST,2}, {3,2})" << std::endl;
+            metanull::charmap::map m = {
+                {'S','.','.','.'},
+                {'.','.','#','.'},
+                {'.','.','#','E'},
+            };
+            auto n = metanull::charmap::maze_find_first_best_path(m, {0,0}, {3,2}, metanull::charmap::EAST, metanull::charmap::basic_score_move, metanull::charmap::is_tile_free);
+
+            std::cerr << "Node.size: " << n.size() << std::endl;
+            std::cerr << n.front() << std::endl;
+            
+            return n.size() == 1
+                && n.front().score == 5
+                && n.front().closed == true
+                && n.front().visited.size() == 6
+                && n.front().turns.size() == 1
+                && n.front().visited == std::vector<metanull::charmap::position>({{0,0},{1,0},{2,0},{3,0},{3,1},{3,2}})
+                && n.front().turns == std::vector<metanull::charmap::position>({{3,0}})
+                ;
+        }},
+        {"maze_maze_find_first_best_path-weighted", []() -> bool {
+            std::cerr << "Expected result: [] - for expression maze_find_first_best_path(m, {{2,0},EAST,2}, {3,2})" << std::endl;
+            metanull::charmap::map m = {
+                {'S','.','.','.'},
+                {'.','.','#','.'},
+                {'.','.','#','E'},
+            };
+            auto n = metanull::charmap::maze_find_first_best_path(m, {0,0}, {3,2}, metanull::charmap::EAST, metanull::charmap::weighted_turn_score_move, metanull::charmap::is_tile_free);
+
+            std::cerr << "Node.size: " << n.size() << std::endl;
+            std::cerr << n.front() << std::endl;
+            
+            return n.size() == 1
+                && n.front().score == 1005
+                && n.front().closed == true
+                && n.front().visited.size() == 6
+                && n.front().turns.size() == 1
+                && n.front().visited == std::vector<metanull::charmap::position>({{0,0},{1,0},{2,0},{3,0},{3,1},{3,2}})
+                && n.front().turns == std::vector<metanull::charmap::position>({{3,0}})
+                ;
+        }},
+        {"maze_maze_find_first_best_path-basic-two", []() -> bool {
+            std::cerr << "Expected result: [] - for expression maze_find_first_best_path(m, {{2,0},EAST,2}, {3,2})" << std::endl;
+            metanull::charmap::map m = {
+                {'S','.','.','.'},
+                {'.','#','#','.'},
+                {'.','.','.','E'},
+            };
+            auto n = metanull::charmap::maze_find_first_best_path(m, {0,0}, {3,2}, metanull::charmap::EAST, metanull::charmap::basic_score_move, metanull::charmap::is_tile_free);
+
+            std::cerr << "Node.size: " << n.size() << std::endl;
+            std::cerr << n.front() << std::endl;
+            
+            return n.size() == 1
+                && n.front().score == 5
+                && n.front().closed == true
+                && n.front().visited.size() == 6
+                && n.front().turns.size() == 1
+                && n.front().visited == std::vector<metanull::charmap::position>({{0,0},{1,0},{2,0},{3,0},{3,1},{3,2}})
+                && n.front().turns == std::vector<metanull::charmap::position>({{3,0}})
+                ;
+        }},
+        {"maze_maze_find_all_best_path-basic", []() -> bool {
+            std::cerr << "Expected result: [] - for expression maze_find_all_best_path(m, {{2,0},EAST,2}, {3,2})" << std::endl;
+            metanull::charmap::map m = {
+                {'S','.','.','.'},
+                {'.','.','#','.'},
+                {'.','.','.','E'},
+            };
+            auto n = metanull::charmap::maze_find_all_best_path(m, {0,0}, {3,2}, metanull::charmap::EAST, metanull::charmap::basic_score_move, metanull::charmap::is_tile_free);
+
+            std::cerr << "Node.size: " << n.size() << std::endl;
+            std::cerr << n.front() << std::endl;
+            
+            return n.size() == 4
+                && n.front().score == 5
+                && n.front().closed == true
+                && n.front().visited.size() == 6
+                && n.front().turns.size() == 1
+                && n.front().visited == std::vector<metanull::charmap::position>({{0,0},{1,0},{2,0},{3,0},{3,1},{3,2}})
+                && n.front().turns == std::vector<metanull::charmap::position>({{3,0}})
+                ;
+        }},
+        {"maze_maze_find_all_best_path-weighted", []() -> bool {
+            std::cerr << "Expected result: [] - for expression maze_find_all_best_path(m, {{2,0},EAST,2}, {3,2})" << std::endl;
+            metanull::charmap::map m = {
+                {'S','.','.','.'},
+                {'.','#','#','.'},
+                {'.','.','.','E'},
+            };
+            auto n = metanull::charmap::maze_find_all_best_path(m, {0,0}, {3,2}, metanull::charmap::EAST, metanull::charmap::weighted_turn_score_move, metanull::charmap::is_tile_free);
+
+            std::cerr << "Node.size: " << n.size() << std::endl;
+            std::cerr << n.front() << std::endl;
+            
+            return n.size() == 1
+                && n.front().score == 1005
+                && n.front().closed == true
+                && n.front().visited.size() == 6
+                && n.front().turns.size() == 1
+                && n.front().visited == std::vector<metanull::charmap::position>({{0,0},{1,0},{2,0},{3,0},{3,1},{3,2}})
+                && n.front().turns == std::vector<metanull::charmap::position>({{3,0}})
+                ;
+        }},
+        {"maze_maze_find_all_best_path-basic-four", []() -> bool {
+            std::cerr << "Expected result: [] - for expression maze_find_all_best_path(m, {{2,0},EAST,2}, {3,2})" << std::endl;
+            metanull::charmap::map m = {
+                {'S','.','.','.'},
+                {'.','#','.','.'},
+                {'.','.','.','E'},
+            };
+            auto n = metanull::charmap::maze_find_all_best_path(m, {0,0}, {3,2}, metanull::charmap::EAST, metanull::charmap::basic_score_move, metanull::charmap::is_tile_free);
+            return n.size() == 4 && std::all_of(n.begin(), n.end(), [](const metanull::charmap::maze_node& node) { 
+                    return node.score == 5
+                        && node.closed == true
+                        && node.visited.size() == 6
+                        && node.visited.front() == metanull::charmap::position{0,0}
+                        && node.visited.back() == metanull::charmap::position{3,2};
+                });
+        }},
+        {"maze_maze_find_all_best_path-weighted-two", []() -> bool {
+            std::cerr << "Expected result: [] - for expression maze_find_all_best_path(m, {{2,0},EAST,2}, {3,2})" << std::endl;
+            metanull::charmap::map m = {
+                {'S','.','.','.'},
+                {'.','#','.','#'},
+                {'.','.','.','E'},
+            };
+            auto n = metanull::charmap::maze_find_all_best_path(m, {0,0}, {3,2}, metanull::charmap::EAST, metanull::charmap::weighted_turn_score_move, metanull::charmap::is_tile_free);
+            for(auto x : n) {
+                std::cerr << x << std::endl;
+            }
+            return n.size() == 2 && std::all_of(n.begin(), n.end(), [](const metanull::charmap::maze_node& node) { 
+                    return node.score == 2005
+                        && node.closed == true
+                        && node.visited.size() == 6
+                        && node.visited.front() == metanull::charmap::position{0,0}
+                        && node.visited.back() == metanull::charmap::position{3,2}
+                        && node.turns.size() == 2;
+                });
+        }},
+        
     };
 
     auto it = tests.find(test_name);

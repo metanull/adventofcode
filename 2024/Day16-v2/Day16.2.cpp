@@ -16,15 +16,12 @@
 #include "charmap.h"
 #include "math.h"
 
-#include "maze.h"
-
 // ---------------------------------------------------------
 const char *banner = "AdventOfCode 2024 Day 16!";
 const char *inputFilePath = INPUT_PATH;
 
 int main(int argc, char **argv, char **envp)
 {
-
     std::vector<std::string> args(argv, argv + argc);
     if (args.size() == 1)
     {
@@ -60,7 +57,7 @@ int main(int argc, char **argv, char **envp)
     std::cout << "Start: " << start.first << "," << start.second << std::endl;
     std::cout << "End: " << end.first << "," << end.second << std::endl;
 
-    auto best_nodes = maze_node::find_all_best_path(inputMap, start, end, metanull::charmap::EAST, maze_node::is_tile_free);
+    auto best_nodes = metanull::charmap::maze_find_all_best_path(inputMap, start, end, metanull::charmap::EAST, metanull::charmap::weighted_turn_score_move, metanull::charmap::is_tile_free);
 
     std::set<metanull::charmap::position> unique_positions;
     for (const auto &node : best_nodes)
@@ -72,4 +69,5 @@ int main(int argc, char **argv, char **envp)
 
     std::cout << "Number of solutions: " << best_nodes.size() << std::endl;
     std::cout << "Number of unique positions: " << unique_positions.size() << std::endl;
+    metanull::charmap::maze_print_path(std::cout, inputMap, start, end, best_nodes, metanull::charmap::is_tile_free);
 }

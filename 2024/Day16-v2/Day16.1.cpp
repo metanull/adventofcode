@@ -16,8 +16,6 @@
 #include "charmap.h"
 #include "math.h"
 
-#include "maze.h"
-
 // ---------------------------------------------------------
 const char *banner = "AdventOfCode 2024 Day 16!";
 const char *inputFilePath = INPUT_PATH;
@@ -60,8 +58,9 @@ int main(int argc, char **argv, char **envp)
     std::cout << "Start: " << start.first << "," << start.second << std::endl;
     std::cout << "End: " << end.first << "," << end.second << std::endl;
 
-    for(auto b : maze_node::find_first_best_path(inputMap, start, end, metanull::charmap::EAST, maze_node::is_tile_free)) {
+    for(auto b : metanull::charmap::maze_find_first_best_path(inputMap, start, end, metanull::charmap::EAST, metanull::charmap::weighted_turn_score_move, metanull::charmap::is_tile_free)) {
         std::cout << "Best path: " << b << std::endl;
+        metanull::charmap::maze_print_path(std::cout, inputMap, start, end, b, metanull::charmap::is_tile_free);
     }
     return 0;
 }
