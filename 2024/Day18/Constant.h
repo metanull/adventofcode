@@ -1,16 +1,16 @@
 #ifndef CONSTANT_H
 #define CONSTANT_H
 
-#define UPPERLIMIT  658 
-// #define UPPERLIMIT  480 
+// #define UPPERLIMIT  LONG_MAX
 #define DEBUG       0
-#define NEW_METHOD  1
-
 #define MULTITHREAD 1
 
-#define INPUT_PATH  "../../2024/Input/Day18.txt"
+// #define INPUT_PATH  "./input.txt"
+#define INPUT_PATH  "E:/adventofcode/2024/Input/Day18.txt"
+// #define INPUT_PATH "C:/Users/phave/Documents/Development/adventofcode/2024/Input/Day18.txt"
 
-#define SCORE_TURN  1
-#define SCORE_STEP  1
+#define UPPERLIMIT 248816
+#define SCORE_TURN   1000
+#define SCORE_STEP      1
 
 #endif
