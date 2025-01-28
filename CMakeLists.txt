@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.0)
-set(PROJECT_NAME AdventOfCode-2024)
+set(PROJECT_NAME AdventOfCode-Havelange-Pascal)
 project(${PROJECT_NAME} VERSION 0.1.0 LANGUAGES CXX)
 
 function(set_cxx_17 TARGET_NAME)

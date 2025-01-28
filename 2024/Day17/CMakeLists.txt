@@ -13,7 +13,7 @@ set_cxx_20(${TARGET_NAME})
 set_property(TARGET ${TARGET_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/.")
 
 set(TARGET_NAME ${EXE_PFX}2)
-add_executable(${TARGET_NAME} Day17.2.cpp )
+add_executable(${TARGET_NAME} Day17.2.cpp)
 target_link_libraries(${TARGET_NAME})
 set_cxx_20(${TARGET_NAME})
 set_property(TARGET ${TARGET_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/.")
