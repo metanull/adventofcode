@@ -62,7 +62,7 @@ int main(int argc, char **argv, char **envp)
 //    std::cout << std::endl;
 
     char need[] = { 2, 1, 7, 4, 1, 5, 0, 3 };
-    uint64_t a_val = LONG_MAX;
+    uint64_t a_val = SIZE_MAX;
     char pgm[] = {
             /* 1 */ 2, 4,   /* BST: B = B & 7 */
             /* 2 */ 1, 2,   /* BXL: B = B ^ 2 */
