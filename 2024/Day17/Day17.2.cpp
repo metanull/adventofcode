@@ -74,7 +74,7 @@ int main(int argc, char **argv, char **envp)
             /* 8 */ 3, 0,   /* JNZ: JUMP 0 or EXIT*/
         };
     while(a_val < UINT64_MAX) {
-        if(0 == (a_val % 1000000)) {
+        if(0 == (a_val % 10000000)) {
             std::cout << "\033[7m" << std::setw(20) << std::setfill(' ') << std::right << a_val << std::endl << "\033[0m\033[1F";
         }
         mem m;
@@ -98,7 +98,7 @@ int main(int argc, char **argv, char **envp)
         }
         if(test_result == true) {
             if(m.rptr < sizeof(need)) {
-                std::cout << "Not a solution: " << std::setfill(' ') << std::setw(20) << a_val << " - ";
+                std::cout << "Not a solution: " << a_val << " - ";
                 for(auto ib = 0; ib < sizeof(m.r); ib ++) {
                 // for(auto b : m.r) {
                     if(m.r[ib] == need[ib] && ib < sizeof(need)) {
