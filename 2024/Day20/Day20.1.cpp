@@ -140,9 +140,11 @@ int main(int argc, char **argv, char **envp)
     for (const auto &cheat : cheats) {
         cheat_counts[cheat.first]++;
     }
+    /*
     for (const auto &entry : cheat_counts) {
         std::cout << "Gain: " << entry.first << " has " << entry.second << " occurrences." << std::endl;
     }
+    */
     /*size_t total_gain = 0;
     for (const auto &entry : cheat_counts) {
         total_gain += entry.first * entry.second;
