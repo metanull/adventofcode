@@ -3,6 +3,7 @@
 [OutputType([object[]])]
 param()
 Process {
+    Write-Warning "P: $Script:P A: $Script:A B: $Script:B C: $Script:C"
     while($Script:P -lt $Script:Program.Length) {
         Write-Verbose "P: $Script:P A: $Script:A B: $Script:B C: $Script:C"
         $OpCode = $Script:Program[$Script:P]
@@ -53,7 +54,10 @@ Begin {
         param(
             [Parameter(Mandatory)]
             [string]
-            $Value
+            $Value,
+
+            [switch]
+            $print
         )
         $r = $null;
         switch($Value) {
@@ -81,60 +85,65 @@ Begin {
             [int]
             $Operand
         )
-        Write-Verbose "OpCode: $OpCode, Operand: $Operand"
-        switch($OpCode) {
-            0 { 
-                # ADV 
-                Write-Verbose "ADV $(Operand -Value $Operand)"
-                $Script:A = [math]::Truncate($Script:A / [math]::Pow(2, (Operand -Value $Operand)))
-                $Script:P += 2
-            }
-            1 { 
-                # BXL
-                Write-Verbose "BXL $($Operand)"
-                $Script:B = $Script:B -bxor $Operand
-                $Script:P += 2
-            }
-            2 { 
-                # BST
-                Write-Verbose "BST $(Operand -Value $Operand)"
-                $Script:B = (Operand -Value $Operand) % 8
-                $Script:P += 2
-            }
-            3 { 
-                # JNZ
-                Write-Verbose "JNZ $($Operand)"
-                if($Script:A -ne 0) {
-                    $Script:P = $Operand
-                } else {
+        Begin {
+            
+        }
+        Process {
+            Write-Verbose "OpCode: $OpCode, Operand: $Operand"
+            switch($OpCode) {
+                0 { 
+                    # ADV 
+                    Write-Verbose "ADV $(Operand -Value $Operand)"
+                    $Script:A = [math]::Truncate($Script:A / [math]::Pow(2, (Operand -Value $Operand)))
                     $Script:P += 2
                 }
+                1 { 
+                    # BXL
+                    Write-Verbose "BXL $($Operand)"
+                    $Script:B = $Script:B -bxor $Operand
+                    $Script:P += 2
+                }
+                2 { 
+                    # BST
+                    Write-Verbose "BST $(Operand -Value $Operand)"
+                    $Script:B = (Operand -Value $Operand) % 8
+                    $Script:P += 2
+                }
+                3 { 
+                    # JNZ
+                    Write-Verbose "JNZ $($Operand)"
+                    if($Script:A -ne 0) {
+                        $Script:P = $Operand
+                    } else {
+                        $Script:P += 2
+                    }
+                }
+                4 { 
+                    # BXC
+                    Write-Verbose "BXC N/A"
+                    $Script:B = $Script:B -bxor $Script:C
+                    $Script:P += 2
+                }
+                5 { 
+                    # OUT
+                    Write-Verbose "OUT $(Operand -Value $Operand)"
+                    (Operand -Value $Operand) % 8 | Write-Output
+                    $Script:P += 2
+                }
+                6 { 
+                    # BDV
+                    Write-Verbose "BDV $(Operand -Value $Operand)"
+                    $Script:B = [math]::Truncate($Script:A / [math]::Pow(2, (Operand -Value $Operand)))
+                    $Script:P += 2
+                }
+                7 { 
+                    # CDV
+                    Write-Verbose "CDV $(Operand -Value $Operand)"
+                    $Script:C = [math]::Truncate($Script:A / [math]::Pow(2, (Operand -Value $Operand)))
+                    $Script:P += 2
+                }
+                default { throw "Invalid opcode: $Value" }
             }
-            4 { 
-                # BXC
-                Write-Verbose "BXC N/A"
-                $Script:B = $Script:B -bxor $Script:C
-                $Script:P += 2
-            }
-            5 { 
-                # OUT
-                Write-Verbose "OUT $(Operand -Value $Operand)"
-                (Operand -Value $Operand) % 8 | Write-Output
-                $Script:P += 2
-            }
-            6 { 
-                # BDV
-                Write-Verbose "BDV $(Operand -Value $Operand)"
-                $Script:B = [math]::Truncate($Script:A / [math]::Pow(2, (Operand -Value $Operand)))
-                $Script:P += 2
-            }
-            7 { 
-                # CDV
-                Write-Verbose "CDV $(Operand -Value $Operand)"
-                $Script:C = [math]::Truncate($Script:A / [math]::Pow(2, (Operand -Value $Operand)))
-                $Script:P += 2
-            }
-            default { throw "Invalid opcode: $Value" }
         }
     }
 }
