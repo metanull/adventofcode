@@ -4,6 +4,7 @@
 #include <thread>
 #include <vector>
 #include <atomic>
+#include <sstream>
 
 const char *banner = "AdventOfCode 2024 Day 17!";
 
@@ -15,10 +16,11 @@ size_t pgm(uint64_t a, uint8_t * r, size_t rs) {
     }
     return i;
 }
-uint64_t brute(uint64_t min, uint64_t max, uint8_t * r, size_t rs, size_t n_thread, size_t thread_index, std::atomic<uint64_t> &found_solution) {
+uint64_t brute(uint64_t min, uint64_t max, uint8_t * r, size_t rs, size_t n_thread, size_t thread_index, std::atomic<uint64_t> &found_solution, std::atomic<uint64_t> &counters) {
     size_t i = 0;
     uint64_t a = 0;
     for(auto x = min; x < max; x += n_thread) {
+        counters = x;
         if (found_solution != UINT64_MAX && x > found_solution) {
             return 0;
         }
@@ -43,8 +45,6 @@ uint64_t brute(uint64_t min, uint64_t max, uint8_t * r, size_t rs, size_t n_thre
 
 int main(int argc, char **argv, char **envp)
 {
-    std::atomic<uint64_t> found_solution(UINT64_MAX);
-
     size_t banner_width = 80;
     std::cout << "\033[7;34;1m" << std::endl
               << std::setfill('#') << std::setw(banner_width) << '#' << std::endl
@@ -77,19 +77,43 @@ int main(int argc, char **argv, char **envp)
     uint64_t max = (uint64_t)pow(2,3*(sizeof(r)));
 
     // std::cout << "Number of threads supported by hardware: " << std::max((size_t)1,(size_t)std::thread::hardware_concurrency()) << std::endl;
+    std::atomic<uint64_t> found_solution(UINT64_MAX);
+    std::atomic<uint64_t> counters[4] = {};
     size_t n_threads = 4;
     std::vector<std::thread> threads;
     uint64_t results[4] = {0};
 
     for(size_t i = 0; i < n_threads; i++) {
         threads.emplace_back([&, i, min, max]() {
-            results[i] = brute(min, max, r, sizeof(r), n_threads, i, found_solution);
+            results[i] = brute(min, max, r, sizeof(r), n_threads, i, found_solution, counters[i]);
         });
     }
+
+    std::atomic<bool> done(false);
+    threads.emplace_back([&]() {
+        std::locale frenchBelgium("fr_BE.UTF-8");
+        long long dsec = 60;
+        auto start = std::chrono::steady_clock::now();
+        while (!done) {
+            uint64_t local_counters[4] = {counters[0], counters[1], counters[2], counters[3]};
+            std::this_thread::sleep_for(std::chrono::seconds(dsec));
+            std::stringstream ss;
+            ss.imbue(frenchBelgium);
+            uint64_t total_counters = 0;
+            ss << "\033[1F" << std::setw(6) << std::right << std::setfill(' ') << std::chrono::duration_cast<std::chrono::minutes>(std::chrono::steady_clock::now() - start).count() << " min | ";
+            for (size_t i = 0; i < n_threads; i++) {
+                total_counters += counters[i] - local_counters[i];
+                ss << "Thread " << i << ": " << (counters[i]/ 1000) << "k (" << ((counters[i] - local_counters[i]) / 1000) << "k/min.) | ";
+            }
+            ss << "Performance: " << std::fixed << std::setprecision(2) << ((double)total_counters / 1000) << "k/min.";
+            std::cout << std::left << std::setfill(' ') << std::setw(250) << ss.str() << std::endl;
+        }
+    });
 
     for(auto &t : threads) {
         t.join();
     }
+    done = true;
 
     std::cout << "Brute: " << results[0] << std::endl;
     std::cout << "Brute: " << results[1] << std::endl;
