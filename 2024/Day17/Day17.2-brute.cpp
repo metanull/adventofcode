@@ -8,6 +8,8 @@
 
 const char *banner = "AdventOfCode 2024 Day 17!";
 
+#define N_THREADS 32
+
 size_t pgm(uint64_t a, uint8_t * r, size_t rs) {
     size_t i = 0;
     while(a > 0 && i < rs) {
@@ -79,13 +81,12 @@ int main(int argc, char **argv, char **envp)
     // std::cout << "Number of threads supported by hardware: " << std::max((size_t)1,(size_t)std::thread::hardware_concurrency()) << std::endl;
     std::atomic<uint64_t> found_solution(UINT64_MAX);
     std::atomic<uint64_t> counters[4] = {};
-    size_t n_threads = 4;
     std::vector<std::thread> threads;
-    uint64_t results[4] = {0};
+    uint64_t results[N_THREADS] = {0};
 
-    for(size_t i = 0; i < n_threads; i++) {
+    for(size_t i = 0; i < N_THREADS; i++) {
         threads.emplace_back([&, i, min, max]() {
-            results[i] = brute(min, max, r, sizeof(r), n_threads, i, found_solution, counters[i]);
+            results[i] = brute(min, max, r, sizeof(r), N_THREADS, i, found_solution, counters[i]);
         });
     }
 
@@ -95,18 +96,26 @@ int main(int argc, char **argv, char **envp)
         long long dsec = 60;
         auto start = std::chrono::steady_clock::now();
         while (!done) {
-            uint64_t local_counters[4] = {counters[0], counters[1], counters[2], counters[3]};
+            uint64_t local_counters[N_THREADS] = {0};
+            for(auto _i = 0; _i < N_THREADS; _i ++) {
+                local_counters[_i] = counters[_i];
+            }
             std::this_thread::sleep_for(std::chrono::seconds(dsec));
             std::stringstream ss;
             ss.imbue(frenchBelgium);
             uint64_t total_counters = 0;
-            ss << "\033[1F" << std::setw(6) << std::right << std::setfill(' ') << std::chrono::duration_cast<std::chrono::minutes>(std::chrono::steady_clock::now() - start).count() << " min | ";
-            for (size_t i = 0; i < n_threads; i++) {
+            ss << "\033[1F" << std::setw(6) << std::right << std::setfill(' ') << std::chrono::duration_cast<std::chrono::minutes>(std::chrono::steady_clock::now() - start).count() << " m|";
+            for (size_t i = 0; i < N_THREADS; i++) {
                 total_counters += counters[i] - local_counters[i];
-                ss << "Thread " << i << ": " << (counters[i]/ 1000) << "k (" << ((counters[i] - local_counters[i]) / 1000) << "k/min.) | ";
+                // ss << "[" << i << "]" << std::setprecision(5) << ((double)counters[i]/ 1000000000000) << "T" << "|" << std::fixed << std::setprecision(2) << (double)((counters[i] - local_counters[i]) / 1000000000) << "Gpm" << "|";
             }
-            ss << "Performance: " << std::fixed << std::setprecision(2) << ((double)total_counters / 1000) << "k/min.";
-            std::cout << std::left << std::setfill(' ') << std::setw(250) << ss.str() << std::endl;
+            size_t i = 0;
+            ss << " [" << i << "]" << std::setw(20) << counters[i] << "|" << std::fixed << std::setprecision(3) << (long double)((counters[i] - local_counters[i]) / 1000000000) << " Gpm" << "|";
+            ss << " (...)|";
+            i = N_THREADS - 1;
+            ss << " [" << i << "]" << std::setw(20) << counters[i] << "|" << std::fixed << std::setprecision(3) << (long double)((counters[i] - local_counters[i]) / 1000000000) << " Gpm" << "|";
+            ss << " SPEED:" << std::fixed << std::setprecision(3) << ((double)total_counters / 1000000000) << " G/m";
+            std::cout << std::left << std::setfill(' ') << std::setw(120) << ss.str() << std::endl;
         }
     });
 
