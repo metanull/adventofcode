@@ -104,18 +104,18 @@ int main(int argc, char **argv, char **envp)
             std::stringstream ss;
             ss.imbue(frenchBelgium);
             uint64_t total_counters = 0;
-            ss << "\033[1F" << std::setw(6) << std::right << std::setfill(' ') << std::chrono::duration_cast<std::chrono::minutes>(std::chrono::steady_clock::now() - start).count() << " m|";
+            ss << std::setw(6) << std::right << std::setfill(' ') << std::chrono::duration_cast<std::chrono::minutes>(std::chrono::steady_clock::now() - start).count() << " m|";
             for (size_t i = 0; i < N_THREADS; i++) {
                 total_counters += counters[i] - local_counters[i];
                 // ss << "[" << i << "]" << std::setprecision(5) << ((double)counters[i]/ 1000000000000) << "T" << "|" << std::fixed << std::setprecision(2) << (double)((counters[i] - local_counters[i]) / 1000000000) << "Gpm" << "|";
             }
             size_t i = 0;
-            ss << " [" << i << "]" << std::setw(20) << counters[i] << "|" << std::fixed << std::setprecision(3) << (long double)((counters[i] - local_counters[i]) / 1000000000) << " Gpm" << "|";
+            ss << " [" << i << "]" << std::setw(20) << counters[i] << "|" << std::fixed << std::setw(6) << std::setprecision(3) << ((double)(counters[i] - local_counters[i]) / 1000000000) << " Gpm" << "|";
             ss << " (...)|";
             i = N_THREADS - 1;
-            ss << " [" << i << "]" << std::setw(20) << counters[i] << "|" << std::fixed << std::setprecision(3) << (long double)((counters[i] - local_counters[i]) / 1000000000) << " Gpm" << "|";
+            ss << " [" << i << "]" << std::setw(20) << counters[i] << "|" << std::fixed << std::setw(6) << std::setprecision(3) << ((double)(counters[i] - local_counters[i]) / 1000000000) << " Gpm" << "|";
             ss << " SPEED:" << std::fixed << std::setprecision(3) << ((double)total_counters / 1000000000) << " G/m";
-            std::cout << std::left << std::setfill(' ') << std::setw(120) << ss.str() << std::endl;
+            std::cout << ss.str() << std::endl;
         }
     });
 
