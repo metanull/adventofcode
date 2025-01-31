@@ -116,7 +116,8 @@ int main(int argc, char **argv, char **envp)
     // uint8_t r[] = {2,1,7,4,1,5,0};   // This is a fast test with an answer of 0
     uint8_t r[] = {2,4,1,2,7,5,4,5,1,3,5,5,0,3,3,0};
     
-    uint64_t min = std::max((uint64_t)1, (uint64_t)pow(2,3*(sizeof(r)-1)));
+    // uint64_t min = std::max((uint64_t)1, (uint64_t)pow(2,3*(sizeof(r)-1)));
+    uint64_t min = 4000000000000ULL;
     uint64_t max = (uint64_t)pow(2,3*(sizeof(r)));
     
     // size_t n_workers = std::max((size_t)1, std::thread::hardware_concurrency());
@@ -125,19 +126,20 @@ int main(int argc, char **argv, char **envp)
     std::vector<std::thread> threads;                   // The list of threads.
     std::vector<std::unique_ptr<std::atomic<uint64_t>>> counters;        // List of Atomic variables to store the "current counter" of each worker.
     counters.reserve(n_workers);
-    std::vector<uint64_t> results;                      // List of results of each worker.    
+    std::vector<std::unique_ptr<std::atomic<uint64_t>>> results;                      // List of results of each worker.    
     results.reserve(n_workers);
     for(size_t i = 0; i < n_workers; i++) {
         // Initialize the counter for the worker
         counters.emplace_back(std::make_unique<std::atomic<uint64_t>>(0));
         // Initialize the results for the worker
-        results.push_back(UINT64_MAX);
+        results.emplace_back(std::make_unique<std::atomic<uint64_t>>(UINT64_MAX));
     }
 
     // Start the Worker threads
     for(size_t i = 0; i < n_workers; i++) {
         threads.emplace_back([&, i, min, max]() {
-            results[i] = brute_thread(min, max, r, sizeof(r), n_workers, i, found_solution, *counters[i]);
+            auto res = brute_thread(min, max, r, sizeof(r), n_workers, i, found_solution, *counters[i]);
+            *results[i] = res;
         });
     }
 
@@ -156,12 +158,17 @@ int main(int argc, char **argv, char **envp)
     threads.back().join();
 
     // Print the results
-    for(auto ir = results.begin(); ir != results.end(); ir++) {
-        if(*ir != UINT64_MAX) {
-            std::cout << "Brute forced: " << *ir << std::endl;
-            return 0;
+    for(auto it = 0; it < results.size(); it++) {
+        if(*results[it] != UINT64_MAX && *results[it] != 0) {
+            std::cout << "Thread #" << it << " found: " << *results[it] << " - verification: ";
+            pgm(*results[it], r, sizeof(r));
+            for(auto c : r) {
+                std::cout << (int)c << " ";
+            }
+            std::cout << std::endl;
         }
     }
+
 
     return 1;
 }
@@ -240,13 +247,32 @@ uint64_t brute_thread(uint64_t min, uint64_t max, uint8_t * r, size_t rs, size_t
                 // If the result is different from the expected result, we break the loop; so that we can try with the next value in the seqence.
                 break;
             }
+            // Update the A register
             a = a>>3;
+
+            // Test if we have found one solution
             if(a == 0 && i == rs) {
-                // If we found a solution, return it.
-                if (x < found_solution) {
-                    // If our solution is better than the found solution, we update the found solution.
-                    found_solution = x;
+
+                // DEBUG: Print the bytes of the result for visual verification
+                {
+                    std::lock_guard<std::mutex> lock(cout_mutex);
+                    std::cout << "\033[31;7;1mThread " << std::setw(3) << thread_index 
+                        << " found a solution for " << x
+                        << " (" << i << " characters matched)\033[0m]" << std::endl;
                 }
+
+                // Return the Solution
+                bool exchange_success = false;
+                do {
+                    // If our solution is better than a previously found solution, we update the found solution.
+                    uint64_t expected = found_solution;
+                    uint64_t desired = x;
+                    if(desired < expected) {
+                        exchange_success = found_solution.compare_exchange_strong(expected, desired);   // We use compare_exchange_strong to avoid race conditions.
+                    } else {
+                        exchange_success = true;
+                    }
+                } while(!exchange_success);
                 return x;
             }
         }
@@ -287,8 +313,17 @@ void monitor_thread(uint64_t min, uint64_t max, std::atomic<bool> &done, std::ve
         for (size_t i = 0; i < counters.size(); ++i) {
             prev_counters[i] = *counters[i];
         }
+
         // Sleep for a while
-        std::this_thread::sleep_for(std::chrono::seconds(dsec));
+        // std::this_thread::sleep_for(std::chrono::seconds(dsec));
+        auto sleep_seconds = dsec;
+        for (size_t i = 0; i < sleep_seconds; ++i) {
+            if (done) {
+                break;
+            }
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+        
         // When wakingup, get and display data bout elapsed period
         for (size_t i = 0; i < counters.size(); ++i) {
             next_counters[i] = *counters[i];
