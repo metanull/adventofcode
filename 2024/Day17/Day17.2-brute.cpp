@@ -16,6 +16,8 @@
 const char *banner = "AdventOfCode 2024 Day 17!";
 
 #define N_THREADS 32
+#define NEEDLE 2,4,1,2,7,5,4,5,1,3,5,5,0,3,3,0
+#define START 0ULL
 
 /**
  * @brief The 'Program' from the input I have received for "AdventOfCode 2024 17.1": 
@@ -113,13 +115,30 @@ int main(int argc, char **argv, char **envp)
     // std::cout << "Brute: " << b << std::endl;
     */
 
-    // uint8_t r[] = {2,1,7,4,1,5,0};   // This is a fast test with an answer of 0
-    uint8_t r[] = {2,4,1,2,7,5,4,5,1,3,5,5,0,3,3,0};
-    
+    /*// uint8_t r[] = {2,1,7,4,1,5,0};   // This is a fast test with an answer of 0
     // uint64_t min = std::max((uint64_t)1, (uint64_t)pow(2,3*(sizeof(r)-1)));
-    uint64_t min = 4000000000000ULL;
+    // uint64_t min = 4000000000000ULL;
+    uint8_t r[] = {1,3,1,6,6,3};
+    uint64_t min = 123450ULL;
     uint64_t max = (uint64_t)pow(2,3*(sizeof(r)));
-    
+    */
+
+    #ifndef NEEDLE
+        uint8_t r[] = {2,4,1,2,7,5,4,5,1,3,5,5,0,3,3,0};
+    #else
+        uint8_t r[] = {NEEDLE};
+    #endif
+    #ifndef START
+        uint64_t min = std::max((uint64_t)1, (uint64_t)pow(2,3*(sizeof(r)-1)));
+    #else
+        uint64_t min = START;
+    #endif
+    #ifndef END
+        uint64_t max = (uint64_t)pow(2,3*(sizeof(r)));
+    #else
+        uint64_t max = END;
+    #endif
+        
     // size_t n_workers = std::max((size_t)1, std::thread::hardware_concurrency());
     static const size_t n_workers = N_THREADS;          // The number of workers
     std::atomic<uint64_t> found_solution(UINT64_MAX);   // Atomic variable to store the found solution, and let the workers stop if they are not able to provide a better solution than the one found.
@@ -259,6 +278,23 @@ uint64_t brute_thread(uint64_t min, uint64_t max, uint8_t * r, size_t rs, size_t
                     std::cout << "\033[31;7;1mThread " << std::setw(3) << thread_index 
                         << " found a solution for " << x
                         << " (" << i << " characters matched)\033[0m]" << std::endl;
+
+
+                    // DEBUG
+                    #ifdef DEBUG
+                        std::cerr << "DEBUG" << std::endl;
+                        std::cerr << "R:";
+                        for(auto j = 0; j < rs; j++) {
+                            std::cout << (int)r[j] << ",";
+                        }
+                        std::cerr << " - SIZE: " << rs << std::endl;
+                        a = x + thread_index;
+                        for(auto t = 0; t < rs; t++) {
+                            
+                            std::cerr << "A: " << a << ", R[" << t << "]: " << (int)r[t] << " == " << (int)(((((a & 7) ^2) ^ (a >> ((a & 7) ^2))) ^ 3) & 7) << " ? " << ((int)r[t] == (int)(((((a & 7) ^2) ^ (a >> ((a & 7) ^2))) ^ 3) & 7)) << std::endl;
+                            a = a>>3;
+                        }
+                    #endif
                 }
 
                 // Return the Solution
@@ -273,7 +309,7 @@ uint64_t brute_thread(uint64_t min, uint64_t max, uint8_t * r, size_t rs, size_t
                         exchange_success = true;
                     }
                 } while(!exchange_success);
-                return x;
+                return x + thread_index;
             }
         }
     }
