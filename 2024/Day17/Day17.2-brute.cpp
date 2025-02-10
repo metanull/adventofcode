@@ -15,7 +15,7 @@
 
 const char *banner = "AdventOfCode 2024 Day 17!";
 
-#define N_THREADS 32
+#define N_THREADS 8
 #define NEEDLE 2,4,1,2,7,5,4,5,1,3,5,5,0,3,3,0
 #define START 0ULL
 
@@ -251,9 +251,9 @@ uint64_t brute_thread(uint64_t min, uint64_t max, uint8_t * r, size_t rs, size_t
     uint64_t a = 0;
     for(auto x = min; x < max; x += n_thread) { // We increment by the number of threads to split the work between the threads.
         // Update the counter for the feedback thread
-        counter = x;
+        counter = x + thread_index;
         // Check if another thread has found solution. If our current solution is greater than the found solution, we can stop.
-        if (found_solution != UINT64_MAX && x > found_solution) {
+        if (found_solution != UINT64_MAX && x + thread_index> found_solution) {
             return 0;
         }
         // Run the forward operation, interrupting as soon as the result is different from the expected result.
@@ -276,7 +276,7 @@ uint64_t brute_thread(uint64_t min, uint64_t max, uint8_t * r, size_t rs, size_t
                 {
                     std::lock_guard<std::mutex> lock(cout_mutex);
                     std::cout << "\033[31;7;1mThread " << std::setw(3) << thread_index 
-                        << " found a solution for " << x
+                        << " found a solution: " << (x + thread_index)
                         << " (" << i << " characters matched)\033[0m]" << std::endl;
 
 
@@ -302,7 +302,7 @@ uint64_t brute_thread(uint64_t min, uint64_t max, uint8_t * r, size_t rs, size_t
                 do {
                     // If our solution is better than a previously found solution, we update the found solution.
                     uint64_t expected = found_solution;
-                    uint64_t desired = x;
+                    uint64_t desired = x + thread_index;
                     if(desired < expected) {
                         exchange_success = found_solution.compare_exchange_strong(expected, desired);   // We use compare_exchange_strong to avoid race conditions.
                     } else {
@@ -371,13 +371,13 @@ void monitor_thread(uint64_t min, uint64_t max, std::atomic<bool> &done, std::ve
 
             // Calculate the performances of the thread
             processed_counters[i] = (next_counters[i] - (min + i)) / counters.size();
-            percent_counters[i] = (float)((long double)(processed_counters[i]) / (long double)(max - min)) * 100.0f;
+            percent_counters[i] = (float)((long double)(min + processed_counters[i]) / (long double)(max - min)) * 100.0f;
             rpm_counters[i] = (long double)(processed_counters[i] - prev_processed_counters[i]) / (long double)(dsec * 1000000);
         }
         // Calculate the global performances
         uint64_t total_prev_processed = std::accumulate(prev_processed_counters.begin(), prev_processed_counters.end(), 0ULL);
         uint64_t total_processed = std::accumulate(processed_counters.begin(), processed_counters.end(), 0ULL);
-        float total_percent = (float)((long double)(total_processed) / (long double)(max - min)) * 100.0f;
+        float total_percent = (float)((long double)(min + total_processed) / (long double)(max - min)) * 100.0f;
         long double total_rpm = (long double)(total_processed - total_prev_processed) / (long double)(dsec * 1000000);
         uint64_t least_advanced_counter = *std::min_element(next_counters.begin(), next_counters.end());
         uint64_t most_advanced_counter = *std::max_element(next_counters.begin(), next_counters.end());
@@ -399,7 +399,7 @@ void monitor_thread(uint64_t min, uint64_t max, std::atomic<bool> &done, std::ve
         ss << "[Global"
            << ": \033[35m" << std::setw(6) << total_percent << " %\033[0m"
            << ", \033[36m" << std::setw(6) << total_rpm << " M.rpm\033[0m"
-           << ", Total: " << total_processed
+           << ", Total: " << (min + total_processed)
            << ", Least: " << least_advanced_counter;
         if(found_solution != UINT64_MAX) {
             ss << ", Solution:\033[1;7;32m" << found_solution << "\033[0m";
