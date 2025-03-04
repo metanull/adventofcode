@@ -330,8 +330,9 @@ namespace metanull
          *
          * @param m The map.
          * @param p The position of the tile.
-         * @param end The ending position.
+         * @param end The ending position (the exit point of the maze).
          * @return True if the tile is free, false otherwise.
+         * @throws std::out_of_range
          */
         extern tile_test_function is_tile_free;
         /*
@@ -343,7 +344,6 @@ namespace metanull
          * @param next The next position.
          * @param next_direction The next direction.
          * @return The score of the move. This function returns 1 if the current position is different from the next position, and 0 otherwise.
-         *
          */
         extern score_move_function basic_score_move;
         /**
