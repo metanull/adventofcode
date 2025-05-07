@@ -9,6 +9,7 @@ Process {
             Activity = 'AdventOfCode 2024-19.1' 
         } 
         $total = 0
+        $dictionary = @{}
     } -end { 
         Write-Progress @progress -Completed 
         Write-Host "Total solutions found: $total" -ForegroundColor Magenta
@@ -16,7 +17,7 @@ Process {
         Write-Progress @progress -CurrentOperation $_ -PercentComplete ($percent_current / $percent_total * 100)
         $parts = [System.Collections.ArrayList]@()
         Write-Host $_ -ForegroundColor Green
-        aoc2024_19_2_v2 -needle $_ -layers $layers -parts ([ref]$parts) | Foreach-Object -begin { $counter = 1} -process {
+        aoc2024_19_2_v2 -needle $_ -layers $layers -parts ([ref]$parts) -dictionary ([ref]$dictionary) | Foreach-Object -begin { $counter = 1} -process {
             ("$([char]27)[2K$([char]27)[0G> Total: {0:d12} - Current: {0:d8} - $($_.Solution -join ', ')" -f $total++,$counter++) | Write-Host -NoNewline
         }
         Write-Host ''
@@ -24,18 +25,18 @@ Process {
 
 }
 Begin {
-
     function aoc2024_19_2_v2 {
         param(
             [Parameter(Mandatory)][string]$needle,
             [Parameter(Mandatory)]$layers,
-            [Parameter(Mandatory)][ref]$parts
+            [Parameter(Mandatory)][ref]$parts,
+            [Parameter(Mandatory)][ref]$dictionary
         )
         $max = ($layers.ItemLength | Measure-Object -Maximum | Select-Object -ExpandProperty Maximum )
         $min = ($layers.ItemLength | Measure-Object -Minimum | Select-Object -ExpandProperty Minimum )
         $lengths = $layers.ItemLength | Sort-Object -Unique
         
-        #Write-Debug "Needle: $needle"
+        Write-Warning "---- Needle: $needle"
 
         $all_matches = $lengths | Where-Object {
             # Only consider lengths that are less than or equal to the needle length
@@ -61,7 +62,10 @@ Begin {
             # No matches found, return false
             #$false | Write-Output
         } else {
+            Write-Warning "NEEDLE     : $needle"
+            Write-Warning "ALL MATCHES: $($all_matches -join ',')"
             $all_matches | Foreach-Object {
+
                 # Process each match found
                 $needle_substring = $_
                 $remaining_needle = $needle.Substring(0, $needle.Length - $needle_substring.Length)
@@ -77,10 +81,23 @@ Begin {
                     $cloned_parts.Reverse()
                     [pscustomobject]@{Solution = $cloned_parts} | Write-Output 
 
+                    <## Feed the dictionary
+                    for ($i = 2; $i -le $cloned_parts.Count; $i++) {
+                        $key = ($cloned_parts | Select-Object -Last $i) -join ''
+                        $value = [System.Collections.ArrayList]@($cloned_parts | Select-Object -Last ($i))
+                        if (-not $dictionary.Value.ContainsKey($key)) {
+                            $dictionary.Value[$key] = [System.Collections.ArrayList]@()
+                        }
+                        if (-not $dictionary.Value[$key].Contains($value)) {
+                            $dictionary.Value[$key].Add($value)
+                            Write-Warning "Key: $key, Value: $($value -join ',')"
+                        }
+                    }#>
+
                     # $true | Write-Output
                 } else {
                     # Process the remaining needle recursively
-                    aoc2024_19_2_v2 -needle $remaining_needle -layers $layers -parts $parts | Write-Output
+                    aoc2024_19_2_v2 -needle $remaining_needle -layers $layers -parts $parts -dictionary $dictionary | Write-Output
                 }
 
                 # Remove the value from the list
