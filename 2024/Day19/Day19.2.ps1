@@ -1,4 +1,6 @@
-﻿Process {
+﻿[CmdletBinding()]
+param()
+Process {
     
     # Process all the Input
     $Result = $needles | ForEach-Object -begin { 
@@ -11,7 +13,7 @@
     } -end { 
         Write-Progress @progress -Completed 
     } -process {
-        Write-Warning "------ $_"
+        Write-Verbose "------ $_"
         Write-Progress @progress -CurrentOperation $_ -PercentComplete ($percent_current / $percent_total * 100)
         $needle = $_
         $ret = [pscustomobject]@{
@@ -19,13 +21,19 @@
             Needle = $needle 
             Status = $null
             Buf = [System.Collections.ArrayList]@()
+            All = [System.Collections.ArrayList]@()
         }
-        $ret.Status = (aoc2024_19_2 -needle $needle -layers $layers -buf ([ref]$ret.Buf))
+        $ret.Status = (aoc2024_19_2 -needle $needle -layers $layers -buf ([ref]$ret.Buf) -all ([ref]$ret.All))
         $ret | Write-Output
     }
     
-    # Display the figures:
-    $Result # | Group-Object Status
+    # Count the solutions per needle; and calculate there Sum
+    $Result | Foreach-Object {
+        $_ | Select-Object N,Needle | Add-Member -PassThru -MemberType NoteProperty -Name Solutions -Value $($_.All.Count)
+    } | Tee-Object -Variable CountResult
+    $CountResult | Measure-Object -Property Solutions -Sum | Select-Object -ExpandProperty Sum | ForEach-Object {
+        "Total solutions: $_"
+    }
 
 }
 Begin {
@@ -34,7 +42,8 @@ Begin {
             $needle,
             $layers,
             $level = $null,
-            [ref] $buf
+            [ref] $buf,
+            [ref] $all
         )
         # compute some valuable values 
         $max = ($layers.ItemLength | Measure-Object -Maximum | Select-Object -ExpandProperty Maximum )
@@ -50,7 +59,8 @@ Begin {
         }
         # not enough chars, reduce $level
         if ($needle.Length -lt ($level)) {
-            return (aoc2024_19_2 -needle $needle -layers $layers -level $needle.Length -buf $buf)
+            Write-Warning "Needle too short: $needle ($($needle.Length)) < ($($level))"
+            return (aoc2024_19_2 -needle $needle -layers $layers -level $needle.Length -buf $buf -all $all)
         }
 
         # Find substring in available patterns
@@ -66,40 +76,59 @@ Begin {
             $bufClone = $buf.Value.Clone()
             $buf.Value.Add($ss_match)
 
-            if ($ss_match.Length -eq $needle.Length) {  # the whole input was processeed, done for good
-                "SOLUTION: $($buf.Value -join ', ')" | Write-Warning
-                return $true
-            }
-            # there is more to process, move next
-            if (aoc2024_19_2 -needle $needle.Substring(0, $needle.Length - $level) -layers $layers -buf $buf) {
+            # If the whole input was processeed...
+            if ($ss_match.Length -eq $needle.Length) {
+                # we have a solution -> done for good
+                $Solution = $buf.Value.Clone()
+                $Solution.Reverse()
 
+                #Avoid infinite loop, by testing if $Solution is already in $all
+                if ($all.Value | Where-Object { Compare-Object -ReferenceObject ($_ -join ',') -DifferenceObject ($Solution -join ',') -IncludeEqual -ExcludeDifferent }) {
+                    Write-Warning "Already found: $($Solution -join ', ')"
+                    return $false
+                }
+                "SOLUTION:      $($Solution -join ', ')" | Write-Warning
+                $all.Value.Add($Solution)
                 # Find other positive alternatives, using smaller chunks
-                for($altLevel = $level - 1; $altLevel -gt 0; $altLevel --) {
+                for($altLevel = $level - 1; $altLevel -ge $min; $altLevel --) {
                     $altbuf = $bufClone.Clone()
-                    $altres = aoc2024_19_2 -needle $needle -layers $layers -buf ([ref]$altbuf) -level $altLevel
+                    $altres = aoc2024_19_2 -needle $needle -layers $layers -buf ([ref]$altbuf) -level $altLevel -all $all
                 }
                 # /Find ---
 
-                return $true    # Analysis of the remaining string = success, done for good
+                return $true
             }
-            # analysis of remaining string failed
-            # let it try something else...
+            # Else, if there is more to process, recurse
+            if (aoc2024_19_2 -needle $needle.Substring(0, $needle.Length - $level) -layers $layers -buf $buf -all $all) {
+                # Recursion resulted in a solution -> done for good
 
-            # Remove items form the buffer, as they are not relevant anymore
+                # Find other positive alternatives, using smaller chunks
+                for($altLevel = $level - 1; $altLevel -ge $min; $altLevel --) {
+                    $altbuf = $bufClone.Clone()
+                    $altres = aoc2024_19_2 -needle $needle -layers $layers -buf ([ref]$altbuf) -level $altLevel -all $all
+                }
+                # /Find ---
+
+                return $true    
+            }
+            # Else, if recursion couldn't find a solution, we have to try something else
+
+            # Remove items form the buffer, as they are not relevant anymore, and continue...
             if($buf.Value.Count -gt $bufLen) {
                 $buf.Value.RemoveRange($bufLen, $buf.Value.Count - $bufLen )
             }
         }
-        # no match, or analysis of remaining failed, try something else
-        return (aoc2024_19_2 -needle $needle -layers $layers -level ($level - 1) -buf $buf)
+        
+        # No match, or recursion was not conclusive, look for another option by recursing using a smaller chunk
+        return (aoc2024_19_2 -needle $needle -layers $layers -level ($level - 1) -buf $buf -all $all)
     }
     
-    # COPY PASTE YOUR INPUT's FIRST LINE HERE:
-    $patterns = @"
+    if($true) {
+        # TEST DATA
+        $patterns = @"
 r, wr, b, g, bwu, rb, gb, br
 "@
-    # COPY PASTE YOUR INPUT HERE:
-    $needles = @"
+        $needles = @"
 brwrr
 bggr
 gbbr
@@ -109,6 +138,15 @@ bwurrg
 brgr
 bbrgwb
 "@
+    } else {
+        # REAL DATA
+        $patterns = @"
+# COPY PASTE YOUR INPUT's FIRST LINE HERE:
+"@
+        $needles = @"
+# COPY PASTE YOUR INPUT HERE:
+"@
+    }
 
     $patterns = [System.Collections.ArrayList]($patterns -split ', ' | where-object { -not [string]::IsNullOrEmpty($_) } | sort-object { $_.Length })
     $needles = [System.Collections.ArrayList]($needles -split "`r?`n" | where-object { -not [string]::IsNullOrEmpty($_) })
