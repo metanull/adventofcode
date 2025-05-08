@@ -37,13 +37,18 @@ Begin {
             #Write-Host -ForegroundColor Cyan $Needle.PadLeft(30,' ')
 
             if($Dictionary.Value.Keys -contains $Needle) {
-                Write-Host -ForegroundColor Green -NoNewline 'DICTIONARY:'.PadRight(16,' ')
-                Write-Host -ForegroundColor Green $Needle.PadLeft(30,' ')
+                Write-Host -ForegroundColor Cyan -NoNewline 'DICTIONARY:'.PadRight(16,' ')
+                Write-Host -ForegroundColor Cyan -NoNewLine $Needle.PadLeft(30,' ')
+                Write-Host -NoNewLine '; '
+                $Dictionary.Value[$Needle].Parts | Foreach-Object {
+                    "$($_ -join ', '); "
+                } | Write-Host -ForegroundColor Yellow
+
                 return $Dictionary.Value[$Needle]
             }
             if($Patterns.Value.Contains($Needle)) {
-                Write-Host -ForegroundColor Green -NoNewline 'PATTERNS  :'.PadRight(16,' ')
-                Write-Host -ForegroundColor Green $Needle.PadLeft(30,' ')
+                Write-Host -ForegroundColor Magenta -NoNewline 'PATTERNS  :'.PadRight(16,' ')
+                Write-Host -ForegroundColor Magenta $Needle.PadLeft(30,' ')
                 $Dictionary.Value += @{
                     $Needle = [pscustomobject]@{
                         Pattern = $Needle
@@ -99,6 +104,8 @@ Begin {
                             $Items.AddRange($CurrentRight) | Out-Null
 
                             Write-Host -ForegroundColor Green -NoNewline 'NEW       :'.PadRight(16,' ')
+                            Write-Host -ForegroundColor Magenta "$Left$Right"
+                            Write-Host -ForegroundColor Green -NoNewline '          :'.PadRight(16,' ')
                             Write-Host -ForegroundColor Magenta -NoNewline $Left.PadLeft(30 - $Right.Length,' ')
                             Write-Host -ForegroundColor Cyan -NoNewline $Right
                             Write-Host -NoNewline ' - '
