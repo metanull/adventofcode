@@ -37,17 +37,22 @@ Begin {
             #Write-Host -ForegroundColor Cyan $Needle.PadLeft(30,' ')
 
             if($Dictionary.Value.Keys -contains $Needle) {
-                #Write-Host -ForegroundColor Green -NoNewline 'DICTIONARY:'.PadRight(16,' ')
-                #Write-Host -ForegroundColor Green $Needle.PadLeft(30,' ')
+                Write-Host -ForegroundColor Green -NoNewline 'DICTIONARY:'.PadRight(16,' ')
+                Write-Host -ForegroundColor Green $Needle.PadLeft(30,' ')
                 return $Dictionary.Value[$Needle]
             }
             if($Patterns.Value.Contains($Needle)) {
-                #Write-Host -ForegroundColor Green -NoNewline 'PATTERNS  :'.PadRight(16,' ')
-                #Write-Host -ForegroundColor Green $Needle.PadLeft(30,' ')
-                $Dictionary.Value[$Needle] = [pscustomobject]@{
-                    Pattern = $Needle
-                    Items = @($Needle)
+                Write-Host -ForegroundColor Green -NoNewline 'PATTERNS  :'.PadRight(16,' ')
+                Write-Host -ForegroundColor Green $Needle.PadLeft(30,' ')
+                $Dictionary.Value += @{
+                    $Needle = [pscustomobject]@{
+                        Pattern = $Needle
+                        Parts = [System.Collections.ArrayList]::new()
+                    }
                 }
+                $Items = [System.Collections.ArrayList]::new()
+                $Items.Add($Needle) | Out-Null
+                $Dictionary.Value[$Needle].Parts.Add($Items) | Out-Null
                 return $Dictionary.Value[$Needle]
             }
             if($NoRecurse.IsPresent -and $NoRecurse) {
@@ -68,33 +73,48 @@ Begin {
                     return
                 }
 
-                    $LeftSolution = aoc2024_19_2_v3_recurse_find_solutions -Needle $Left -Patterns $Patterns -Dictionary $Dictionary -NoRecurse
-                    $RightSolution = aoc2024_19_2_v3_recurse_find_solutions -Needle $Right -Patterns $Patterns -Dictionary $Dictionary
-                    if($LeftSolution -and $RightSolution) {
-                        Write-Host -ForegroundColor Green -NoNewline 'NEW       :'.PadRight(16,' ')
-                        Write-Host -ForegroundColor Magenta -NoNewline $Left.PadLeft(30 - $Right.Length,' ')
-                        Write-Host -ForegroundColor Cyan -NoNewline $Right
-                        Write-Host -ForegroundColor Yellow " [$($LeftSolution.Items.Count + $RightSolution.Items.Count)] [$($LeftSolution.Items)]+[$($RightSolution.Items)]"
-
-                        $Item = [System.Collections.ArrayList]::new()
-                        $LeftSolution.Items | Foreach-Object {
-                            $Item.Add($_) | Out-Null
-                        }
-                        $Items = [System.Collections.ArrayList]::new()
-                        $RightSolution.Items | Foreach-Object {
-                            $ThisItem = $Item.Clone()
-                            $_ | Foreach-Object {
-                                $ThisItem.Add($_) | Out-Null
+                $LeftSolution = aoc2024_19_2_v3_recurse_find_solutions -Needle $Left -Patterns $Patterns -Dictionary $Dictionary -NoRecurse
+                $RightSolution = aoc2024_19_2_v3_recurse_find_solutions -Needle $Right -Patterns $Patterns -Dictionary $Dictionary
+                if($LeftSolution -and $RightSolution) {
+                    if($Dictionary.Value.Keys -notcontains $Needle) {
+                        $Dictionary.Value += @{
+                            $Needle = [pscustomobject]@{
+                                Pattern = $Needle
+                                Parts = [System.Collections.ArrayList]::new()
                             }
-                            $Items.Add($ThisItem) | Out-Null
                         }
-                        $Dictionary.Value[$Needle] = [pscustomobject]@{
-                            Pattern = $Needle
-                            Items = $Items
-                        }
-                        return $Dictionary.Value[$Needle]
                     }
-             
+                    <#
+                    $Items = [System.Collections.ArrayList]::new()
+                    $Items.AddRange($LeftSolution.Parts) | Out-Null
+                    $Items.AddRange($RightSolution.Parts) | Out-Null
+                    $Dictionary.Value[$Needle].Parts.Add($Items) | Out-Null
+                    #>
+                    $LeftSolution.Parts |% {
+                        $CurrentLeft = $_
+                        $RightSolution.Parts |% {
+                            $CurrentRight = $_
+                            $Items = [System.Collections.ArrayList]::new()
+                            $Items.AddRange($CurrentLeft) | Out-Null
+                            $Items.AddRange($CurrentRight) | Out-Null
+
+                            Write-Host -ForegroundColor Green -NoNewline 'NEW       :'.PadRight(16,' ')
+                            Write-Host -ForegroundColor Magenta -NoNewline $Left.PadLeft(30 - $Right.Length,' ')
+                            Write-Host -ForegroundColor Cyan -NoNewline $Right
+                            Write-Host -NoNewline ' - '
+                            Write-Host -ForegroundColor Magenta -NoNewline (($Items | Select-Object -First $CurrentLeft.Count)  -join '; ')
+                            Write-Host -NoNewline ' ; '
+                            Write-Host -ForegroundColor Cyan (($Items | Select-Object -Last $CurrentRight.Count)  -join '; ')
+
+                            $Dictionary.Value[$Needle].Parts.Add($Items) | Out-Null
+                        }
+                    }
+
+                }
+            }
+            # If the loop produced some outputs, return them
+            if($Dictionary.Value.Keys -contains $Needle) {
+                return $Dictionary.Value[$Needle]
             }
         }
     }
@@ -136,9 +156,7 @@ Process {
 
         Write-Host -ForegroundColor Yellow -NoNewline 'INPUT:'.PadRight(16,' ')
         Write-Host -ForegroundColor Green "$_"
-        $Solutions = aoc2024_19_2_v3_recurse_find_solutions -Needle $_ -Patterns ([ref]$Patterns) -Dictionary ([ref]$Dictionary)
-        Write-Warning "SOLUTIONS: $($Solutions.Count)"
-        $Solutions | Write-Output
+        aoc2024_19_2_v3_recurse_find_solutions -Needle $_ -Patterns ([ref]$Patterns) -Dictionary ([ref]$Dictionary)
 
     } -Begin { 
         $Progress.Reset($Needles.Count)
