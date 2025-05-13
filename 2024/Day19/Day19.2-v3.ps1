@@ -126,6 +126,142 @@ Begin {
         }
     }
 
+    function New-Dictionary {
+        [CmdletBinding()]
+        param()
+        Get-Variable -Name Dictionary -Scope global -ErrorAction SilentlyContinue |% { $_ |  Remove-Variable -Scope global }
+        New-Variable -Name Dictionary -Scope global -Value (@{})
+    }
+    function Test-Dictionary {
+        [CmdletBinding()]
+        param()
+        try {
+            Get-Variable -Name Dictionary -Scope global -ErrorAction Stop
+            return $true
+        } catch {
+            return $false
+        }
+    }
+    function Get-DictionaryIterator {
+        [CmdletBinding()]
+        param()
+        if(-not (Test-Dictionary)) {
+            return $null
+        }
+        return $Global:Dictionary.GetEnumerator()
+    }
+    function Set-DictionaryItem {
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory, Position = 0)]
+            [string]$Key,
+            [Parameter(Mandatory, Position = 1, ParameterSetName='Single')]
+            [string]$Item,
+            [Parameter(Mandatory, Position = 1, ParameterSetName='Multiple')]
+            [System.Collections.ICollection]$List,
+            [switch] $Append
+        )
+        if(-not (Test-Dictionary)) {
+            New-Dictionary
+        }
+        if(((Test-DictionaryItem -Key $Key) -and (-not ($Append.IsPresent -and $Append)))) {
+            "Key $Key is already present in the dictionary" | Write-Error
+        }
+
+        $Values = [System.Collections.ArrayList]::new()
+        if($PSCmdlet.ParameterSetName -eq 'Single') {
+            $Values.Add($Item) | Out-Null
+        } else {
+            $Values.AddRange($List) | Out-Null
+        }
+
+        if(-not (Test-DictionaryItem -Key $Key)) {
+            $Global:Dictionary += @{
+                ($Key) = [PSCustomObject]@{
+                    Pattern = $Key
+                    Parts = [System.Collections.ArrayList]::new()
+                }
+            }
+        }
+        if(Test-DictionaryItem -Key $Key -ChildValue $Values) {
+            "Value $($Values -join ':') is already present in the Key $Key of the dictionary" | Write-Error
+        } else {
+            $Global:Dictionary[$Key].Parts.Add($Values) | Out-Null
+        }
+    }
+    function Test-DictionaryItem {
+        [CmdletBinding(DefaultParameterSetName = 'Parent')]
+        param(
+            [Parameter(Mandatory, Position = 0)]
+            [string]$Key,
+            [Parameter(ParameterSetName = 'Child', Mandatory, Position = 1)]
+            [System.Collections.ICollection]$ChildValue
+        )
+        if(-not (Test-Dictionary)) {
+            return $false
+        }
+        # Test if the key exists
+        if($PSCmdlet.ParameterSetName -ne 'Child') {
+            return ($Global:Dictionary.Keys -contains $Key)
+        }
+        # Test if the element exists under that Key
+        if($Global:Dictionary.Keys -contains $Key) {
+            if($Global:Dictionary[$Key].Parts | Where-Object {($_ -join  ':') -eq ($ChildValue -join ':')}) {
+                return $true
+            }
+        }
+        return $false
+    }
+    function Get-DictionaryItem {
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory, Position = 0)]
+            [string]$Key
+        )
+        if(-not (Test-DictionaryItem -Key $Key)) {
+            return $null
+        }
+        return ($Global:Dictionary[$Key].Parts)
+    }
+    function Format-DictionaryItem {
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
+            [PSCustomObject]$Item
+        )
+        Begin {
+            $ANSI = "$([char]27)"
+            $Red = "$ANSI[31;1m"
+            $Green = "$ANSI[32;1m"
+            $Yellow = "$ANSI[33;1m"
+            $Blue = "$ANSI[34;1m"
+            $Magenta = "$ANSI[35;1m"
+            $Cyan = "$ANSI[36;1m"
+            $White = "$ANSI[37;1m"
+            $None = "$ANSI[0m"
+        }
+        Process {
+            if(-not ($_|Get-Member -Name Pattern)) {
+                "Item is not of the expected type" | Write-Error
+            }
+            if(-not ($_|Get-Member -Name Parts)) {
+                "Item is not of the expected type" | Write-Error
+            }
+            $stringBuilder = New-Object -TypeName System.Text.StringBuilder
+            $stringBuilder.AppendLine("Key:   '$Cyan$($_.Pattern)$None'") | Out-Null
+            $stringBuilder.AppendLine("Items: $Yellow$($_.Parts.Count)$None") | Out-Null
+            $_.Parts | Foreach-Object -Begin {$i = 0} -Process {
+                
+                $stringBuilder.AppendLine(("- $Blue{0}$None) Items: $Yellow$($_.Count)$None" -f (++$i).ToString().PadLeft(3,' '))) | Out-Null
+                $_ | ForEach-Object -Begin {$j = 0} -Process {
+                    $stringBuilder.AppendLine(("  - $Blue{0}$None.$White{1}$None) '$Magenta$($_)$None'" -f ($i),(++$j).ToString().PadRight(3,' '))) | Out-Null
+                }
+            }
+            return $stringBuilder.ToString()
+        }
+    }
+    
+
     # Load input data
     $DataFile = Import-PowerShellDataFile -Path "$PSScriptRoot\Day19.test.psd1"
     # $Patterns = [System.Collections.ArrayList]($DataFile.patterns -split ', ' | where-object { -not [string]::IsNullOrEmpty($_) })
