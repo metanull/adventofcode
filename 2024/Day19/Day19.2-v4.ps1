@@ -43,18 +43,14 @@ Begin {
             if(Test-DictionaryItem -Key $Needle) {
                 # Print
                 Write-Host -ForegroundColor Cyan -NoNewline 'DICTIONARY:'.PadRight(16,' ')
-                Write-Host -ForegroundColor Cyan -NoNewLine $Needle.PadLeft(30,' ')
-                Write-Host -NoNewLine '; '
+                Write-Host -ForegroundColor Cyan $Needle.PadLeft(30,' ')
 
                 # Get the item from the dictionary
                 $Item = $null
                 Get-DictionaryItem -Key $Needle -RefItem ([ref]$Item)
                 
                 # Print
-                $Item | Foreach-Object {
-                    "$($_ -join ', '); "
-                } | Write-Host -NoNewLine -ForegroundColor Yellow
-                Write-Host ''
+                $Item | Format-DictionaryItem | Write-Host
 
                 # Return the item
                 return $Item
@@ -76,10 +72,7 @@ Begin {
                 Get-DictionaryItem -Key $Needle -RefItem ([ref]$Item)
                 
                 # Print
-                $Item | Foreach-Object {
-                    "$($_ -join ', '); "
-                } | Write-Host -NoNewLine -ForegroundColor Yellow
-                Write-Host ''
+                $Item | Format-DictionaryItem | Write-Host
 
                 # Return the item
                 return $Item
