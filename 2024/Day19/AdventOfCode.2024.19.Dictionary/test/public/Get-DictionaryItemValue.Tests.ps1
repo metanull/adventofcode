@@ -1,4 +1,4 @@
-Describe "Testing public module function Get-DictionaryItem" -Tag "UnitTest" {
+Describe "Testing public module function Get-DictionaryItemValue" -Tag "UnitTest" {
     BeforeAll {
         $abc_Items = [System.Collections.ArrayList]::new()
         $abc_Items.Add([System.Collections.ArrayList]::new(@('abc')))
@@ -41,27 +41,32 @@ Describe "Testing public module function Get-DictionaryItem" -Tag "UnitTest" {
         }
 
         It "Should not throw on not found" {
-            {Invoke-ModuleFunctionStub -Key xyz } | Should -Not -Throw
+            $Item = $null
+            {Invoke-ModuleFunctionStub -RefItem ([ref]$Item) -Key xyz } | Should -Not -Throw
         }
 
         It "Should return null on not found" {
-            $Item = Invoke-ModuleFunctionStub -Key xyz
+            $Item = $null
+            $Result = Invoke-ModuleFunctionStub -RefItem ([ref]$Item) -Key xyz
             $Item | Should -BeNullOrEmpty
+            $Result | Should -BeNullOrEmpty
         }
 
-        It "Should return the Item on found" {
-            $Item = Invoke-ModuleFunctionStub -Key abc
+        It "Should return the values on found" {
+            $Item = $null
+            $Result = Invoke-ModuleFunctionStub -RefItem ([ref]$Item) -Key abc
             
             # Test the returned arraylist object
             $Item | Should -Not -BeNullOrEmpty
-            Should -ActualValue $Item -BeOfType [pscustomobject]
-            $Item.Pattern | Should -Be 'abc'
-            Should -ActualValue $Item.Parts -BeOfType [System.Collections.ArrayList]
-            $Item.Parts.Count | Should -Be 4
-            $Item.Parts[0].Count | Should -Be 1
-            $Item.Parts[1].Count | Should -Be 2
-            $Item.Parts[2].Count | Should -Be 2
-            $Item.Parts[3].Count | Should -Be 3
+            Should -ActualValue $Item -BeOfType [System.Collections.ArrayList]
+            $Item.Count | Should -Be 4
+            $Item[0].Count | Should -Be 1
+            $Item[1].Count | Should -Be 2
+            $Item[2].Count | Should -Be 2
+            $Item[3].Count | Should -Be 3
+
+            # Test the returned flatten array
+            $Result.Count | Should -Be 8
         }
     }
 }

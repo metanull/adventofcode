@@ -2,7 +2,7 @@
 [CmdletBinding()]
 param()
 Begin {
-    Import-Module .\AdventOfCode.2024.19.Dictionary\build\AdventOfCode.2024.19.Dictionary
+    Import-Module .\AdventOfCode.2024.19.Dictionary\build\AdventOfCode.2024.19.Dictionary -MinimumVersion 1.2.3.0 -Force
     Reset-Dictionary
     
     function aoc2024_19_2_v3_preprocess_patterns {
@@ -33,52 +33,61 @@ Begin {
         param(
             [Parameter(Mandatory)][string]$Needle,
             [Parameter(Mandatory)][ref]$Patterns,
-            [Parameter(Mandatory)][ref]$Dictionary,
             [switch]$NoRecurse
         )
         Process {
-            #Write-Host -ForegroundColor Yellow -NoNewline 'INPUT:     '.PadRight(16,' ')
-            #Write-Host -ForegroundColor Cyan $Needle.PadLeft(30,' ')
+            # Write-Warning "Needle: $Needle"
 
+            # If the item was found in the dictionary, return it as-is
             if(Test-DictionaryItem -Key $Needle) {
-                # Print
-                Write-Host -ForegroundColor Cyan -NoNewline 'DICTIONARY:'.PadRight(16,' ')
-                Write-Host -ForegroundColor Cyan $Needle.PadLeft(30,' ')
+                ## Print
+                #Write-Host -ForegroundColor Cyan -NoNewline 'DICTIONARY:'.PadRight(16,' ')
+                #Write-Host -ForegroundColor Cyan $Needle.PadLeft(30,' ')
 
                 # Get the item from the dictionary
-                $Item = $null
-                Get-DictionaryItem -Key $Needle -RefItem ([ref]$Item)
+                $Item = Get-DictionaryItem -Key $Needle
                 
-                # Print
-                $Item | Format-DictionaryItem | Write-Host
+                ## Print
+                #$Item | Format-DictionaryItem | Write-Host -ForegroundColor DarkGray
 
                 # Return the item
                 return $Item
             }
 
+            # Else, if the item was found in the patterns, add it to the dictionary
+            # ... and keep on processing (no return yet), as even if the item was found in the patterns, there might exists other ways to compose it
             if($Patterns.Value.Contains($Needle)) {
-                # Print
-                Write-Host -ForegroundColor Magenta -NoNewline 'PATTERNS  :'.PadRight(16,' ')
-                Write-Host -ForegroundColor Magenta $Needle.PadLeft(30,' ')
+                ## Print
+                #Write-Host -ForegroundColor Magenta -NoNewline 'PATTERNS  :'.PadRight(16,' ')
+                #Write-Host -ForegroundColor Magenta $Needle.PadLeft(30,' ')
 
                 # Add the item to the dictionary
                 New-DictionaryItem -Key $Needle
                 $Items = [System.Collections.ArrayList]::new()
                 $Items.Add($Needle) | Out-Null
-                New-DictionaryItemValue -Key $Needle -ValueItem $Items
+
+                if(-not (Test-DictionaryItemValue -Key $Needle -ValueItem $Items)) {
+                    # Add the item values to the dictionary (if it does not exist)
+                    New-DictionaryItemValue -Key $Needle -ValueItem $Items
+                }
 
                 # Get the item from the dictionary
-                $Item = $null
-                Get-DictionaryItem -Key $Needle -RefItem ([ref]$Item)
-                
-                # Print
-                $Item | Format-DictionaryItem | Write-Host
+                $Item = Get-DictionaryItem -Key $Needle
 
-                # Return the item
-                return $Item
+                ## Print
+                #$Item | Format-DictionaryItem | Write-Host -ForegroundColor DarkGray
+
+                # DO NOT RETURN the item. Keep on processing to look for other ways to compose the item
+                # <# return $Item #>
+                # IN ADDITION, DISABLE $NoRecurse. It allows splitting further the "pattern" into smaller parts
+                $NoRecurse = $false
             }
 
             if($NoRecurse.IsPresent -and $NoRecurse) {
+                ## Print
+                #Write-Host -ForegroundColor Red -NoNewline 'INVALID   :'.PadRight(16,' ')
+                #Write-Host -ForegroundColor Red $Needle.PadLeft(30,' ')
+
                 # Finding child solutions by recursion is not wanted
                 #Write-Host -ForegroundColor Gray -NoNewline '          :'.PadRight(16,' ')
                 #Write-Host -ForegroundColor Gray 'Recursion not wanted!'.PadLeft(30,' ')
@@ -92,60 +101,64 @@ Begin {
                 $Right = $Needle.Substring($i)
 
                 if([string]::IsNullOrEmpty($Left) -or [string]::IsNullOrEmpty($Right)) {
-                    Write-Warning "Not found: $Needle for length $i"
+                    Write-Verbose "Not found: $Needle for length $i"
                     return
                 }
 
-                $LeftSolution = aoc2024_19_2_v3_recurse_find_solutions -Needle $Left -Patterns $Patterns -Dictionary $Dictionary -NoRecurse
-                $RightSolution = aoc2024_19_2_v3_recurse_find_solutions -Needle $Right -Patterns $Patterns -Dictionary $Dictionary
+                $LeftSolution = aoc2024_19_2_v3_recurse_find_solutions -Needle $Left -Patterns $Patterns -NoRecurse
+                $RightSolution = aoc2024_19_2_v3_recurse_find_solutions -Needle $Right -Patterns $Patterns 
                 if($LeftSolution -and $RightSolution) {
-                    if($Dictionary.Value.Keys -notcontains $Needle) {
-                        $Dictionary.Value += @{
-                            $Needle = [pscustomobject]@{
-                                Pattern = $Needle
-                                Parts = [System.Collections.ArrayList]::new()
-                            }
-                        }
+                    ## Print
+                    #Write-Host -ForegroundColor DarkGray -NoNewline 'ADD NEW   :'.PadRight(16,' ')
+                    #Write-Host -ForegroundColor DarkGray $Needle.PadLeft(30,' ')
+
+                    if(-not (Test-DictionaryItem -Key $Needle)) {
+                        # Add a new item to the dictionary
+                        New-DictionaryItem -Key $Needle
                     }
-                    <#
-                    $Items = [System.Collections.ArrayList]::new()
-                    $Items.AddRange($LeftSolution.Parts) | Out-Null
-                    $Items.AddRange($RightSolution.Parts) | Out-Null
-                    $Dictionary.Value[$Needle].Parts.Add($Items) | Out-Null
-                    #>
                     $LeftSolution.Parts |% {
                         $CurrentLeft = $_
                         $RightSolution.Parts |% {
                             $CurrentRight = $_
+
+                            # Add the item values to the dictionary
                             $Items = [System.Collections.ArrayList]::new()
                             $Items.AddRange($CurrentLeft) | Out-Null
                             $Items.AddRange($CurrentRight) | Out-Null
-
-                            Write-Host -ForegroundColor Green -NoNewline 'NEW       :'.PadRight(16,' ')
-                            Write-Host -ForegroundColor Magenta "$Left$Right"
-                            Write-Host -ForegroundColor Green -NoNewline '          :'.PadRight(16,' ')
-                            Write-Host -ForegroundColor Magenta -NoNewline $Left.PadLeft(30 - $Right.Length,' ')
-                            Write-Host -ForegroundColor Cyan -NoNewline $Right
-                            Write-Host -NoNewline ' - '
-                            Write-Host -ForegroundColor Magenta -NoNewline (($Items | Select-Object -First $CurrentLeft.Count)  -join '; ')
-                            Write-Host -NoNewline ' ; '
-                            Write-Host -ForegroundColor Cyan (($Items | Select-Object -Last $CurrentRight.Count)  -join '; ')
-
-                            $Dictionary.Value[$Needle].Parts.Add($Items) | Out-Null
+                            
+                            if(-not (Test-DictionaryItemValue -Key $Needle -ValueItem $Items)) {
+                                # Add the item values to the dictionary (if it does not exist)
+                                New-DictionaryItemValue -Key $Needle -ValueItem $Items
+                            }
                         }
                     }
+                    # Get the item from the dictionary
+                    $Item = Get-DictionaryItem -Key $Needle
 
+                    ## Print
+                    #$Item | Format-DictionaryItem | Write-Host -ForegroundColor DarkBlue
                 }
             }
             # If the loop produced some outputs, return them
-            if($Dictionary.Value.Keys -contains $Needle) {
-                return $Dictionary.Value[$Needle]
+            if((Test-DictionaryItem -Key $Needle)) {
+                ## Print
+                #Write-Host -ForegroundColor Green -NoNewline 'DICTIONARY:'.PadRight(16,' ')
+                #Write-Host -ForegroundColor Green $Needle.PadLeft(30,' ')
+
+                # Get the item from the dictionary
+                $Item = Get-DictionaryItem -Key $Needle
+                
+                ## Print
+                #$Item | Format-DictionaryItem | Write-Host -ForegroundColor DarkGray
+
+                # Return the item
+                return $Item
             }
         }
     }
 
     # Load input data
-    $DataFile = Import-PowerShellDataFile -Path "$PSScriptRoot\Day19.test.psd1"
+    $DataFile = Import-PowerShellDataFile -Path "$PSScriptRoot\Day19.real.psd1"
     # $Patterns = [System.Collections.ArrayList]($DataFile.patterns -split ', ' | where-object { -not [string]::IsNullOrEmpty($_) })
     $Patterns = aoc2024_19_2_v3_preprocess_patterns -Patterns $DataFile.Patterns
     $Needles = [System.Collections.ArrayList]($DataFile.needles -split "`r?`n" | where-object { -not [string]::IsNullOrEmpty($_) })
@@ -161,7 +174,7 @@ Begin {
             Id = 1
         }
     }
-    $Progress | Add-Member -MemberType ScriptMethod -Name Reset -Value {param([ValidateScript({$_ -gt 0 })][int]$Max) $this.Total = $Max}
+    $Progress | Add-Member -MemberType ScriptMethod -Name Reset -Value {param([ValidateScript({$_ -gt 0 })][int]$Max) $this.Total = $Max; $this.Current = 0}
     $Progress | Add-Member -MemberType ScriptMethod -Name Step -Value {
         param($CurrentOperation)
         $this.Current ++
@@ -175,13 +188,38 @@ Begin {
     }
 }
 Process {
-    $Dictionary = @{}
+    # First process all the patterns (in order to get a preliminary dictionary for faster handling of the needles)
+    $Patterns.SortedPatterns | Foreach-Object -Process {
+        $Progress.Step($_)
+
+        #Write-Host -ForegroundColor Yellow -NoNewline 'INPUT:'.PadRight(16,' ')
+        #Write-Host -ForegroundColor Green "$_"
+        $Item = aoc2024_19_2_v3_recurse_find_solutions -Needle $_ -Patterns ([ref]$Patterns)
+        <#if($Item) {
+            $Item | Format-DictionaryItem | Write-Host -ForegroundColor Green
+        } else {
+            Write-Warning "No solution found for $_"
+        }#>
+    } -Begin { 
+        $Progress.Reset($Patterns.SortedPatterns.Count)
+    } -End { 
+        $Progress.Done()
+        Write-Host "Dictionary pre-initialized." -ForegroundColor Magenta
+    }
+
+    # Then process the actual needles and count solutions
     $Needles | ForEach-Object -Process {
         $Progress.Step($_)
 
         Write-Host -ForegroundColor Yellow -NoNewline 'INPUT:'.PadRight(16,' ')
         Write-Host -ForegroundColor Green "$_"
-        aoc2024_19_2_v3_recurse_find_solutions -Needle $_ -Patterns ([ref]$Patterns) -Dictionary ([ref]$Dictionary)
+        $Item = aoc2024_19_2_v3_recurse_find_solutions -Needle $_ -Patterns ([ref]$Patterns)
+        if($Item) {
+            $Item | Format-DictionaryItem | Write-Host -ForegroundColor Green
+            $Total += $Item.Parts.Count
+        } else {
+            Write-Warning "No solution found for $_"
+        }
 
     } -Begin { 
         $Progress.Reset($Needles.Count)

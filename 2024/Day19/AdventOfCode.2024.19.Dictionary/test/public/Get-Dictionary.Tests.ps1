@@ -1,5 +1,5 @@
-Describe "Testing public module function Get-DictionaryItem" -Tag "UnitTest" {
-    BeforeAll {
+Describe "Testing public module function Get-Dictionary" -Tag "UnitTest" {
+    BeforeEach {
         $abc_Items = [System.Collections.ArrayList]::new()
         $abc_Items.Add([System.Collections.ArrayList]::new(@('abc')))
         $abc_Items.Add([System.Collections.ArrayList]::new(@('ab','c')))
@@ -21,7 +21,7 @@ Describe "Testing public module function Get-DictionaryItem" -Tag "UnitTest" {
             }
         })
     }
-    AfterAll {
+    AfterEach {
         $script:AOC_2024_19_DICTIONARY = (@{})
     }
     Context "A dummy unit test" {
@@ -40,28 +40,40 @@ Describe "Testing public module function Get-DictionaryItem" -Tag "UnitTest" {
             }
         }
 
-        It "Should not throw on not found" {
-            {Invoke-ModuleFunctionStub -Key xyz } | Should -Not -Throw
+        It "Should not throw on empty dictionary" {
+            $script:AOC_2024_19_DICTIONARY = (@{})
+            {Invoke-ModuleFunctionStub} | Should -Not -Throw
         }
 
-        It "Should return null on not found" {
-            $Item = Invoke-ModuleFunctionStub -Key xyz
-            $Item | Should -BeNullOrEmpty
+        It "Should return empty hashtable on empty dictionary" {
+            $script:AOC_2024_19_DICTIONARY = (@{})
+            $Item = Invoke-ModuleFunctionStub
+            Should -ActualValue $Item -BeOfType 'hashtable'
+            $Item.Keys | Should -BeNullOrEmpty
+            $Item.Values | Should -BeNullOrEmpty
         }
 
-        It "Should return the Item on found" {
-            $Item = Invoke-ModuleFunctionStub -Key abc
-            
-            # Test the returned arraylist object
-            $Item | Should -Not -BeNullOrEmpty
-            Should -ActualValue $Item -BeOfType [pscustomobject]
-            $Item.Pattern | Should -Be 'abc'
-            Should -ActualValue $Item.Parts -BeOfType [System.Collections.ArrayList]
-            $Item.Parts.Count | Should -Be 4
-            $Item.Parts[0].Count | Should -Be 1
-            $Item.Parts[1].Count | Should -Be 2
-            $Item.Parts[2].Count | Should -Be 2
-            $Item.Parts[3].Count | Should -Be 3
+        It "Should return the dictionary" {
+            $Item = Invoke-ModuleFunctionStub
+
+            Should -ActualValue $Item -BeOfType 'hashtable'
+            $Item.Keys.Count | Should -Be 2
+            $Item.Keys | Should -Contain 'abc'
+            $Item.Keys | Should -Contain 'def'
+            $Item['abc'].Pattern | Should -Be 'abc'
+            $Item['def'].Pattern | Should -Be 'def'
+            Should -ActualValue $Item['abc'].Parts -BeOfType 'System.Collections.ArrayList'
+            $Item['abc'].Parts.Count | Should -Be 4
+            $Item['abc'].Parts[0].Count | Should -Be 1
+            $Item['abc'].Parts[1].Count | Should -Be 2
+            $Item['abc'].Parts[2].Count | Should -Be 2
+            $Item['abc'].Parts[3].Count | Should -Be 3
+            Should -ActualValue $Item['def'].Parts -BeOfType 'System.Collections.ArrayList'
+            $Item['def'].Parts.Count | Should -Be 4
+            $Item['def'].Parts[0].Count | Should -Be 1
+            $Item['def'].Parts[1].Count | Should -Be 2
+            $Item['def'].Parts[2].Count | Should -Be 2
+            $Item['def'].Parts[3].Count | Should -Be 3
         }
     }
 }
