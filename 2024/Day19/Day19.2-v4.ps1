@@ -1,6 +1,10 @@
-﻿[CmdletBinding()]
+﻿#requires -Version 5.1
+[CmdletBinding()]
 param()
 Begin {
+    Import-Module .\AdventOfCode.2024.19.Dictionary\build\AdventOfCode.2024.19.Dictionary
+    Reset-Dictionary
+    
     function aoc2024_19_2_v3_preprocess_patterns {
         [CmdletBinding()]
         param(
@@ -36,30 +40,51 @@ Begin {
             #Write-Host -ForegroundColor Yellow -NoNewline 'INPUT:     '.PadRight(16,' ')
             #Write-Host -ForegroundColor Cyan $Needle.PadLeft(30,' ')
 
-            if($Dictionary.Value.Keys -contains $Needle) {
+            if(Test-DictionaryItem -Key $Needle) {
+                # Print
                 Write-Host -ForegroundColor Cyan -NoNewline 'DICTIONARY:'.PadRight(16,' ')
                 Write-Host -ForegroundColor Cyan -NoNewLine $Needle.PadLeft(30,' ')
                 Write-Host -NoNewLine '; '
-                $Dictionary.Value[$Needle].Parts | Foreach-Object {
-                    "$($_ -join ', '); "
-                } | Write-Host -ForegroundColor Yellow
 
-                return $Dictionary.Value[$Needle]
+                # Get the item from the dictionary
+                $Item = $null
+                Get-DictionaryItem -Key $Needle -RefItem ([ref]$Item)
+                
+                # Print
+                $Item | Foreach-Object {
+                    "$($_ -join ', '); "
+                } | Write-Host -NoNewLine -ForegroundColor Yellow
+                Write-Host ''
+
+                # Return the item
+                return $Item
             }
+
             if($Patterns.Value.Contains($Needle)) {
+                # Print
                 Write-Host -ForegroundColor Magenta -NoNewline 'PATTERNS  :'.PadRight(16,' ')
                 Write-Host -ForegroundColor Magenta $Needle.PadLeft(30,' ')
-                $Dictionary.Value += @{
-                    $Needle = [pscustomobject]@{
-                        Pattern = $Needle
-                        Parts = [System.Collections.ArrayList]::new()
-                    }
-                }
+
+                # Add the item to the dictionary
+                New-DictionaryItem -Key $Needle
                 $Items = [System.Collections.ArrayList]::new()
                 $Items.Add($Needle) | Out-Null
-                $Dictionary.Value[$Needle].Parts.Add($Items) | Out-Null
-                return $Dictionary.Value[$Needle]
+                New-DictionaryItemValue -Key $Needle -ValueItem $Items
+
+                # Get the item from the dictionary
+                $Item = $null
+                Get-DictionaryItem -Key $Needle -RefItem ([ref]$Item)
+                
+                # Print
+                $Item | Foreach-Object {
+                    "$($_ -join ', '); "
+                } | Write-Host -NoNewLine -ForegroundColor Yellow
+                Write-Host ''
+
+                # Return the item
+                return $Item
             }
+
             if($NoRecurse.IsPresent -and $NoRecurse) {
                 # Finding child solutions by recursion is not wanted
                 #Write-Host -ForegroundColor Gray -NoNewline '          :'.PadRight(16,' ')

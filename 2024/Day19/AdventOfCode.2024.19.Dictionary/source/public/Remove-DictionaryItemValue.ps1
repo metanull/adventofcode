@@ -11,6 +11,9 @@ param(
     [System.Collections.ICollection]$ValueItem
 )
 End {
+    if(-not ($script:AOC_2024_19_DICTIONARY.Keys -contains $Key)) {
+        return
+    }
     $ValueItemFootprint = $ValueItem -join ':'
     for($k = 0; $k -lt $script:AOC_2024_19_DICTIONARY[$Key].Parts.Count; $k ++) {
         $valueParts = [System.Collections.ArrayList]::new()
@@ -18,7 +21,7 @@ End {
             $valueParts.Add($script:AOC_2024_19_DICTIONARY[$Key].Parts[$k][$l]) | Out-Null
         }
         if(($valueParts -join ':') -eq $ValueItemFootprint) {
-            $script:AOC_2024_19_DICTIONARY[$Key].Parts[$k].RemoveAt($l) | Out-Null
+            $script:AOC_2024_19_DICTIONARY[$Key].Parts.RemoveAt($k) | Out-Null
             break
         }
     }
