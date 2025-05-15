@@ -1,4 +1,29 @@
 Describe "Testing public module function Measure-Dictionary" -Tag "UnitTest" {
+    BeforeEach {
+        $abc_Items = [System.Collections.ArrayList]::new()
+        $abc_Items.Add([System.Collections.ArrayList]::new(@('abc')))
+        $abc_Items.Add([System.Collections.ArrayList]::new(@('ab','c')))
+        $abc_Items.Add([System.Collections.ArrayList]::new(@('a','bc')))
+        $abc_Items.Add([System.Collections.ArrayList]::new(@('a','b','c')))
+        $def_Items = [System.Collections.ArrayList]::new()
+        $def_Items.Add([System.Collections.ArrayList]::new(@('def')))
+        $def_Items.Add([System.Collections.ArrayList]::new(@('de','f')))
+        $def_Items.Add([System.Collections.ArrayList]::new(@('d','ef')))
+        $def_Items.Add([System.Collections.ArrayList]::new(@('d','e','f')))
+        $script:AOC_2024_19_DICTIONARY = (@{
+            'abc' = [pscustomobject]@{
+                Pattern = 'abc'
+                Parts = $abc_Items
+            }
+            'def' = [pscustomobject]@{
+                Pattern = 'def'
+                Parts = $def_Items
+            }
+        })
+    }
+    AfterEach {
+        $script:AOC_2024_19_DICTIONARY = (@{})
+    }
     Context "A dummy unit test" {
         BeforeAll {
             $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
@@ -15,9 +40,18 @@ Describe "Testing public module function Measure-Dictionary" -Tag "UnitTest" {
             }
         }
 
-        It "Should return TRUE" {
+        It "Should not throw on empty dictionnary" {
+            $script:AOC_2024_19_DICTIONARY = (@{})
+            {Invoke-ModuleFunctionStub} | Should -Not -Throw
+        }
+
+        It "Should not throw" {
+            {Invoke-ModuleFunctionStub} | Should -Not -Throw
+        }
+
+        It "Should return the number of keys" {
             $Result = Invoke-ModuleFunctionStub
-            $Result | Should -BeTrue
+            $Result.Count | Should -Be 2
         }
     }
 }
