@@ -24,7 +24,7 @@ Describe "Testing public module function Test-DictionaryItemValue" -Tag "UnitTes
     AfterAll {
         $script:AOC_2024_19_DICTIONARY = (@{})
     }
-    Context "A dummy unit test" {
+    Context "Default context" {
         BeforeAll {
             $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
             $ScriptName = $PSCommandPath | Split-Path -Leaf

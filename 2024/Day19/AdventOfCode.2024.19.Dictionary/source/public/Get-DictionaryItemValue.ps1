@@ -1,6 +1,6 @@
 ﻿<#
     .SYNOPSIS
-    A dummy function, that doesn't not do anything
+    
     .PARAMETER Key
         The Key in the dictionary
     .PARAMETER RefItem

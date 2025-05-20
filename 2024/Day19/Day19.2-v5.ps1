@@ -145,7 +145,38 @@ Process {
             $Progress.Done()
             Write-Host "Dictionary pre-initialized." -ForegroundColor Magenta
         }
+    
 
+    # Then process the actual needles and count solutions
+    $Needles | Select-Object -First 1 | ForEach-Object -Process {
+            $Needle = $_
+            $Progress.Step($_)
+
+            $Iterations = $Needle.Length - ($Patterns.MinLength )
+            for($ijk = 1; $ijk -le $Iterations; $ijk++) {
+                $Needle = $_
+                
+                $SubNeedle = $Needle.Substring($Needle.Length - ($Patterns.MinLength + $ijk), ($Patterns.MinLength + $ijk))
+
+                Write-Host -ForegroundColor Yellow -NoNewline 'INPUT:'.PadRight(16,' ')
+                Write-Host -ForegroundColor Green "$SubNeedle - ($ijk. $Needle)"
+
+                $Item = aoc2024_19_2_v3_recurse_find_solutions -Needle $SubNeedle -Patterns ([ref]$Patterns) -AntiPatterns ([ref]$AntiPatterns) -MaxPattern $Patterns.MaxLength -Progress ([ref]$Progress)
+                if($Item) {
+                    $Item | Format-DictionaryItem | Write-Host -ForegroundColor Green | Out-Null
+                } else {
+                    Write-Warning "No solution found for $SubNeedle"
+                    break
+                }
+            }
+        } -Begin { 
+            $Progress.Reset($Needles.Count)
+        } -End { 
+            $Progress.Done()
+            Write-Host "Dataset pre-processed for needle $Needle" -ForegroundColor Magenta
+        }
+
+    # Write-Warning "FINAL"
     # Then process the actual needles and count solutions
     $Needles | ForEach-Object -Process {
             $Progress.Step($_)
@@ -166,4 +197,9 @@ Process {
             Write-Host "Total solutions found: $Total" -ForegroundColor Magenta
         }
 
+    [pscustomobject]@{d=Get-Dictionary;
+        p=$Patterns;
+        a=$AntiPatterns;
+        n=$Needles;
+        t=$Total}
 }
