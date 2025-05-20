@@ -16,3 +16,4 @@ build
 *.db
 *.sqlite-journal
 *.db-journal
+*.real.psd1
