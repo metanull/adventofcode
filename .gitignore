@@ -12,3 +12,7 @@
 **/.ninja*
 **/bin
 build
+*.sqlite
+*.db
+*.sqlite-journal
+*.db-journal
