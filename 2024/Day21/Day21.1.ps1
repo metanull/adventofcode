@@ -36,33 +36,62 @@ Function Find-KeyPadPath {
     }
 }
 
-$Keypads = Import-PowerShellDataFile -Path (Join-Path -Path $PSScriptRoot -ChildPath Keypads.psd1)
+Function Invoke-RobotChain {
+    [CmdletBinding()]
+    Param(
+        [System.Collections.ArrayList] $Code
+    )
+    Begin {
+        $Keypads = Import-PowerShellDataFile -Path (Join-Path -Path $PSScriptRoot -ChildPath Keypads.psd1)
+    } 
+    Process {
+        $CurrentKey = 'A'
+        $Robot1 = foreach($TargetKey in $Code) {
+            Find-KeyPadPath -UpFirst -KeyPad $Keypads.Numeric.Moves -TargetKey $TargetKey -CurrentKey $CurrentKey
+            'A' | Write-Output
+            $CurrentKey = $TargetKey
+        }
+        $CurrentKey = 'A'
+        $Robot2 = foreach($TargetKey in $Robot1) {
+            Find-KeyPadPath -KeyPad $Keypads.Directional.Moves -TargetKey $TargetKey -CurrentKey $CurrentKey
+            'A' | Write-Output
+            $CurrentKey = $TargetKey
+        }
+        $CurrentKey = 'A'
+        $Robot3 = foreach($TargetKey in $Robot2) {
+            Find-KeyPadPath -KeyPad $Keypads.Directional.Moves -TargetKey $TargetKey -CurrentKey $CurrentKey
+            'A' | Write-Output
+            $CurrentKey = $TargetKey
+        }
 
-$Code = @('0','2','9','A')
-$Keypads.Numeric.Printable
+        $Final = $Robot3
+        $ShortestSolutionLength = [int]($Final | Measure-Object | Select-Object -ExpandProperty Count)
+        $CodeFingerprint = [int](($Code -join '') -replace '^\D+|\D+$')
+        $Solution = $ShortestSolutionLength * $CodeFingerprint
 
-$CurrentKey = 'A'
-$Level1 = foreach($TargetKey in $Code) {
-    Write-Warning $TargetKey
-    Find-KeyPadPath -UpFirst -KeyPad $Keypads.Numeric.Moves -TargetKey $TargetKey -CurrentKey $CurrentKey | Foreach-Object {
-        $_ | Write-Host -ForegroundColor Magenta
-        $_ | Write-Output
+        [PSCustomObject]@{
+            Code = $Code -join ''
+            CodeValue = $CodeFingerprint
+            Solution = ($Final | Foreach-Object {
+                switch($_) {
+                    'Up' {'^'}
+                    'Down' {'v'}
+                    'Left' {'<'}
+                    'Right' {'>'}
+                    default {$_}
+                }
+            }) -join ''
+            SolutionLength = $ShortestSolutionLength
+            Complexity = $Solution
+        }
     }
-    'A' | Write-Host -ForegroundColor Cyan
-    'A' | Write-Output
-    $CurrentKey = $TargetKey
 }
 
-$Keypads.Directional.Printable
-
-$CurrentKey = 'A'
-$Level2 = foreach($TargetKey in $Level1) {
-    Write-Warning $TargetKey
-    Find-KeyPadPath -KeyPad $Keypads.Directional.Moves -TargetKey $TargetKey -CurrentKey $CurrentKey| Foreach-Object {
-        $_ | Write-Host -ForegroundColor Magenta
-        $_ | Write-Output
-    }
-    'A' | Write-Host -ForegroundColor Cyan
-    'A' | Write-Output
-    $CurrentKey = $TargetKey
+$Codes = @('029A','980A','179A','456A','379A')
+#$Codes = @('780A','539A','341A','189A','682A')
+$Solutions = foreach($Code in $Codes) {
+    Invoke-RobotChain -Code $Code.ToCharArray()
 }
+$Solutions | Select-Object -Property Code,CodeValue,SolutionLength,Solution
+$Solutions | Measure-Object -Sum -Property Complexity | Select-Object -ExpandProperty Sum
+
