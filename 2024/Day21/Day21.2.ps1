@@ -135,8 +135,8 @@ Function Invoke-RobotChainOptimized {
     }
 }
 
-$Codes = @('029A','980A','179A','456A','379A')
-#$Codes = @('780A','539A','341A','189A','682A')
+#$Codes = @('029A','980A','179A','456A','379A')
+$Codes = @('780A','539A','341A','189A','682A')
 $Solutions = foreach($Code in $Codes) {
     Invoke-RobotChainOptimized -Code $Code.ToCharArray() -NumDirectionalRobots 25
 }
