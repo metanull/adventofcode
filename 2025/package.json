@@ -12,6 +12,8 @@
     "day3.2": "node Day3/Day3.2.js",
     "day4.1": "node Day4/Day4.1.js",
     "day4.2": "node Day4/Day4.2.js",
+    "day5.1": "node Day5/Day5.1.js",
+    "day5.2": "node Day5/Day5.2.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },

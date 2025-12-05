@@ -44,6 +44,8 @@ npm run day1.2    # Run Day 1, Part 2
 import { readLines, logger, sum, int } from '../lib/index.js';
 import { resolve } from 'path';
 
+const title = 'Day X, Part 1';
+
 logger.setDebug(true);
 
 // 1. Decode/parse input line
@@ -84,7 +86,7 @@ function solve() {
 }
 
 try {
-    logger.section('Day X, Part X');
+    logger.section(title);
 
     const startTime = performance.now();
     const result = solve();
