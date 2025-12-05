@@ -7,7 +7,8 @@
 import { readLines, logger, int, getCallerDir } from '../lib/index.js';
 import { resolve } from 'path';
 
-// Enable debug mode for detailed logging
+const title = 'Day 1, Part 2';
+
 logger.setDebug(false);
 
 /**
@@ -72,8 +73,7 @@ function solve() {
 }
 
 try {
-    logger.section('Day 1, Part 2');
-
+    logger.section(title);
     const startTime = performance.now();
     const result = solve();
     const endTime = performance.now();
