@@ -22,9 +22,6 @@ function decodeLine(line) {
     return direction === 'L' ? -value : value;
 }
 
-/**
- * Main solution
- */
 function solve() {
     const scriptDir = getCallerDir(import.meta.url);
     const inputPath = resolve(scriptDir, '..', 'Input', 'Day1.txt');
@@ -64,7 +61,6 @@ function solve() {
     return aggregatedResult;
 }
 
-// Run solution
 try {
     logger.section('Day 1, Part 1');
 
