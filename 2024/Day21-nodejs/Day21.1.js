@@ -6,7 +6,7 @@
  * Robot keypad chain puzzle - finding shortest sequences to type door codes
  */
 
-import { readLines, logger, getCallerDir } from './lib/index.js';
+import { readLines, logger, getCallerDir } from '../../lib/index.js';
 import { resolve } from 'path';
 import { processCodeThroughRobotChain, calculateComplexity } from './RobotChain.js';
 

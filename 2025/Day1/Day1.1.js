@@ -5,7 +5,7 @@
  */
 
 import chalk from 'chalk';
-import { readLines, logger, int, getCallerDir} from '../lib/index.js';
+import { readLines, logger, int, getCallerDir} from '../../lib/index.js';
 import { resolve } from 'path';
 
 const title = 'Day 1, Part 1';
