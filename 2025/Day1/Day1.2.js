@@ -25,9 +25,6 @@ function decodeLine(line) {
  * Main solution
  */
 function solve() {
-    logger.section('Day 1, Part 2');
-    
-    // Resolve input file path
     const scriptDir = getCallerDir(import.meta.url);
     const inputPath = resolve(scriptDir, '..', 'Input', 'Day1.txt');
     
@@ -79,6 +76,8 @@ function solve() {
 
 // Run solution
 try {
+    logger.section('Day 1, Part 2');
+
     const startTime = performance.now();
     const result = solve();
     const endTime = performance.now();
