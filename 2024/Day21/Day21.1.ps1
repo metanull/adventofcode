@@ -2,38 +2,54 @@ Function Find-KeyPadPath {
     [CmdletBinding()]
     param(
         [hashtable]$KeyPad,
+        [hashtable]$GapPos,
         [string]$TargetKey,
-        [string]$CurrentKey = 'A',
-        [switch]$UpFirst
+        [string]$CurrentKey = 'A'
     )
-    $Target = $KeyPad[$TargetKey]
-    $Current = $KeyPad[$CurrentKey]
+    $Start = $KeyPad[$CurrentKey]
+    $End = $KeyPad[$TargetKey]
 
-    $Vertical = $Target.Vertical - $Current.Vertical
-    $VerticalMoves = for($i = 0; $i -lt [Math]::Abs($Vertical); $i++) {
-        if($Vertical -gt 0) {
-            'Up' | Write-Output
-        } else {
-            'Down' | Write-Output
-        }
+    $dx = $End.X - $Start.X
+    $dy = $End.Y - $Start.Y
+
+    # Generate horizontal moves (negative dx = left '<', positive dx = right '>')
+    $HorizontalMoves = for($i = 0; $i -lt [Math]::Abs($dx); $i++) {
+        if($dx -lt 0) { '<' } else { '>' }
     }
-    $Horizontal = $Target.Horizontal - $Current.Horizontal
-    $HorizontalMoves = for($i = 0; $i -lt [Math]::Abs($Horizontal); $i++) {
-        if($Horizontal -gt 0) {
-            'Left' | Write-Output
-        } else {
-            'Right' | Write-Output
-        }
+
+    # Generate vertical moves (negative dy = up '^', positive dy = down 'v')
+    $VerticalMoves = for($i = 0; $i -lt [Math]::Abs($dy); $i++) {
+        if($dy -lt 0) { '^' } else { 'v' }
     }
-    if(($Vertical -ge 0 -and $UpFirst.IsPresent -and $UpFirst) -or ($Vertical -le 0 -and ((-not $UpFirst.IsPresent) -or (-not $UpFirst)))) {
-        # Moving away from the deadchar: place vertical moves first (to avoid hitting deadchar)
-        $VerticalMoves | ForEach-Object { $_ | Write-Output }
-        $HorizontalMoves | ForEach-Object { $_ | Write-Output }
+
+    # Check if horizontal-first path crosses gap
+    $hFirstCrossesGap = ($Start.Y -eq $GapPos.Y) -and ($End.X -eq $GapPos.X)
+    # Check if vertical-first path crosses gap
+    $vFirstCrossesGap = ($Start.X -eq $GapPos.X) -and ($End.Y -eq $GapPos.Y)
+
+    if($hFirstCrossesGap -and -not $vFirstCrossesGap) {
+        # Must go vertical first
+        $VerticalMoves
+        $HorizontalMoves
+    } elseif($vFirstCrossesGap -and -not $hFirstCrossesGap) {
+        # Must go horizontal first
+        $HorizontalMoves
+        $VerticalMoves
     } else {
-        # Moving towards the deadchar: place horizontal moves first (to avoid hitting deadchar)
-        $HorizontalMoves | ForEach-Object { $_ | Write-Output }
-        $VerticalMoves | ForEach-Object { $_ | Write-Output }
+        # No gap conflict - prefer left moves first, then vertical, then right
+        if($dx -lt 0) {
+            # Going left: do horizontal first
+            $HorizontalMoves
+            $VerticalMoves
+        } else {
+            # Going right or no horizontal: do vertical first
+            $VerticalMoves
+            $HorizontalMoves
+        }
     }
+
+    # Always output 'A' to press the button
+    'A'
 }
 
 Function Invoke-RobotChain {
@@ -47,20 +63,17 @@ Function Invoke-RobotChain {
     Process {
         $CurrentKey = 'A'
         $Robot1 = foreach($TargetKey in $Code) {
-            Find-KeyPadPath -UpFirst -KeyPad $Keypads.Numeric.Moves -TargetKey $TargetKey -CurrentKey $CurrentKey
-            'A' | Write-Output
+            Find-KeyPadPath -KeyPad $Keypads.Numeric.Moves -GapPos $Keypads.Numeric.Gap -TargetKey $TargetKey -CurrentKey $CurrentKey
             $CurrentKey = $TargetKey
         }
         $CurrentKey = 'A'
         $Robot2 = foreach($TargetKey in $Robot1) {
-            Find-KeyPadPath -KeyPad $Keypads.Directional.Moves -TargetKey $TargetKey -CurrentKey $CurrentKey
-            'A' | Write-Output
+            Find-KeyPadPath -KeyPad $Keypads.Directional.Moves -GapPos $Keypads.Directional.Gap -TargetKey $TargetKey -CurrentKey $CurrentKey
             $CurrentKey = $TargetKey
         }
         $CurrentKey = 'A'
         $Robot3 = foreach($TargetKey in $Robot2) {
-            Find-KeyPadPath -KeyPad $Keypads.Directional.Moves -TargetKey $TargetKey -CurrentKey $CurrentKey
-            'A' | Write-Output
+            Find-KeyPadPath -KeyPad $Keypads.Directional.Moves -GapPos $Keypads.Directional.Gap -TargetKey $TargetKey -CurrentKey $CurrentKey
             $CurrentKey = $TargetKey
         }
 
@@ -72,23 +85,15 @@ Function Invoke-RobotChain {
         [PSCustomObject]@{
             Code = $Code -join ''
             CodeValue = $CodeFingerprint
-            Solution = ($Final | Foreach-Object {
-                switch($_) {
-                    'Up' {'^'}
-                    'Down' {'v'}
-                    'Left' {'<'}
-                    'Right' {'>'}
-                    default {$_}
-                }
-            }) -join ''
+            Solution = $Final -join ''
             SolutionLength = $ShortestSolutionLength
             Complexity = $Solution
         }
     }
 }
 
-$Codes = @('029A','980A','179A','456A','379A')
-#$Codes = @('780A','539A','341A','189A','682A')
+#$Codes = @('029A','980A','179A','456A','379A')
+$Codes = @('780A','539A','341A','189A','682A')
 $Solutions = foreach($Code in $Codes) {
     Invoke-RobotChain -Code $Code.ToCharArray()
 }
