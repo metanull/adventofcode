@@ -12,54 +12,81 @@ const title = 'Day 5, Part 2';
 logger.setDebug(true);
 
 /**
- * Decode/parse the input into ranges and available IDs
+ * Decode/parse the input into ranges
  * @param {string[]} lines - All input lines
- * @returns {{ranges: Array<[number, number]>, available: number[]}} Parsed data
+ * @returns {Array<[number, number]>} Array of [start, end] ranges
  */
 function decodeInput(lines) {
     const blankIndex = lines.findIndex(line => line.trim() === '');
-
     const rangeLines = lines.slice(0, blankIndex);
-    const availableLines = lines.slice(blankIndex + 1);
 
-    const ranges = rangeLines.map(line => {
+    return rangeLines.map(line => {
         const [start, end] = line.split('-').map(int);
         return [start, end];
     });
-
-    const available = availableLines.map(line => int(line.trim()));
-
-    return { ranges, available };
 }
 
 /**
- * Check if an ID falls within any of the ranges
- * @param {number} id - Ingredient ID to check
- * @param {Array<[number, number]>} ranges - Array of [start, end] ranges
- * @returns {boolean} True if ID is in any range
+ * Check if two ranges overlap (including touching ranges like 1-3 and 4-5)
+ * @param {[number, number]} range1 - First range [start, end]
+ * @param {[number, number]} range2 - Second range [start, end]
+ * @returns {boolean} True if ranges overlap or are adjacent
  */
-function isInAnyRange(id, ranges) {
-    return ranges.some(([start, end]) => id >= start && id <= end);
+function rangesOverlap(range1, range2) {
+    const [start1, end1] = range1;
+    const [start2, end2] = range2;
+
+    return !(end1 < start2 - 1 || end2 < start1 - 1);
 }
 
 /**
- * Find available IDs that match fresh ingredient ranges
- * @param {Array<[number, number]>} ranges - Fresh ingredient ranges
- * @param {number[]} available - Available ingredient IDs
- * @returns {number[]} Array of matching IDs
+ * Merge two overlapping ranges
+ * @param {[number, number]} range1 - First range
+ * @param {[number, number]} range2 - Second range
+ * @returns {[number, number]} Merged range
  */
-function findMatchingIds(ranges, available) {
-    const matching = [];
+function mergeRanges(range1, range2) {
+    const [start1, end1] = range1;
+    const [start2, end2] = range2;
 
-    available.forEach((id, index) => {
-        logger.progress(index + 1, available.length);
+    return [Math.min(start1, start2), Math.max(end1, end2)];
+}
 
-        if (isInAnyRange(id, ranges)) {
-            matching.push(id);
+/**
+ * Build a consolidated list of non-overlapping ranges
+ * @param {Array<[number, number]>} ranges - Input ranges (may overlap)
+ * @returns {Array<[number, number]>} Consolidated non-overlapping ranges (sorted)
+ */
+function consolidateRanges(ranges) {
+    if (ranges.length === 0) return [];
+
+    const sorted = [...ranges].sort((a, b) => a[0] - b[0]);
+    const consolidated = [sorted[0]];
+
+    for (let i = 1; i < sorted.length; i++) {
+        logger.progress(i, sorted.length);
+        const currentRange = sorted[i];
+        const lastConsolidated = consolidated[consolidated.length - 1];
+
+        if (rangesOverlap(lastConsolidated, currentRange)) {
+            consolidated[consolidated.length - 1] = mergeRanges(lastConsolidated, currentRange);
+        } else {
+            consolidated.push(currentRange);
         }
-    });
+    }
 
-    return matching;
+    return consolidated;
+}
+
+/**
+ * Count total distinct IDs covered by all ranges
+ * @param {Array<[number, number]>} ranges - Non-overlapping ranges
+ * @returns {number} Total count of distinct IDs
+ */
+function countDistinctIds(ranges) {
+    return ranges.reduce((sum, [start, end]) => {
+        return sum + (end - start + 1);
+    }, 0);
 }
 
 function solve() {
@@ -69,15 +96,21 @@ function solve() {
     logger.info(`Reading input from: ${inputPath}`);
 
     const lines = readLines(inputPath);
-    const { ranges, available } = decodeInput(lines);
+    const ranges = decodeInput(lines);
 
-    logger.info(`Fresh ranges: ${ranges.length}, Available IDs: ${available.length}`);
+    logger.info(`Input ranges: ${ranges.length}`);
 
-    const matchingIds = findMatchingIds(ranges, available);
+    const consolidated = consolidateRanges(ranges);
+    logger.debug(`Consolidated ranges: ${consolidated.length}`);
+    consolidated.forEach(([start, end]) => {
+        logger.debug(`  [${start}, ${end}]`);
+    });
 
-    logger.debug(`Found ${matchingIds.length} matching IDs`);
+    const answer = countDistinctIds(consolidated);
 
-    return matchingIds.length;
+    logger.debug(`Total distinct IDs: ${answer}`);
+
+    return answer;
 }
 
 try {
