@@ -8,6 +8,8 @@
     "day1.2": "node Day1/Day1.2.js",
     "day2.1": "node Day2/Day2.1.js",
     "day2.2": "node Day2/Day2.2.js",
+    "day3.1": "node Day3/Day3.1.js",
+    "day3.2": "node Day3/Day3.2.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },

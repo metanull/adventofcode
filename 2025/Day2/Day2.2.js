@@ -88,7 +88,6 @@ function solve() {
     return sum(allInvalidIds);
 }
 
-// Run solution
 try {
     logger.section('Day 2, Part 2');
 
