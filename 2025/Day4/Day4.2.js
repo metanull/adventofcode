@@ -73,6 +73,17 @@ function findMatchingCells(grid) {
     return matching;
 }
 
+/**
+ * Remove matching cells from the grid by replacing '@' with '.'
+ * @param {string[][]} grid - 2D grid
+ * @param {Array<[number, number]>} cells - Cells to remove
+ */
+function removeMatchingCells(grid, cells) {
+    cells.forEach(([row, col]) => {
+        grid[row][col] = '.';
+    });
+}
+
 function solve() {
     const scriptDir = getCallerDir(import.meta.url);
     const inputPath = resolve(scriptDir, '..', 'Input', 'Day4.txt');
@@ -83,11 +94,30 @@ function solve() {
     logger.info(`Grid size: ${lines.length} x ${lines[0].length}`);
 
     const grid = decodeInput(lines);
-    const matchingCells = findMatchingCells(grid);
+    const results = [];
+    let iteration = 0;
 
-    logger.debug(`Found ${matchingCells.length} matching cells`);
+    while (true) {
+        iteration++;
+        logger.debug(`Iteration ${iteration}`);
 
-    return matchingCells.length;
+        const matchingCells = findMatchingCells(grid);
+
+        if (matchingCells.length === 0) {
+            logger.debug('No more matching cells found');
+            break;
+        }
+
+        results.push(matchingCells.length);
+        logger.debug(`Found ${matchingCells.length} matching cells`);
+
+        removeMatchingCells(grid, matchingCells);
+    }
+
+    const answer = results.reduce((sum, count) => sum + count, 0);
+    logger.debug(`Total iterations: ${iteration}, Total cells removed: ${answer}`);
+
+    return answer;
 }
 
 try {
