@@ -17,3 +17,7 @@ build
 *.sqlite-journal
 *.db-journal
 *.real.psd1
+
+# Node.js
+node_modules/
+package-lock.json

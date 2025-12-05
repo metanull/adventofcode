@@ -37,3 +37,4 @@ add_subdirectory(lib)
 # Build the individual projects
 add_subdirectory(2023)
 add_subdirectory(2024)
+add_subdirectory(2025)
