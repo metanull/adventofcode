@@ -38,6 +38,67 @@ node 2025\Day1\Day1.1.js    # Run Day 1, Part 1
 npm run day1.2    # Run Day 1, Part 2
 ```
 
+## Template node.js app
+
+```javascript
+import { readLines, logger, sum, int } from '../lib/index.js';
+import { resolve } from 'path';
+
+logger.setDebug(true);
+
+// 1. Decode/parse input line
+function decodeLine(line) {
+    // Parse the line into a usable format
+    return line;
+}
+
+// 2. Process a single decoded line
+function processLine(data, lineIndex) {
+    // Compute value for this line
+    return 0;
+}
+
+// 3. Aggregate results
+function aggregate(results) {
+    // Combine all results (usually sum)
+    return sum(results);
+}
+
+// 4. Solve the riddle
+function solve() {
+    const scriptDir = getCallerDir(import.meta.url);
+    const inputPath = resolve(scriptDir, '..', 'Input', 'DayX.txt');
+
+    logger.info(`Reading input from: ${inputPath}`);
+
+    const lines = readLines(inputPath, { skipEmpty: true });
+    logger.info(`Total lines: ${lines.length}`);
+
+    const results = lines.map((line, index) => {
+        logger.progress(index + 1, lines.length);
+        const decoded = decodeLine(line);
+        return processLine(decoded, index);
+    });
+
+    return aggregate(results);
+}
+
+try {
+    logger.section('Day X, Part X');
+
+    const startTime = performance.now();
+    const result = solve();
+    const endTime = performance.now();
+
+    logger.result('Final Answer', result);
+    logger.success(`Completed in ${(endTime - startTime).toFixed(2)}ms`);
+} catch (error) {
+    logger.error('Failed to solve:', error.message);
+    console.error(error);
+    process.exit(1);
+}
+```
+
 ## Common Utilities
 
 ### Logger
@@ -95,42 +156,4 @@ int("42");                       // 42 (safe parsing)
 extractIntegers("a1b2c3");      // [1, 2, 3]
 range(0, 5);                     // [0, 1, 2, 3, 4]
 unique([1, 2, 2, 3, 3]);        // [1, 2, 3]
-```
-
-## Template node.js app
-
-```javascript
-import { readLines, logger, sum, int } from '../lib/index.js';
-import { resolve } from 'path';
-
-logger.setDebug(true);
-
-// 1. Decode/parse input line
-function decodeLine(line) {
-    // Parse the line into a usable format
-    return line;
-}
-
-// 2. Process each line
-function processLine(data, lineIndex) {
-    // Compute value for this line
-    return 0;
-}
-
-// 3. Aggregate results
-function aggregate(results) {
-    // Combine all results (usually sum)
-    return sum(results);
-}
-
-// 4. Main solution
-function solve() {
-    const lines = readLines('Input/DayN.txt', { skipEmpty: true });
-    const results = lines.map((line, i) => processLine(decodeLine(line), i));
-    return aggregate(results);
-}
-
-// Run
-const answer = solve();
-logger.result('Final Answer', answer);
 ```
