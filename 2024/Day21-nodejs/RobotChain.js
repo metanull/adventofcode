@@ -4,7 +4,7 @@
  */
 
 import { createNumericKeypad, createDirectionalKeypad } from './Keypad.js';
-import { logger } from './lib/index.js';
+import { logger } from '../../lib/index.js';
 
 /**
  * Process a code through the robot chain

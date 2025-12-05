@@ -4,7 +4,7 @@
  * Description: https://adventofcode.com/2025/day/2
  */
 
-import { readLines, logger, sum, int, getCallerDir } from '../lib/index.js';
+import { readLines, logger, sum, int, getCallerDir } from '../../lib/index.js';
 import { resolve } from 'path';
 
 const title = 'Day 2, Part 1';

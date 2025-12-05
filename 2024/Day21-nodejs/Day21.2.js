@@ -6,7 +6,7 @@
  * Robot keypad chain puzzle - with 25 directional robots!
  */
 
-import { readLines, logger, getCallerDir } from './lib/index.js';
+import { readLines, logger, getCallerDir } from '../../lib/index.js';
 import { resolve } from 'path';
 import { processCodeThroughRobotChainOptimized, calculateComplexity } from './RobotChainOptimized.js';
 
