@@ -6,6 +6,7 @@
   "private": true,
   "scripts": {
     "aoc": "node run.js",
+    "new": "node generate.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },

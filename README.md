@@ -39,6 +39,26 @@ npm run aoc 2024 Day21.2   # or simply: npm run aoc 2024 21.2
 
 All Node.js solutions share common libraries located in `/lib`.
 
-## Template solution
+## Creating New Day Solutions
 
-An template script is documentend in `2025\README.md`
+Generate skeleton files for a new day:
+
+```bash
+# Create files for a specific day (defaults to current year)
+npm run new <day>
+
+# Create files for a specific year and day
+npm run new <day> <year>
+
+# Examples:
+npm run new 5           # Creates 2025/Day5/Day5.1.js and Day5.2.js
+npm run new 12 2024     # Creates 2024/Day12/Day12.1.js and Day12.2.js
+```
+
+This automatically creates:
+- Year directory (if it doesn't exist)
+- Day directory (`DayX/`)
+- Solution templates (`DayX.1.js` and `DayX.2.js`)
+- Empty input file (`Input/DayX.txt`)
+
+The generator will refuse to overwrite existing non-empty directories.
